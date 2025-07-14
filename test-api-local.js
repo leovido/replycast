@@ -1,11 +1,12 @@
 const http = require('http');
 const url = require('url');
-require('dotenv').config();
+import dotenv from 'dotenv';
+dotenv.config();
 
 // === CONFIG ===
 const API_KEY = process.env.NEYNAR_API_KEY;
 
-function timeAgo(dateString) {
+const timeAgo = (dateString) => {
   const now = new Date();
   const then = new Date(dateString);
   const diffMs = now.getTime() - then.getTime();
@@ -19,7 +20,7 @@ function timeAgo(dateString) {
   return `${diffDay}d ago`;
 }
 
-function flattenReplies(replies) {
+const flattenReplies = (replies) => {
   let all = [];
   for (const reply of replies) {
     all.push(reply);
@@ -96,7 +97,8 @@ async function handleFarcasterReplies(fid) {
         unrepliedCount++;
         const username = replies[0]?.author?.username || "(unknown)";
         const timeAgoStr = timeAgo(replies[0]?.timestamp || cast.timestamp);
-        unrepliedDetails.push({ username, timeAgo: timeAgoStr });
+        const castUrl = `https://farcaster.xyz/${cast.author?.username || 'unknown'}/${cast.hash}`;
+        unrepliedDetails.push({ username, timeAgo: timeAgoStr, castUrl });
       }
     }
 

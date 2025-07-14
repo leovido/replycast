@@ -3,7 +3,7 @@ import { NextApiRequest, NextApiResponse } from 'next';
 // === CONFIG ===
 const API_KEY = process.env.NEYNAR_API_KEY;
 
-function timeAgo(dateString: string): string {
+const timeAgo = (dateString: string): string => {
   const now = new Date();
   const then = new Date(dateString);
   const diffMs = now.getTime() - then.getTime();
@@ -17,7 +17,7 @@ function timeAgo(dateString: string): string {
   return `${diffDay}d ago`;
 }
 
-function flattenReplies(replies: any[]): any[] {
+const flattenReplies = (replies: any[]): any[] => {
   let all: any[] = [];
   for (const reply of replies) {
     all.push(reply);
@@ -49,7 +49,7 @@ export default async function handler(
   try {
     // === Step 1: Fetch your recent casts ===
     const userCastsRes = await fetch(
-      `https://api.neynar.com/v2/farcaster/feed/user/casts?limit=25&fid=${fid}`,
+      `https://api.neynar.com/v2/farcaster/feed/user/casts?limit=100&fid=${fid}`,
       { headers: { "x-api-key": API_KEY } }
     ).then((res) => res.json());
 
@@ -62,7 +62,19 @@ export default async function handler(
     }
 
     let unrepliedCount = 0;
-    const unrepliedDetails: Array<{ username: string; timeAgo: string }> = [];
+    const unrepliedDetails: Array<{ 
+      username: string; 
+      timeAgo: string; 
+      castUrl: string; 
+      text: string; 
+      avatarUrl: string;
+      castHash: string;
+      authorFid: number;
+      originalCastText: string;
+      originalCastHash: string;
+      originalAuthorUsername: string;
+      replyCount: number;
+    }> = [];
 
     for (const cast of userCastsRes.casts) {
       const hash = cast.hash;
@@ -88,9 +100,32 @@ export default async function handler(
 
       if (hasReplies && !authorResponded) {
         unrepliedCount++;
-        const username = replies[0]?.author?.username || "(unknown)";
-        const timeAgoStr = timeAgo(replies[0]?.timestamp || cast.timestamp);
-        unrepliedDetails.push({ username, timeAgo: timeAgoStr });
+        const firstReply = replies[0];
+        const username = firstReply?.author?.username || "(unknown)";
+        const timeAgoStr = timeAgo(firstReply?.timestamp || cast.timestamp);
+        const castUrl = `https://farcaster.xyz/${cast.author?.username || 'unknown'}/${cast.hash}`;
+        const text = firstReply?.text || '';
+        const avatarUrl = firstReply?.author?.pfp_url || '';
+        const castHash = cast.hash;
+        const authorFid = firstReply?.author?.fid || 0;
+        const originalCastText = cast.text || '';
+        const originalCastHash = cast.hash;
+        const originalAuthorUsername = cast.author?.username || 'unknown';
+        const replyCount = replies.length;
+        
+        unrepliedDetails.push({ 
+          username, 
+          timeAgo: timeAgoStr, 
+          castUrl, 
+          text, 
+          avatarUrl, 
+          castHash, 
+          authorFid,
+          originalCastText,
+          originalCastHash,
+          originalAuthorUsername,
+          replyCount
+        });
       }
     }
 
@@ -101,6 +136,7 @@ export default async function handler(
     });
 
   } catch (error) {
+    console.error('API Error:', error);
     return res.status(500).json({ 
       error: "Internal server error",
       message: error instanceof Error ? error.message : "Unknown error"

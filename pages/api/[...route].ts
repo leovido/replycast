@@ -158,7 +158,7 @@ app.get("/farther-widget-script", async (c) => {
       r.textColor = Color.white();
       r.font = bodyFont;
 
-      w.url = "https://warpcast.com/~/channel/farther";
+      w.url = "https://farcaster.xyz/~/channel/farther";
       Script.setWidget(w);
       Script.complete();
 
@@ -351,7 +351,7 @@ app.get("/widget-script", async (c) => {
       r.textColor = Color.white();
       r.font = bodyFont;
 
-      w.url = "https://warpcast.com/~/channel/lp";
+      w.url = "https://farcaster.xyz/~/channel/lp";
       Script.setWidget(w);
       Script.complete();
 

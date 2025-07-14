@@ -158,7 +158,8 @@ describe('Farcaster Replies API', () => {
           casts: [
             {
               hash: 'cast1',
-              timestamp: '2024-01-01T10:00:00Z'
+              timestamp: '2024-01-01T10:00:00Z',
+              author: { username: 'testuser' }
             }
           ]
         })
@@ -189,6 +190,7 @@ describe('Farcaster Replies API', () => {
       expect(result.data.unrepliedCount).toBe(1);
       expect(result.data.unrepliedDetails).toHaveLength(1);
       expect(result.data.unrepliedDetails[0].username).toBe('alice');
+      expect(result.data.unrepliedDetails[0].castUrl).toBe('https://farcaster.xyz/testuser/cast1');
       expect(result.data.message).toBe('You have 1 unreplied comments today.');
     });
 
@@ -199,7 +201,8 @@ describe('Farcaster Replies API', () => {
           casts: [
             {
               hash: 'cast1',
-              timestamp: '2024-01-01T10:00:00Z'
+              timestamp: '2024-01-01T10:00:00Z',
+              author: { username: 'testuser' }
             }
           ]
         })
@@ -243,8 +246,8 @@ describe('Farcaster Replies API', () => {
       fetch.mockResolvedValueOnce({
         json: () => Promise.resolve({
           casts: [
-            { hash: 'cast1', timestamp: '2024-01-01T10:00:00Z' },
-            { hash: 'cast2', timestamp: '2024-01-01T11:00:00Z' }
+            { hash: 'cast1', timestamp: '2024-01-01T10:00:00Z', author: { username: 'testuser' } },
+            { hash: 'cast2', timestamp: '2024-01-01T11:00:00Z', author: { username: 'testuser' } }
           ]
         })
       });
@@ -308,7 +311,7 @@ describe('Farcaster Replies API', () => {
       fetch.mockResolvedValueOnce({
         json: () => Promise.resolve({
           casts: [
-            { hash: 'cast1', timestamp: '2024-01-01T10:00:00Z' }
+            { hash: 'cast1', timestamp: '2024-01-01T10:00:00Z', author: { username: 'testuser' } }
           ]
         })
       });
@@ -331,7 +334,7 @@ describe('Farcaster Replies API', () => {
       fetch.mockResolvedValueOnce({
         json: () => Promise.resolve({
           casts: [
-            { hash: 'cast1', timestamp: '2024-01-01T10:00:00Z' }
+            { hash: 'cast1', timestamp: '2024-01-01T10:00:00Z', author: { username: 'testuser' } }
           ]
         })
       });
