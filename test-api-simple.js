@@ -1,9 +1,10 @@
-import { NextApiRequest, NextApiResponse } from 'next';
+// Simple test script to run the API logic directly
+require('dotenv').config();
 
 // === CONFIG ===
 const API_KEY = process.env.NEYNAR_API_KEY;
 
-function timeAgo(dateString: string): string {
+function timeAgo(dateString) {
   const now = new Date();
   const then = new Date(dateString);
   const diffMs = now.getTime() - then.getTime();
@@ -17,8 +18,8 @@ function timeAgo(dateString: string): string {
   return `${diffDay}d ago`;
 }
 
-function flattenReplies(replies: any[]): any[] {
-  let all: any[] = [];
+function flattenReplies(replies) {
+  let all = [];
   for (const reply of replies) {
     all.push(reply);
     if (reply.direct_replies && reply.direct_replies.length > 0) {
@@ -28,33 +29,49 @@ function flattenReplies(replies: any[]): any[] {
   return all;
 }
 
-export default async function handler(
-  req: NextApiRequest,
-  res: NextApiResponse
-) {
-  if (req.method !== 'GET') {
-    return res.status(405).json({ error: 'Method not allowed' });
+async function testFarcasterReplies(fid) {
+  // Mock Next.js request/response objects
+  const mockReq = {
+    method: 'GET',
+    query: { fid: fid },
+    headers: {}
+  };
+
+  const mockRes = {
+    status: (code) => ({
+      json: (data) => {
+        console.log(`Status: ${code}`);
+        console.log('Response:', JSON.stringify(data, null, 2));
+      }
+    }),
+    json: (data) => {
+      console.log('Response:', JSON.stringify(data, null, 2));
+    }
+  };
+
+  if (mockReq.method !== 'GET') {
+    return mockRes.status(405).json({ error: 'Method not allowed' });
   }
 
-  const { fid } = req.query;
+  const { fid: queryFid } = mockReq.query;
   
-  if (!fid || typeof fid !== 'string') {
-    return res.status(400).json({ error: 'FID parameter is required' });
+  if (!queryFid || typeof queryFid !== 'string') {
+    return mockRes.status(400).json({ error: 'FID parameter is required' });
   }
 
   if (!API_KEY) {
-    return res.status(500).json({ error: 'API key not configured' });
+    return mockRes.status(500).json({ error: 'API key not configured' });
   }
 
   try {
     // === Step 1: Fetch your recent casts ===
     const userCastsRes = await fetch(
-      `https://api.neynar.com/v2/farcaster/feed/user/casts?limit=25&fid=${fid}`,
+      `https://api.neynar.com/v2/farcaster/feed/user/casts?limit=25&fid=${queryFid}`,
       { headers: { "x-api-key": API_KEY } }
     ).then((res) => res.json());
 
     if (!userCastsRes || !Array.isArray(userCastsRes.casts)) {
-      return res.status(200).json({
+      return mockRes.status(200).json({
         unrepliedCount: 0,
         unrepliedDetails: [],
         message: "No recent casts found."
@@ -62,7 +79,7 @@ export default async function handler(
     }
 
     let unrepliedCount = 0;
-    const unrepliedDetails: Array<{ username: string; timeAgo: string }> = [];
+    const unrepliedDetails = [];
 
     for (const cast of userCastsRes.casts) {
       const hash = cast.hash;
@@ -94,16 +111,29 @@ export default async function handler(
       }
     }
 
-    return res.status(200).json({
+    return mockRes.status(200).json({
       unrepliedCount,
       unrepliedDetails,
       message: `You have ${unrepliedCount} unreplied comments today.`
     });
 
   } catch (error) {
-    return res.status(500).json({ 
+    return mockRes.status(500).json({ 
       error: "Internal server error",
       message: error instanceof Error ? error.message : "Unknown error"
     });
   }
-} 
+}
+
+console.log('🧪 Testing Farcaster Replies API...');
+console.log('📊 FID: 203666');
+console.log('🔑 API Key configured:', !!process.env.NEYNAR_API_KEY);
+console.log('---');
+
+testFarcasterReplies('203666')
+  .then(() => {
+    console.log('✅ Test completed');
+  })
+  .catch((error) => {
+    console.error('❌ Test failed:', error);
+  }); 
