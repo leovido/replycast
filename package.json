@@ -9,7 +9,6 @@
     "test": "jest",
     "test:watch": "jest --watch"
   },
-  "type": "module",
   "dependencies": {
     "@farcaster/miniapp-sdk": "^0.1.7",
     "@hono/node-server": "^1.11.1",
