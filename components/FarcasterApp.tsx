@@ -151,7 +151,7 @@ export default function FarcasterApp() {
       cachedFids,
       ttl: Math.round(CACHE_TTL / 1000)
     };
-  }, []);
+  }, [CACHE_TTL]);
 
   // Helper to fetch OpenRank ranks with caching
   const fetchOpenRankRanks = useCallback(async (fids: number[]) => {
@@ -215,7 +215,7 @@ export default function FarcasterApp() {
     } catch (error) {
       console.error('Failed to fetch OpenRank ranks:', error);
     }
-  }, []);
+  }, [CACHE_TTL, getCacheStatus]);
 
   // Helper to filter by day
   function filterByDay(details: UnrepliedDetail[]) {
