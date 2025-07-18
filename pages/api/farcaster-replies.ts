@@ -52,7 +52,7 @@ export default async function handler(
   try {
     // === Step 1: Fetch your recent casts ===
     const userCastsRes = await fetch(
-      `https://api.neynar.com/v2/farcaster/feed/user/casts?limit=100&fid=${fid}`,
+      `https://api.neynar.com/v2/farcaster/feed/user/casts?limit=10&fid=${fid}`,
       { headers: { "x-api-key": API_KEY } }
     ).then((res) => res.json());
 

@@ -127,7 +127,95 @@ export default function FarcasterApp() {
   const [viewMode, setViewMode] = useState<'list' | 'grid'>('list')
   const [dayFilter, setDayFilter] = useState<'all' | 'today' | '3days' | '7days'>('all')
   const [sortOption, setSortOption] = useState<'newest' | 'oldest' | 'fid-asc' | 'fid-desc' | 'short' | 'medium' | 'long'>('newest')
+  const [openRankRanks, setOpenRankRanks] = useState<Record<number, number | null>>({})
   const textareaRef = useRef<HTMLTextAreaElement>(null)
+  
+  // Cache for OpenRank data with TTL (5 minutes)
+  const openRankCache = useRef<{
+    data: Record<number, number | null>;
+    timestamp: number;
+  }>({ data: {}, timestamp: 0 });
+  
+  const CACHE_TTL = 5 * 60 * 1000; // 5 minutes in milliseconds
+
+  // Utility to check cache status
+  const getCacheStatus = useCallback(() => {
+    const now = Date.now();
+    const isCacheValid = (now - openRankCache.current.timestamp) < CACHE_TTL;
+    const cacheAge = Math.round((now - openRankCache.current.timestamp) / 1000);
+    const cachedFids = Object.keys(openRankCache.current.data).length;
+    
+    return {
+      isValid: isCacheValid,
+      age: cacheAge,
+      cachedFids,
+      ttl: Math.round(CACHE_TTL / 1000)
+    };
+  }, []);
+
+  // Helper to fetch OpenRank ranks with caching
+  const fetchOpenRankRanks = useCallback(async (fids: number[]) => {
+    if (fids.length === 0) return;
+    
+    const now = Date.now();
+    const uniqueFids = Array.from(new Set(fids));
+    
+    // Check if cache is still valid
+    const isCacheValid = (now - openRankCache.current.timestamp) < CACHE_TTL;
+    
+    // Filter out FIDs that are already cached and valid
+    const cachedFids = uniqueFids.filter(fid => 
+      isCacheValid && openRankCache.current.data.hasOwnProperty(fid)
+    );
+    
+    // FIDs that need to be fetched
+    const fidsToFetch = uniqueFids.filter(fid => 
+      !isCacheValid || !openRankCache.current.data.hasOwnProperty(fid)
+    );
+    
+    // If we have cached data, use it immediately
+    if (cachedFids.length > 0) {
+      const cachedRanks: Record<number, number | null> = {};
+      cachedFids.forEach(fid => {
+        cachedRanks[fid] = openRankCache.current.data[fid];
+      });
+      
+      // Update state with cached data
+      setOpenRankRanks(prev => ({ ...prev, ...cachedRanks }));
+    }
+    
+    // If no FIDs need fetching, we're done
+    if (fidsToFetch.length === 0) {
+      return;
+    }
+    
+    try {
+      const cacheStatus = getCacheStatus();
+      console.log(`OpenRank cache: ${cacheStatus.cachedFids} FIDs cached, ${cacheStatus.age}s old (TTL: ${cacheStatus.ttl}s)`);
+      console.log(`Fetching OpenRank for ${fidsToFetch.length} FIDs (${cachedFids.length} from cache)`);
+      
+      const response = await fetch(`/api/openRank?fids=${fidsToFetch.join(',')}`);
+      const data = await response.json();
+      
+      if (data.ranks) {
+        // Convert string keys to numbers for consistency
+        const newRankMap: Record<number, number | null> = {};
+        
+        Object.entries(data.ranks).forEach(([fid, rank]) => {
+          newRankMap[parseInt(fid)] = rank as number | null;
+        });
+        
+        // Update cache with new data
+        openRankCache.current.data = { ...openRankCache.current.data, ...newRankMap };
+        openRankCache.current.timestamp = now;
+        
+        // Update state with new data
+        setOpenRankRanks(prev => ({ ...prev, ...newRankMap }));
+      }
+    } catch (error) {
+      console.error('Failed to fetch OpenRank ranks:', error);
+    }
+  }, []);
 
   // Helper to filter by day
   function filterByDay(details: UnrepliedDetail[]) {
@@ -193,22 +281,30 @@ export default function FarcasterApp() {
 
   const MAX_CHARACTERS = 320 // Farcaster cast limit
 
-  const fetchData = useCallback(async (fid: number) => {
+  const fetchData = useCallback(async () => {
     try {
-      const res = await fetch(`/api/farcaster-replies?fid=${fid}`, {
+       // Use the actual user FID instead of hardcoded value
+      const userFid = user?.fid || 203666;
+      const res = await fetch(`/api/farcaster-replies?fid=${userFid}`, {
         // Add cache control to prevent unnecessary refetches
         cache: 'default'
       });
       const responseData = await res.json()
+      console.log('responseData', responseData)
       if (responseData) {
         setData(responseData)
+        
+        setLoading(false)
+        // Fetch OpenRank ranks for all FIDs in the response
+        const fids = responseData.unrepliedDetails.map((detail: UnrepliedDetail) => detail.authorFid);
+        await fetchOpenRankRanks(fids);
       } else {
         setError(responseData.error || 'Failed to fetch data')
       }
     } catch (err) {
       setError('Failed to load conversations')
     }
-  }, []);
+  }, [user, fetchOpenRankRanks])
 
   useEffect(() => {
     const initializeApp = async () => {
@@ -221,31 +317,28 @@ export default function FarcasterApp() {
           pfpUrl: 'https://cdn-icons-png.flaticon.com/512/1828/1828640.png',
         };
 
-        // Only set user if not already set
-        setUser(prev => prev || farUser);
+        if (!farUser || !farUser.fid) throw new Error('Farcaster user not found');
+        setUser(farUser);
 
-        // Only fetch if user is available
-        if (farUser.fid) {
-          await fetchData(farUser.fid);
-        }
+        await fetchData()
 
-        await sdk.actions.ready();
-      } catch (err) {
-        setError(`Error: ${err}`);
-      } finally {
-        setLoading(false);
+        await sdk.actions.ready()
+       } catch (err) {
+        setError(`Error: ${err}`)
       }
-    };
-
-    if (!user) {
-      initializeApp();
     }
+    
+    initializeApp()
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user]);
+  }, [])
 
   const handleRefresh = async () => {
     setIsRefreshing(true)
     setError(null)
+    
+    // Clear OpenRank cache to force fresh data
+    openRankCache.current = { data: {}, timestamp: 0 };
+    
     // Force refresh by bypassing cache
     const userFid = user?.fid || 203666;
     try {
@@ -255,6 +348,10 @@ export default function FarcasterApp() {
       const responseData = await res.json()
       if (responseData) {
         setData(responseData)
+        
+        // Fetch OpenRank ranks for all FIDs in the response
+        const fids = responseData.unrepliedDetails.map((detail: UnrepliedDetail) => detail.authorFid);
+        await fetchOpenRankRanks(fids);
       } else {
         setError(responseData.error || 'Failed to fetch data')
       }
@@ -293,7 +390,7 @@ export default function FarcasterApp() {
         // Success! Clear the form and refresh data
         setSelectedCast(null)
         setReplyText('')
-        await fetchData(user?.fid || 203666) // Refresh to update the list
+        await fetchData() // Refresh to update the list
       }
     } catch (error) {
       console.error('Failed to compose cast:', error)
@@ -459,7 +556,7 @@ export default function FarcasterApp() {
             <div className="glass rounded-3xl p-10 mb-8 animate-fade-in-up shadow-xl border border-white/30">
               <div className="text-center">
                 <div className="text-gray-900/80 text-lg font-medium mb-2">
-                  {username} has
+                  {user?.username} has
                 </div>
                 <div className="text-7xl md:text-8xl font-extrabold text-gray-900 mb-2 tracking-tighter" style={{ fontFamily: 'Instrument Sans, Nunito, Inter, sans-serif' }}>
                   {data ? data.unrepliedCount : '--'}
@@ -475,6 +572,12 @@ export default function FarcasterApp() {
                     </div>
                   </div>
                 )}
+                {/* Cache Status */}
+                <div className="text-xs text-white/60 bg-white/5 px-2 py-1 rounded-lg border border-white/10 mt-4">
+                  <span className="font-mono">
+                    Cache: {getCacheStatus().cachedFids} FIDs ({getCacheStatus().age}s)
+                  </span>
+                </div>
                 {/* Refresh Button */}
                 <button
                   onClick={handleRefresh}
@@ -616,6 +719,7 @@ export default function FarcasterApp() {
                   onClick={() => handleReply(cast)}
                   viewMode={viewMode}
                   authorFid={cast.authorFid}
+                  openRankRank={openRankRanks[cast.authorFid] || null}
                 />
               ))}
             </div>
@@ -631,6 +735,7 @@ export default function FarcasterApp() {
                   onClick={() => handleReply(cast)}
                   viewMode={viewMode}
                   authorFid={cast.authorFid}
+                  openRankRank={openRankRanks[cast.authorFid] || null}
                 />
               ))}
             </div>

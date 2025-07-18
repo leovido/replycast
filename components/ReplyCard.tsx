@@ -9,6 +9,7 @@ export interface ReplyCardProps {
   onClick?: () => void;
   viewMode?: 'list' | 'grid';
   authorFid?: number;
+  openRankRank?: number | null;
 }
 
 export function ReplyCard({
@@ -19,8 +20,24 @@ export function ReplyCard({
   onClick,
   viewMode = 'list',
   authorFid,
+  openRankRank,
 }: ReplyCardProps) {
   const isGrid = viewMode === 'grid';
+  
+  // Helper to get rank badge
+  const getRankBadge = (rank: number | null) => {
+    if (!rank) return null;
+    
+    if (rank <= 100) return { text: 'Top 100', color: 'bg-yellow-500 text-yellow-900' };
+    if (rank <= 500) return { text: 'Top 500', color: 'bg-blue-500 text-white' };
+    if (rank <= 1000) return { text: 'Top 1K', color: 'bg-green-500 text-white' };
+    if (rank <= 5000) return { text: 'Top 5K', color: 'bg-purple-500 text-white' };
+    return null;
+  };
+  
+
+  
+  const rankBadge = getRankBadge(openRankRank || null);
   
   return (
     <div
@@ -52,6 +69,16 @@ export function ReplyCard({
           }`}>@{username}</span>
           {authorFid !== undefined && (
             <span className="text-sm text-white font-sans-rounded font-light">{authorFid}</span>
+          )}
+          {openRankRank && (
+            <div className="flex items-center gap-2 mt-1">
+              <span className="text-xs text-gray-400 font-sans">Rank: #{openRankRank}</span>
+              {rankBadge && (
+                <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${rankBadge.color}`}>
+                  {rankBadge.text}
+                </span>
+              )}
+            </div>
           )}
         </div>
         <div className="flex items-center gap-2 mb-1">
