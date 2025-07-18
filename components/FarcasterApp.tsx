@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState, useRef, useCallback } from 'react'
 import Image from 'next/image'
 import { sdk } from '@farcaster/miniapp-sdk'
 import { ReplyCard } from './ReplyCard';
@@ -193,39 +193,9 @@ export default function FarcasterApp() {
 
   const MAX_CHARACTERS = 320 // Farcaster cast limit
 
-  useEffect(() => {
-    const initializeApp = async () => {
-      try {
-
-        const ctx = await sdk.context;
-        const farUser = ctx?.user ?? {
-          fid: 203666,
-          username: 'test',
-          displayName: 'test',
-          pfpUrl: 'https://cdn-icons-png.flaticon.com/512/1828/1828640.png',
-        };
-
-        if (!farUser || !farUser.fid) throw new Error('Farcaster user not found');
-        setUser(farUser);
-
-        await fetchData()
-
-        await sdk.actions.ready()
-       } catch (err) {
-        setError(`Error: ${err}`)
-      } finally {
-        setLoading(false)
-      }
-    }
-    
-    initializeApp()
-  }, [])
-
-  const fetchData = async () => {
+  const fetchData = useCallback(async (fid: number) => {
     try {
-      // Use the actual user FID instead of hardcoded value
-      const userFid = user?.fid || 203666;
-      const res = await fetch(`/api/farcaster-replies?fid=${userFid}`, {
+      const res = await fetch(`/api/farcaster-replies?fid=${fid}`, {
         // Add cache control to prevent unnecessary refetches
         cache: 'default'
       });
@@ -238,7 +208,40 @@ export default function FarcasterApp() {
     } catch (err) {
       setError('Failed to load conversations')
     }
-  }
+  }, []);
+
+  useEffect(() => {
+    const initializeApp = async () => {
+      try {
+        const ctx = await sdk.context;
+        const farUser = ctx?.user ?? {
+          fid: 203666,
+          username: 'test',
+          displayName: 'test',
+          pfpUrl: 'https://cdn-icons-png.flaticon.com/512/1828/1828640.png',
+        };
+
+        // Only set user if not already set
+        setUser(prev => prev || farUser);
+
+        // Only fetch if user is available
+        if (farUser.fid) {
+          await fetchData(farUser.fid);
+        }
+
+        await sdk.actions.ready();
+      } catch (err) {
+        setError(`Error: ${err}`);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (!user) {
+      initializeApp();
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]);
 
   const handleRefresh = async () => {
     setIsRefreshing(true)
@@ -290,7 +293,7 @@ export default function FarcasterApp() {
         // Success! Clear the form and refresh data
         setSelectedCast(null)
         setReplyText('')
-        await fetchData() // Refresh to update the list
+        await fetchData(user?.fid || 203666) // Refresh to update the list
       }
     } catch (error) {
       console.error('Failed to compose cast:', error)
