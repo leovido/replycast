@@ -22,6 +22,7 @@ interface FarcasterRepliesResponse {
   unrepliedCount: number;
   unrepliedDetails: UnrepliedDetail[];
   message: string;
+  nextCursor?: string | null;
 }
 
 const mockReplies: FarcasterRepliesResponse = {
@@ -128,7 +129,15 @@ export default function FarcasterApp() {
   const [dayFilter, setDayFilter] = useState<'all' | 'today' | '3days' | '7days'>('all')
   const [sortOption, setSortOption] = useState<'newest' | 'oldest' | 'fid-asc' | 'fid-desc' | 'short' | 'medium' | 'long'>('newest')
   const [openRankRanks, setOpenRankRanks] = useState<Record<number, number | null>>({})
+  
+  // Pagination state
+  const [cursor, setCursor] = useState<string | null>(null)
+  const [hasMore, setHasMore] = useState(true)
+  const [isLoadingMore, setIsLoadingMore] = useState(false)
+  const [allConversations, setAllConversations] = useState<UnrepliedDetail[]>([])
+  
   const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const observerRef = useRef<HTMLDivElement>(null)
   
   // Cache for OpenRank data with TTL (5 minutes)
   const openRankCache = useRef<{
@@ -281,30 +290,97 @@ export default function FarcasterApp() {
 
   const MAX_CHARACTERS = 320 // Farcaster cast limit
 
-  const fetchData = useCallback(async () => {
+  const fetchData = useCallback(async (isInitialLoad = true) => {
     try {
-       // Use the actual user FID instead of hardcoded value
       const userFid = user?.fid || 203666;
-      const res = await fetch(`/api/farcaster-replies?fid=${userFid}`, {
-        // Add cache control to prevent unnecessary refetches
-        cache: 'default'
+      const url = new URL('/api/farcaster-replies', window.location.origin);
+      url.searchParams.set('fid', userFid.toString());
+      url.searchParams.set('limit', '5');
+      
+      if (!isInitialLoad && cursor) {
+        url.searchParams.set('cursor', cursor);
+      }
+      
+      const res = await fetch(url.toString(), {
+        cache: isInitialLoad ? 'default' : 'no-store'
       });
-      const responseData = await res.json()
-      console.log('responseData', responseData)
+      const responseData = await res.json();
+      
       if (responseData) {
-        setData(responseData)
+        if (isInitialLoad) {
+          // Initial load - replace all data
+          setData(responseData);
+          setAllConversations(responseData.unrepliedDetails || []);
+          setCursor(responseData.nextCursor || null);
+          setHasMore(!!responseData.nextCursor);
+          setLoading(false);
+        } else {
+          // Pagination load - append data
+          setData(prev => ({
+            ...prev!,
+            unrepliedDetails: [...(prev?.unrepliedDetails || []), ...(responseData.unrepliedDetails || [])],
+            unrepliedCount: (prev?.unrepliedCount || 0) + (responseData.unrepliedDetails?.length || 0)
+          }));
+          setAllConversations(prev => [...prev, ...(responseData.unrepliedDetails || [])]);
+          setCursor(responseData.nextCursor || null);
+          setHasMore(!!responseData.nextCursor);
+          setIsLoadingMore(false);
+        }
         
-        setLoading(false)
-        // Fetch OpenRank ranks for all FIDs in the response
-        const fids = responseData.unrepliedDetails.map((detail: UnrepliedDetail) => detail.authorFid);
-        await fetchOpenRankRanks(fids);
+        // Fetch OpenRank ranks for new FIDs
+        const newFids = responseData.unrepliedDetails?.map((detail: UnrepliedDetail) => detail.authorFid) || [];
+        if (newFids.length > 0) {
+          await fetchOpenRankRanks(newFids);
+        }
       } else {
-        setError(responseData.error || 'Failed to fetch data')
+        setError(responseData.error || 'Failed to fetch data');
       }
     } catch (err) {
-      setError('Failed to load conversations')
+      setError('Failed to load conversations');
+      if (!isInitialLoad) {
+        setIsLoadingMore(false);
+      }
     }
-  }, [user, fetchOpenRankRanks])
+  }, [user, fetchOpenRankRanks, cursor])
+
+  // Reset pagination when filters change
+  useEffect(() => {
+    if (allConversations.length > 0) {
+      setCursor(null);
+      setHasMore(true);
+      setIsLoadingMore(false);
+      setAllConversations([]);
+      fetchData(true);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dayFilter, sortOption]);
+
+  // Intersection Observer for infinite scroll
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const [entry] = entries;
+        if (entry.isIntersecting && hasMore && !isLoadingMore && !loading) {
+          setIsLoadingMore(true);
+          fetchData(false);
+        }
+      },
+      {
+        rootMargin: '100px', // Start loading when 100px from bottom
+        threshold: 0.1
+      }
+    );
+
+    if (observerRef.current) {
+      observer.observe(observerRef.current);
+    }
+
+    return () => {
+      if (observerRef.current) {
+        observer.unobserve(observerRef.current);
+      }
+    };
+  }, [hasMore, isLoadingMore, loading, fetchData]);
 
   useEffect(() => {
     const initializeApp = async () => {
@@ -320,7 +396,7 @@ export default function FarcasterApp() {
         if (!farUser || !farUser.fid) throw new Error('Farcaster user not found');
         setUser(farUser);
 
-        await fetchData()
+        await fetchData(true)
 
         await sdk.actions.ready()
        } catch (err) {
@@ -339,25 +415,14 @@ export default function FarcasterApp() {
     // Clear OpenRank cache to force fresh data
     openRankCache.current = { data: {}, timestamp: 0 };
     
+    // Reset pagination state
+    setCursor(null)
+    setHasMore(true)
+    setIsLoadingMore(false)
+    setAllConversations([])
+    
     // Force refresh by bypassing cache
-    const userFid = user?.fid || 203666;
-    try {
-      const res = await fetch(`/api/farcaster-replies?fid=${userFid}`, {
-        cache: 'no-store' // Force fresh data
-      });
-      const responseData = await res.json()
-      if (responseData) {
-        setData(responseData)
-        
-        // Fetch OpenRank ranks for all FIDs in the response
-        const fids = responseData.unrepliedDetails.map((detail: UnrepliedDetail) => detail.authorFid);
-        await fetchOpenRankRanks(fids);
-      } else {
-        setError(responseData.error || 'Failed to fetch data')
-      }
-    } catch (err) {
-      setError('Failed to load conversations')
-    }
+    await fetchData(true)
     setIsRefreshing(false)
   }
 
@@ -390,7 +455,12 @@ export default function FarcasterApp() {
         // Success! Clear the form and refresh data
         setSelectedCast(null)
         setReplyText('')
-        await fetchData() // Refresh to update the list
+        // Reset pagination and refresh all data
+        setCursor(null)
+        setHasMore(true)
+        setIsLoadingMore(false)
+        setAllConversations([])
+        await fetchData(true) // Refresh to update the list
       }
     } catch (error) {
       console.error('Failed to compose cast:', error)
@@ -511,7 +581,7 @@ export default function FarcasterApp() {
   }
 
   // Filtered and sorted data for rendering
-  const filteredDetails = data ? sortDetails(filterByDay(data.unrepliedDetails)) : [];
+  const filteredDetails = allConversations.length > 0 ? sortDetails(filterByDay(allConversations)) : [];
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-600 via-blue-600 to-cyan-500 font-sans">
@@ -740,8 +810,54 @@ export default function FarcasterApp() {
               ))}
             </div>
           )}
+          
+          {/* Loading More Indicator */}
+          {isLoadingMore && (
+            <div className="text-center py-8">
+              <div className="inline-flex items-center gap-3 text-white/80">
+                <svg
+                  width={20}
+                  height={20}
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="animate-spin"
+                  aria-hidden="true"
+                >
+                  <path d="M23 4v6h-6" />
+                  <path d="M1 20v-6h6" />
+                  <path d="M3.51 9a9 9 0 0 1 14.13-3.36L23 10" />
+                  <path d="M20.49 15A9 9 0 0 1 6.36 18.36L1 14" />
+                </svg>
+                <span className="text-sm font-medium">Loading more conversations...</span>
+              </div>
+            </div>
+          )}
+          
+          {/* End of Results */}
+          {!hasMore && filteredDetails.length > 0 && (
+            <div className="text-center py-8">
+              <div className="text-white/60 text-sm">
+                <span className="font-medium">🎉 All caught up!</span>
+                <p className="mt-1">You&apos;ve seen all your unreplied conversations.</p>
+              </div>
+            </div>
+          )}
+          
+          {/* Intersection Observer Element */}
+          {hasMore && (
+            <div 
+              ref={observerRef} 
+              className="h-4 w-full"
+              aria-hidden="true"
+            />
+          )}
+          
           {/* Empty State */}
-          {filteredDetails.length === 0 && (
+          {filteredDetails.length === 0 && !loading && (
             <div className="text-center py-12">
               <div className="glass rounded-3xl p-12">
                 <div className="text-6xl mb-4">🎉</div>
