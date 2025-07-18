@@ -1,6 +1,8 @@
 import { useEffect, useState, useRef } from 'react'
+import Image from 'next/image'
 import { sdk } from '@farcaster/miniapp-sdk'
 import { ReplyCard } from './ReplyCard';
+import { User } from '@/types/types';
 
 interface UnrepliedDetail {
   username: string;
@@ -76,12 +78,20 @@ function LoadingScreen() {
         {/* Logo/Icon */}
         <div className="mb-8">
           <div className="w-16 h-16 mx-auto bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-sm border border-white/30">
-            <img 
-              src="https://cdn-icons-png.flaticon.com/512/1828/1828640.png" 
-              alt="ReplyCast"
-              className="w-8 h-8 !w-8 !h-8"
-              style={{ width: '32px', height: '32px', textAlign: 'center' }}
-            />
+            <svg
+              width={32}
+              height={32}
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={2}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="text-center"
+              aria-hidden="true"
+            >
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+            </svg>
           </div>
         </div>
         
@@ -105,6 +115,7 @@ function LoadingScreen() {
 }
 
 export default function FarcasterApp() {
+  const [user, setUser] = useState<User | null>(null);
   const [data, setData] = useState<FarcasterRepliesResponse | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -120,13 +131,23 @@ export default function FarcasterApp() {
   useEffect(() => {
     const initializeApp = async () => {
       try {
-        // Initialize the Mini App
-        await sdk.actions.ready()
-        
-        // Fetch data
+
+        const ctx = await sdk.context;
+        const farUser = ctx?.user ?? {
+          fid: 123,
+          username: 'test',
+          displayName: 'test',
+          pfpUrl: 'https://cdn-icons-png.flaticon.com/512/1828/1828640.png',
+        };
+
+        if (!farUser || !farUser.fid) throw new Error('Farcaster user not found');
+        setUser(farUser);
+
         await fetchData()
-      } catch (err) {
-        setError('Network error')
+
+        await sdk.actions.ready()
+       } catch (err) {
+        setError(`Error: ${err}`)
       } finally {
         setLoading(false)
       }
@@ -137,7 +158,13 @@ export default function FarcasterApp() {
 
   const fetchData = async () => {
     try {
-      const responseData = mockReplies;
+      // Use the actual user FID instead of hardcoded value
+      const userFid = user?.fid || 203666;
+      const res = await fetch(`/api/farcaster-replies?fid=${userFid}`, {
+        // Add cache control to prevent unnecessary refetches
+        cache: 'default'
+      });
+      const responseData = await res.json()
       if (responseData) {
         setData(responseData)
       } else {
@@ -151,7 +178,21 @@ export default function FarcasterApp() {
   const handleRefresh = async () => {
     setIsRefreshing(true)
     setError(null)
-    await fetchData()
+    // Force refresh by bypassing cache
+    const userFid = user?.fid || 203666;
+    try {
+      const res = await fetch(`/api/farcaster-replies?fid=${userFid}`, {
+        cache: 'no-store' // Force fresh data
+      });
+      const responseData = await res.json()
+      if (responseData) {
+        setData(responseData)
+      } else {
+        setError(responseData.error || 'Failed to fetch data')
+      }
+    } catch (err) {
+      setError('Failed to load conversations')
+    }
     setIsRefreshing(false)
   }
 
@@ -219,7 +260,89 @@ export default function FarcasterApp() {
 
   // Show loading screen when loading is true
   if (loading) {
-    return <LoadingScreen />
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-purple-600 via-blue-600 to-cyan-500 font-sans">
+        {/* Header Section - Always visible */}
+        <div className="relative overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-br from-purple-600/20 via-blue-600/20 to-cyan-500/20"></div>
+          <div className="relative px-6 pt-12 pb-8">
+            <div className="max-w-3xl mx-auto text-center">
+              {/* App Title */}
+              <div className="mb-8">
+                <h1 className="text-5xl md:text-6xl font-extrabold text-white mb-2 tracking-tight" style={{ fontFamily: 'Instrument Sans, Nunito, Inter, sans-serif' }}>
+                  ReplyCast
+                </h1>
+                <p className="text-xl md:text-2xl font-medium text-white/90 mb-8" style={{ fontFamily: 'Instrument Sans, Nunito, Inter, sans-serif' }}>
+                  Never miss a reply again
+                </p>
+              </div>
+              
+              {/* User Greeting */}
+              {user && (
+                <div className="mb-6 flex items-center justify-center gap-3 bg-white/10 backdrop-blur-sm rounded-2xl p-4 border border-white/20">
+                  {user.pfpUrl && (
+                    <Image 
+                      src={`/api/image-proxy?url=${user.pfpUrl}`} 
+                      alt="Profile picture" 
+                      width={40} 
+                      height={40} 
+                      className="rounded-full border-2 border-white/30"
+                    />
+                  )}
+                  <div className="text-center">
+                    <div className="text-white font-semibold text-lg">
+                      Hi, @{user.username || user.displayName || user.fid}
+                    </div>
+                    <div className="text-white/70 text-sm">
+                      FID: {user.fid}
+                    </div>
+                  </div>
+                </div>
+              )}
+              
+              {/* Stats Card - Placeholder */}
+              <div className="glass rounded-3xl p-10 mb-8 animate-fade-in-up shadow-xl border border-white/30">
+                <div className="text-center">
+                  <div className="text-gray-900/80 text-lg font-medium mb-2">
+                    Loading...
+                  </div>
+                  <div className="text-7xl md:text-8xl font-extrabold text-gray-900 mb-2 tracking-tighter animate-pulse" style={{ fontFamily: 'Instrument Sans, Nunito, Inter, sans-serif' }}>
+                    --
+                  </div>
+                  <div className="text-gray-800/90 text-xl font-semibold mb-2">
+                    unreplied conversations
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        {/* Conversations List - Placeholder Cards */}
+        <div className="px-4 pb-12">
+          <div className="max-w-3xl mx-auto">
+            <div className="space-y-6">
+              {/* Placeholder Reply Cards */}
+              {[1, 2, 3].map((index) => (
+                <div
+                  key={index}
+                  className="max-w-md w-full mx-auto bg-[#181A20]/50 rounded-2xl shadow-xl p-6 mb-6 flex items-start gap-4 animate-pulse"
+                >
+                  <div className="w-12 h-12 rounded-full bg-gray-400/30 flex-shrink-0"></div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1">
+                      <div className="h-6 bg-gray-400/30 rounded w-24"></div>
+                      <div className="h-4 bg-gray-400/30 rounded w-16"></div>
+                    </div>
+                    <div className="h-6 bg-gray-400/30 rounded w-full mt-2"></div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -238,6 +361,29 @@ export default function FarcasterApp() {
                 Never miss a reply again
               </p>
             </div>
+            
+            {/* User Greeting */}
+            {user && (
+              <div className="mb-6 flex items-center justify-center gap-3 bg-white/10 backdrop-blur-sm rounded-2xl p-4 border border-white/20">
+                {user.pfpUrl && (
+                  <Image 
+                    src={`/api/image-proxy?url=${user.pfpUrl}`} 
+                    alt="Profile picture" 
+                    width={40} 
+                    height={40} 
+                    className="rounded-full border-2 border-white/30"
+                  />
+                )}
+                <div className="text-center">
+                  <div className="text-white font-semibold text-lg">
+                    Hi, @{user.username || user.displayName || user.fid}
+                  </div>
+                  <div className="text-white/70 text-sm">
+                    FID: {user.fid}
+                  </div>
+                </div>
+              </div>
+            )}
             {/* Stats Card */}
             <div className="glass rounded-3xl p-10 mb-8 animate-fade-in-up shadow-xl border border-white/30">
               <div className="text-center">
@@ -265,12 +411,23 @@ export default function FarcasterApp() {
                   className="btn-secondary mt-6 inline-flex items-center gap-2 focus:outline-none focus:ring-2 focus:ring-blue-400 rounded-xl px-4 py-2 text-base"
                   aria-label="Refresh"
                 >
-                  <img 
-                    src="https://cdn-icons-png.flaticon.com/512/3524/3524636.png" 
-                    alt="Refresh"
-                    className={`w-4 h-4 !w-4 !h-4 ${isRefreshing ? 'animate-spin' : ''}`}
-                    style={{ width: '16px', height: '16px' }}
-                  />
+                  <svg
+                    width={16}
+                    height={16}
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth={2}
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className={`${isRefreshing ? 'animate-spin' : ''}`}
+                    aria-hidden="true"
+                  >
+                    <path d="M23 4v6h-6" />
+                    <path d="M1 20v-6h6" />
+                    <path d="M3.51 9a9 9 0 0 1 14.13-3.36L23 10" />
+                    <path d="M20.49 15A9 9 0 0 1 6.36 18.36L1 14" />
+                  </svg>
                   {isRefreshing ? 'Refreshing...' : 'Refresh'}
                 </button>
               </div>
@@ -289,7 +446,6 @@ export default function FarcasterApp() {
                 username={cast.username}
                 timeAgo={cast.timeAgo}
                 text={cast.text}
-                originalAuthorUsername={cast.originalAuthorUsername}
                 onClick={() => handleReply(cast)}
               />
             ))}
@@ -300,7 +456,7 @@ export default function FarcasterApp() {
               <div className="glass rounded-3xl p-12">
                 <div className="text-6xl mb-4">🎉</div>
                 <h3 className="text-2xl font-bold text-gray-900 mb-2" style={{ fontFamily: 'Instrument Sans, Nunito, Inter, sans-serif' }}>All caught up!</h3>
-                <p className="text-gray-700/80 text-lg">You've replied to all your conversations.</p>
+                <p className="text-gray-700/80 text-lg">You&apos;ve replied to all your conversations.</p>
               </div>
             </div>
           )}
@@ -312,11 +468,12 @@ export default function FarcasterApp() {
           <div className="modal-content" onClick={e => e.stopPropagation()}>
             {/* Header */}
             <div className="flex items-center gap-3 mb-6">
-              <img
-                src={selectedCast.avatarUrl || '/default-avatar.png'}
+              <Image
+                src={`/api/image-proxy?url=${selectedCast.avatarUrl}`}
                 alt={selectedCast.username}
-                className="w-10 h-10 rounded-full border-2 border-gray-200 object-cover !w-10 !h-10"
-                style={{ width: '40px', height: '40px' }}
+                width={40}
+                height={40}
+                className="rounded-full border-2 border-gray-200 object-cover"
                 onError={e => (e.currentTarget.src = '/default-avatar.png')}
               />
               <div>
@@ -386,12 +543,23 @@ export default function FarcasterApp() {
               >
                 {isComposing ? (
                   <span className="flex items-center gap-2">
-                    <img 
-                      src="https://cdn-icons-png.flaticon.com/512/3524/3524636.png" 
-                      alt="Loading"
-                      className="animate-spin h-4 w-4 !h-4 !w-4"
-                      style={{ width: '16px', height: '16px' }}
-                    />
+                    <svg
+                      width={16}
+                      height={16}
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth={2}
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      className="animate-spin"
+                      aria-hidden="true"
+                    >
+                      <path d="M23 4v6h-6" />
+                      <path d="M1 20v-6h6" />
+                      <path d="M3.51 9a9 9 0 0 1 14.13-3.36L23 10" />
+                      <path d="M20.49 15A9 9 0 0 1 6.36 18.36L1 14" />
+                    </svg>
                     Sending...
                   </span>
                 ) : (

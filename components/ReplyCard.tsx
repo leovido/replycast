@@ -1,4 +1,5 @@
 import React from 'react';
+import Image from 'next/image';
 
 export interface ReplyCardProps {
   avatarUrl: string;
@@ -12,6 +13,7 @@ export function ReplyCard({
   avatarUrl,
   username,
   text,
+  timeAgo,
   onClick,
 }: ReplyCardProps) {
   return (
@@ -24,15 +26,20 @@ export function ReplyCard({
       onKeyDown={e => (onClick && (e.key === 'Enter' || e.key === ' ') && onClick())}
       style={{ fontFamily: 'Instrument Sans, Nunito, Inter, sans-serif' }}
     >
-      <img
-        src={avatarUrl || '/default-avatar.png'}
+      <Image
+        src={`/api/image-proxy?url=${avatarUrl}`}
         alt={username}
-        className="w-12 h-12 rounded-full object-cover flex-shrink-0 border-2 border-[#23242a]"
-        style={{ width: '48px', height: '48px', background: 'linear-gradient(135deg, #7f5af0 0%, #23242a 100%)' }}
+        width={48}
+        height={48}
+        className="rounded-full object-cover flex-shrink-0 border-2 border-[#23242a]"
+        style={{ background: 'linear-gradient(135deg, #7f5af0 0%, #23242a 100%)' }}
         onError={e => (e.currentTarget.src = '/default-avatar.png')}
       />
       <div className="flex-1 min-w-0">
-        <div className="font-bold text-xl text-white font-sans">@{username}</div>
+        <div className="flex items-center gap-2 mb-1">
+          <span className="font-bold text-xl text-white font-sans">@{username}</span>
+          <span className="text-xs text-gray-400 font-sans">{timeAgo}</span>
+        </div>
         <div className="text-white text-lg mt-2 font-sans leading-snug break-words">{text}</div>
       </div>
     </div>
