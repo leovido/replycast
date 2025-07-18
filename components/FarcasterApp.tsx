@@ -124,7 +124,72 @@ export default function FarcasterApp() {
   const [isComposing, setIsComposing] = useState(false)
   const [replyError, setReplyError] = useState<string | null>(null)
   const [isRefreshing, setIsRefreshing] = useState(false)
+  const [viewMode, setViewMode] = useState<'list' | 'grid'>('list')
+  const [dayFilter, setDayFilter] = useState<'all' | 'today' | '3days' | '7days'>('all')
+  const [sortOption, setSortOption] = useState<'newest' | 'oldest' | 'fid-asc' | 'fid-desc' | 'short' | 'medium' | 'long'>('newest')
   const textareaRef = useRef<HTMLTextAreaElement>(null)
+
+  // Helper to filter by day
+  function filterByDay(details: UnrepliedDetail[]) {
+    if (dayFilter === 'all') return details;
+    return details.filter(detail => {
+      const match = detail.timeAgo.match(/(\d+)([mhd])/);
+      if (!match) return true;
+      const value = parseInt(match[1], 10);
+      const unit = match[2];
+      let minutesAgo = 0;
+      if (unit === 'm') minutesAgo = value;
+      if (unit === 'h') minutesAgo = value * 60;
+      if (unit === 'd') minutesAgo = value * 60 * 24;
+      if (dayFilter === 'today') return minutesAgo <= 60 * 24;
+      if (dayFilter === '3days') return minutesAgo <= 60 * 24 * 3;
+      if (dayFilter === '7days') return minutesAgo <= 60 * 24 * 7;
+      return true;
+    });
+  }
+
+  // Helper to sort
+  function sortDetails(details: UnrepliedDetail[]) {
+    let arr = [...details];
+    switch (sortOption) {
+      case 'newest':
+        // Assume timeAgo is like '2h', '5m', '1d'. Sort by minutesAgo ascending (newest first)
+        arr.sort((a, b) => getMinutesAgo(a.timeAgo) - getMinutesAgo(b.timeAgo));
+        break;
+      case 'oldest':
+        arr.sort((a, b) => getMinutesAgo(b.timeAgo) - getMinutesAgo(a.timeAgo));
+        break;
+      case 'fid-asc':
+        arr.sort((a, b) => a.authorFid - b.authorFid);
+        break;
+      case 'fid-desc':
+        arr.sort((a, b) => b.authorFid - a.authorFid);
+        break;
+      case 'short':
+        arr = arr.filter(d => d.text.length < 20);
+        break;
+      case 'medium':
+        arr = arr.filter(d => d.text.length >= 20 && d.text.length <= 50);
+        break;
+      case 'long':
+        arr = arr.filter(d => d.text.length > 50);
+        break;
+      default:
+        break;
+    }
+    return arr;
+  }
+
+  function getMinutesAgo(timeAgo: string) {
+    const match = timeAgo.match(/(\d+)([mhd])/);
+    if (!match) return 0;
+    const value = parseInt(match[1], 10);
+    const unit = match[2];
+    if (unit === 'm') return value;
+    if (unit === 'h') return value * 60;
+    if (unit === 'd') return value * 60 * 24;
+    return 0;
+  }
 
   const MAX_CHARACTERS = 320 // Farcaster cast limit
 
@@ -134,7 +199,7 @@ export default function FarcasterApp() {
 
         const ctx = await sdk.context;
         const farUser = ctx?.user ?? {
-          fid: 123,
+          fid: 203666,
           username: 'test',
           displayName: 'test',
           pfpUrl: 'https://cdn-icons-png.flaticon.com/512/1828/1828640.png',
@@ -345,6 +410,9 @@ export default function FarcasterApp() {
     )
   }
 
+  // Filtered and sorted data for rendering
+  const filteredDetails = data ? sortDetails(filterByDay(data.unrepliedDetails)) : [];
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-600 via-blue-600 to-cyan-500 font-sans">
       {/* Header Section */}
@@ -432,26 +500,138 @@ export default function FarcasterApp() {
                 </button>
               </div>
             </div>
+            {/* Filter Section */}
+            <div className="glass rounded-2xl p-4 mt-6 border border-white/20">
+              <div className="flex flex-col md:flex-row items-center justify-center gap-2 md:gap-6">
+                <div className="flex items-center gap-2 mb-2 md:mb-0">
+                  <span className="text-white/80 text-sm font-medium mr-2">View:</span>
+                  <button
+                    onClick={() => setViewMode('list')}
+                    className={`p-2 rounded-xl transition-all duration-200 ${
+                      viewMode === 'list'
+                        ? 'bg-white/20 text-white shadow-lg'
+                        : 'bg-white/10 text-white/60 hover:bg-white/15 hover:text-white/80'
+                    }`}
+                    aria-label="List view"
+                  >
+                    <svg
+                      width={18}
+                      height={18}
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth={2}
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      aria-hidden="true"
+                    >
+                      <line x1="8" y1="6" x2="21" y2="6" />
+                      <line x1="8" y1="12" x2="21" y2="12" />
+                      <line x1="8" y1="18" x2="21" y2="18" />
+                      <line x1="3" y1="6" x2="3.01" y2="6" />
+                      <line x1="3" y1="12" x2="3.01" y2="12" />
+                      <line x1="3" y1="18" x2="3.01" y2="18" />
+                    </svg>
+                  </button>
+                  <button
+                    onClick={() => setViewMode('grid')}
+                    className={`p-2 rounded-xl transition-all duration-200 ${
+                      viewMode === 'grid'
+                        ? 'bg-white/20 text-white shadow-lg'
+                        : 'bg-white/10 text-white/60 hover:bg-white/15 hover:text-white/80'
+                    }`}
+                    aria-label="Grid view"
+                  >
+                    <svg
+                      width={18}
+                      height={18}
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth={2}
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      aria-hidden="true"
+                    >
+                      <rect x="3" y="3" width="7" height="7" />
+                      <rect x="14" y="3" width="7" height="7" />
+                      <rect x="14" y="14" width="7" height="7" />
+                      <rect x="3" y="14" width="7" height="7" />
+                    </svg>
+                  </button>
+                </div>
+                {/* Day Filter Dropdown */}
+                <div className="flex items-center gap-2">
+                  <span className="text-white/80 text-sm font-medium mr-2">Day:</span>
+                  <select
+                    value={dayFilter}
+                    onChange={e => setDayFilter(e.target.value as any)}
+                    className="bg-white/10 text-white/90 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 border border-white/20 shadow-sm"
+                    style={{ fontFamily: 'Instrument Sans, Nunito, Inter, sans-serif' }}
+                  >
+                    <option value="all">All</option>
+                    <option value="today">Today</option>
+                    <option value="3days">Last 3 days</option>
+                    <option value="7days">Last 7 days</option>
+                  </select>
+                </div>
+                {/* Sort Dropdown */}
+                <div className="flex items-center gap-2">
+                  <span className="text-white/80 text-sm font-medium mr-2">Sort:</span>
+                  <select
+                    value={sortOption}
+                    onChange={e => setSortOption(e.target.value as any)}
+                    className="bg-white/10 text-white/90 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 border border-white/20 shadow-sm"
+                    style={{ fontFamily: 'Instrument Sans, Nunito, Inter, sans-serif' }}
+                  >
+                    <option value="newest">Newest</option>
+                    <option value="oldest">Oldest</option>
+                    <option value="fid-asc">FID: Low → High</option>
+                    <option value="fid-desc">FID: High → Low</option>
+                    <option value="short">Cast: Short (&lt;20 chars)</option>
+                    <option value="medium">Cast: Medium (20–50 chars)</option>
+                    <option value="long">Cast: Long (&gt;50 chars)</option>
+                  </select>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
       {/* Conversations List */}
       <div className="px-4 pb-12">
-        <div className="max-w-3xl mx-auto">
-          <div className="space-y-6">
-            {data?.unrepliedDetails.map((cast, index) => (
-              <ReplyCard
-                key={index}
-                avatarUrl={cast.avatarUrl}
-                username={cast.username}
-                timeAgo={cast.timeAgo}
-                text={cast.text}
-                onClick={() => handleReply(cast)}
-              />
-            ))}
-          </div>
+        <div className="max-w-6xl mx-auto">
+          {viewMode === 'list' ? (
+            <div className="space-y-6">
+              {filteredDetails.map((cast, index) => (
+                <ReplyCard
+                  key={index}
+                  avatarUrl={cast.avatarUrl}
+                  username={cast.username}
+                  timeAgo={cast.timeAgo}
+                  text={cast.text}
+                  onClick={() => handleReply(cast)}
+                  viewMode={viewMode}
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {filteredDetails.map((cast, index) => (
+                <ReplyCard
+                  key={index}
+                  avatarUrl={cast.avatarUrl}
+                  username={cast.username}
+                  timeAgo={cast.timeAgo}
+                  text={cast.text}
+                  onClick={() => handleReply(cast)}
+                  viewMode={viewMode}
+                />
+              ))}
+            </div>
+          )}
           {/* Empty State */}
-          {data?.unrepliedDetails.length === 0 && (
+          {filteredDetails.length === 0 && (
             <div className="text-center py-12">
               <div className="glass rounded-3xl p-12">
                 <div className="text-6xl mb-4">🎉</div>
