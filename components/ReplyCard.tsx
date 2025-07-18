@@ -8,6 +8,7 @@ export interface ReplyCardProps {
   timeAgo: string;
   onClick?: () => void;
   viewMode?: 'list' | 'grid';
+  authorFid?: number;
 }
 
 export function ReplyCard({
@@ -17,6 +18,7 @@ export function ReplyCard({
   timeAgo,
   onClick,
   viewMode = 'list',
+  authorFid,
 }: ReplyCardProps) {
   const isGrid = viewMode === 'grid';
   
@@ -44,10 +46,15 @@ export function ReplyCard({
         onError={e => (e.currentTarget.src = '/default-avatar.png')}
       />
       <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2 mb-1">
+        <div className="flex flex-col gap-0 mb-1">
           <span className={`font-bold text-white font-sans ${
             isGrid ? 'text-lg' : 'text-xl'
           }`}>@{username}</span>
+          {authorFid !== undefined && (
+            <span className="text-sm text-white font-sans-rounded font-light">{authorFid}</span>
+          )}
+        </div>
+        <div className="flex items-center gap-2 mb-1">
           <span className="text-xs text-gray-400 font-sans">{timeAgo}</span>
         </div>
         <div className={`text-white font-sans leading-snug break-words ${

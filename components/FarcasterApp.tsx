@@ -615,6 +615,7 @@ export default function FarcasterApp() {
                   text={cast.text}
                   onClick={() => handleReply(cast)}
                   viewMode={viewMode}
+                  authorFid={cast.authorFid}
                 />
               ))}
             </div>
@@ -629,6 +630,7 @@ export default function FarcasterApp() {
                   text={cast.text}
                   onClick={() => handleReply(cast)}
                   viewMode={viewMode}
+                  authorFid={cast.authorFid}
                 />
               ))}
             </div>
