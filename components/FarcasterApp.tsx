@@ -289,20 +289,32 @@ export default function FarcasterApp() {
         // Add cache control to prevent unnecessary refetches
         cache: 'default'
       });
+      
+      if (!res.ok) {
+        throw new Error(`HTTP error! status: ${res.status}`);
+      }
+      
       const responseData = await res.json()
       console.log('responseData', responseData)
-      if (responseData) {
+      
+      if (responseData && !responseData.error) {
         setData(responseData)
-        
         setLoading(false)
+        setError(null)
+        
         // Fetch OpenRank ranks for all FIDs in the response
-        const fids = responseData.unrepliedDetails.map((detail: UnrepliedDetail) => detail.authorFid);
-        await fetchOpenRankRanks(fids);
+        if (responseData.unrepliedDetails && Array.isArray(responseData.unrepliedDetails)) {
+          const fids = responseData.unrepliedDetails.map((detail: UnrepliedDetail) => detail.authorFid);
+          await fetchOpenRankRanks(fids);
+        }
       } else {
         setError(responseData.error || 'Failed to fetch data')
+        setLoading(false)
       }
     } catch (err) {
+      console.error('fetchData error:', err)
       setError('Failed to load conversations')
+      setLoading(false)
     }
   }, [user, fetchOpenRankRanks])
 
