@@ -306,6 +306,10 @@ export default function FarcasterApp() {
       });
       const responseData = await res.json();
       
+      if (!res.ok) {
+        throw new Error(`HTTP error! status: ${res.status}`);
+      }
+      
       if (responseData) {
         if (isInitialLoad) {
           // Initial load - replace all data

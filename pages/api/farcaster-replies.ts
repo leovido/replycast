@@ -48,7 +48,11 @@ export default async function handler(
   const limitNum = parseInt(limit as string, 10) || 5;
 
   if (!API_KEY) {
-    return res.status(500).json({ error: 'API key not configured' });
+    console.error('NEYNAR_API_KEY environment variable is not set');
+    return res.status(500).json({ 
+      error: 'API key not configured',
+      message: 'Please set the NEYNAR_API_KEY environment variable'
+    });
   }
 
   try {

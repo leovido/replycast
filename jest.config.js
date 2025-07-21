@@ -9,5 +9,13 @@ module.exports = {
   ],
   coverageReporters: ['text', 'lcov', 'html'],
   setupFilesAfterEnv: [],
-  testTimeout: 10000
+  testTimeout: 10000,
+  // Simple transform configuration
+  transform: {
+    '^.+\\.js$': 'babel-jest'
+  },
+  // Handle mixed module types
+  transformIgnorePatterns: [
+    'node_modules/(?!(@farcaster|ethers)/)'
+  ]
 };
