@@ -1,8 +1,14 @@
-import { useEffect, useState, useRef, useCallback } from 'react'
+import { useEffect, useState, useRef, useCallback, useMemo, memo } from 'react'
 import Image from 'next/image'
+import dynamic from 'next/dynamic'
 import { sdk } from '@farcaster/miniapp-sdk'
-import { ReplyCard } from './ReplyCard';
 import { User } from '@/types/types';
+
+// Lazy load ReplyCard component
+const ReplyCard = dynamic(() => import('./ReplyCard').then(mod => ({ default: mod.ReplyCard })), {
+  loading: () => <div className="animate-pulse bg-white/10 rounded-xl h-32" />,
+  ssr: false
+});
 
 interface UnrepliedDetail {
   username: string;
@@ -71,8 +77,8 @@ const mockReplies: FarcasterRepliesResponse = {
   message: 'Success',
 };
 
-// Loading Screen Component
-function LoadingScreen() {
+// Memoized Loading Screen Component
+const LoadingScreen = memo(() => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-600 via-blue-600 to-cyan-500 flex items-center justify-center">
       <div className="text-center">
@@ -113,9 +119,15 @@ function LoadingScreen() {
       </div>
     </div>
   )
-}
+});
 
-export default function FarcasterApp() {
+LoadingScreen.displayName = 'LoadingScreen';
+
+// Constants moved outside component to prevent recreation
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes in milliseconds
+const MAX_CHARACTERS = 320; // Farcaster cast limit
+
+const FarcasterApp = memo(() => {
   const [user, setUser] = useState<User | null>(null);
   const [data, setData] = useState<FarcasterRepliesResponse | null>(null)
   const [loading, setLoading] = useState(true)
@@ -144,10 +156,8 @@ export default function FarcasterApp() {
     data: Record<number, number | null>;
     timestamp: number;
   }>({ data: {}, timestamp: 0 });
-  
-  const CACHE_TTL = 5 * 60 * 1000; // 5 minutes in milliseconds
 
-  // Utility to check cache status
+  // Memoized utility functions
   const getCacheStatus = useCallback(() => {
     const now = Date.now();
     const isCacheValid = (now - openRankCache.current.timestamp) < CACHE_TTL;
@@ -160,50 +170,47 @@ export default function FarcasterApp() {
       cachedFids,
       ttl: Math.round(CACHE_TTL / 1000)
     };
-  }, [CACHE_TTL]);
+  }, []);
 
-  // Helper to fetch OpenRank ranks with caching
+  // Helper to fetch OpenRank ranks with caching (optimized)
   const fetchOpenRankRanks = useCallback(async (fids: number[]) => {
     if (fids.length === 0) return;
     
     const now = Date.now();
-    const uniqueFids = Array.from(new Set(fids));
+    const uniqueFids = Array.from(new Set(fids)); // More efficient Set conversion
     
     // Check if cache is still valid
     const isCacheValid = (now - openRankCache.current.timestamp) < CACHE_TTL;
     
     // Filter out FIDs that are already cached and valid
-    const cachedFids = uniqueFids.filter(fid => 
-      isCacheValid && openRankCache.current.data.hasOwnProperty(fid)
-    );
-    
-    // FIDs that need to be fetched
     const fidsToFetch = uniqueFids.filter(fid => 
       !isCacheValid || !openRankCache.current.data.hasOwnProperty(fid)
     );
     
     // If we have cached data, use it immediately
-    if (cachedFids.length > 0) {
+    if (isCacheValid) {
       const cachedRanks: Record<number, number | null> = {};
-      cachedFids.forEach(fid => {
-        cachedRanks[fid] = openRankCache.current.data[fid];
+      uniqueFids.forEach(fid => {
+        if (openRankCache.current.data.hasOwnProperty(fid)) {
+          cachedRanks[fid] = openRankCache.current.data[fid];
+        }
       });
       
-      // Update state with cached data
-      setOpenRankRanks(prev => ({ ...prev, ...cachedRanks }));
+      if (Object.keys(cachedRanks).length > 0) {
+        setOpenRankRanks(prev => ({ ...prev, ...cachedRanks }));
+      }
     }
     
     // If no FIDs need fetching, we're done
-    if (fidsToFetch.length === 0) {
-      return;
-    }
+    if (fidsToFetch.length === 0) return;
     
     try {
-      const cacheStatus = getCacheStatus();
-      console.log(`OpenRank cache: ${cacheStatus.cachedFids} FIDs cached, ${cacheStatus.age}s old (TTL: ${cacheStatus.ttl}s)`);
-      console.log(`Fetching OpenRank for ${fidsToFetch.length} FIDs (${cachedFids.length} from cache)`);
+      const response = await fetch(`/api/openRank?fids=${fidsToFetch.join(',')}`, {
+        signal: AbortSignal.timeout(10000) // 10 second timeout
+      });
       
-      const response = await fetch(`/api/openRank?fids=${fidsToFetch.join(',')}`);
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      
       const data = await response.json();
       
       if (data.ranks) {
@@ -224,33 +231,35 @@ export default function FarcasterApp() {
     } catch (error) {
       console.error('Failed to fetch OpenRank ranks:', error);
     }
-  }, [CACHE_TTL, getCacheStatus]);
+  }, []);
 
-  // Helper to filter by day
-  function filterByDay(details: UnrepliedDetail[]) {
+  // Memoized filter and sort functions
+  const getMinutesAgo = useCallback((timeAgo: string) => {
+    const match = timeAgo.match(/(\d+)([mhd])/);
+    if (!match) return 0;
+    const value = parseInt(match[1], 10);
+    const unit = match[2];
+    if (unit === 'm') return value;
+    if (unit === 'h') return value * 60;
+    if (unit === 'd') return value * 60 * 24;
+    return 0;
+  }, []);
+
+  const filterByDay = useCallback((details: UnrepliedDetail[]) => {
     if (dayFilter === 'all') return details;
     return details.filter(detail => {
-      const match = detail.timeAgo.match(/(\d+)([mhd])/);
-      if (!match) return true;
-      const value = parseInt(match[1], 10);
-      const unit = match[2];
-      let minutesAgo = 0;
-      if (unit === 'm') minutesAgo = value;
-      if (unit === 'h') minutesAgo = value * 60;
-      if (unit === 'd') minutesAgo = value * 60 * 24;
+      const minutesAgo = getMinutesAgo(detail.timeAgo);
       if (dayFilter === 'today') return minutesAgo <= 60 * 24;
       if (dayFilter === '3days') return minutesAgo <= 60 * 24 * 3;
       if (dayFilter === '7days') return minutesAgo <= 60 * 24 * 7;
       return true;
     });
-  }
+  }, [dayFilter, getMinutesAgo]);
 
-  // Helper to sort
-  function sortDetails(details: UnrepliedDetail[]) {
-    let arr = [...details];
+  const sortDetails = useCallback((details: UnrepliedDetail[]) => {
+    const arr = [...details]; // Create copy to avoid mutation
     switch (sortOption) {
       case 'newest':
-        // Assume timeAgo is like '2h', '5m', '1d'. Sort by minutesAgo ascending (newest first)
         arr.sort((a, b) => getMinutesAgo(a.timeAgo) - getMinutesAgo(b.timeAgo));
         break;
       case 'oldest':
@@ -263,32 +272,25 @@ export default function FarcasterApp() {
         arr.sort((a, b) => b.authorFid - a.authorFid);
         break;
       case 'short':
-        arr = arr.filter(d => d.text.length < 20);
-        break;
+        return arr.filter(d => d.text.length < 20);
       case 'medium':
-        arr = arr.filter(d => d.text.length >= 20 && d.text.length <= 50);
-        break;
+        return arr.filter(d => d.text.length >= 20 && d.text.length <= 50);
       case 'long':
-        arr = arr.filter(d => d.text.length > 50);
-        break;
+        return arr.filter(d => d.text.length > 50);
       default:
         break;
     }
     return arr;
-  }
+  }, [sortOption, getMinutesAgo]);
 
-  function getMinutesAgo(timeAgo: string) {
-    const match = timeAgo.match(/(\d+)([mhd])/);
-    if (!match) return 0;
-    const value = parseInt(match[1], 10);
-    const unit = match[2];
-    if (unit === 'm') return value;
-    if (unit === 'h') return value * 60;
-    if (unit === 'd') return value * 60 * 24;
-    return 0;
-  }
-
-  const MAX_CHARACTERS = 320 // Farcaster cast limit
+  // Memoized processed data
+  const processedData = useMemo(() => {
+    if (!data?.unrepliedDetails) return [];
+    
+    const filtered = filterByDay(data.unrepliedDetails);
+    const sorted = sortDetails(filtered);
+    return sorted;
+  }, [data?.unrepliedDetails, filterByDay, sortDetails]);
 
   const fetchData = useCallback(async (isInitialLoad = true) => {
     try {
@@ -400,13 +402,14 @@ export default function FarcasterApp() {
 
         await sdk.actions.ready()
        } catch (err) {
-        setError(`Error: ${err}`)
+        const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+        setError(`Error: ${errorMessage}`)
+        setLoading(false);
       }
     }
     
     initializeApp()
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [fetchData])
 
   const handleRefresh = async () => {
     setIsRefreshing(true)
@@ -495,283 +498,50 @@ export default function FarcasterApp() {
 
   // Show loading screen when loading is true
   if (loading) {
+    return <LoadingScreen />;
+  }
+
+  if (error) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-600 via-blue-600 to-cyan-500 font-sans">
-        {/* Header Section - Always visible */}
-        <div className="relative overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-br from-purple-600/20 via-blue-600/20 to-cyan-500/20"></div>
-          <div className="relative px-6 pt-12 pb-8">
-            <div className="max-w-3xl mx-auto text-center">
-              {/* App Title */}
-              <div className="mb-8">
-                <h1 className="text-5xl md:text-6xl font-extrabold text-white mb-2 tracking-tight" style={{ fontFamily: 'Instrument Sans, Nunito, Inter, sans-serif' }}>
-                  ReplyCast
-                </h1>
-                <p className="text-xl md:text-2xl font-medium text-white/90 mb-8" style={{ fontFamily: 'Instrument Sans, Nunito, Inter, sans-serif' }}>
-                  Never miss a reply again
-                </p>
-              </div>
-              
-              {/* User Greeting */}
-              {user && (
-                <div className="mb-6 flex items-center justify-center gap-3 bg-white/10 backdrop-blur-sm rounded-2xl p-4 border border-white/20">
-                  {user.pfpUrl && (
-                    <Image 
-                      src={`/api/image-proxy?url=${user.pfpUrl}`} 
-                      alt="Profile picture" 
-                      width={40} 
-                      height={40} 
-                      className="rounded-full border-2 border-white/30"
-                    />
-                  )}
-                  <div className="text-center">
-                    <div className="text-white font-semibold text-lg">
-                      Hi, @{user.username || user.displayName || user.fid}
-                    </div>
-                    <div className="text-white/70 text-sm">
-                      FID: {user.fid}
-                    </div>
-                  </div>
-                </div>
-              )}
-              
-              {/* Stats Card - Placeholder */}
-              <div className="glass rounded-3xl p-10 mb-8 animate-fade-in-up shadow-xl border border-white/30">
-                <div className="text-center">
-                  <div className="text-gray-900/80 text-lg font-medium mb-2">
-                    Loading...
-                  </div>
-                  <div className="text-7xl md:text-8xl font-extrabold text-gray-900 mb-2 tracking-tighter animate-pulse" style={{ fontFamily: 'Instrument Sans, Nunito, Inter, sans-serif' }}>
-                    --
-                  </div>
-                  <div className="text-gray-800/90 text-xl font-semibold mb-2">
-                    unreplied conversations
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-        
-        {/* Conversations List - Placeholder Cards */}
-        <div className="px-4 pb-12">
-          <div className="max-w-3xl mx-auto">
-            <div className="space-y-6">
-              {/* Placeholder Reply Cards */}
-              {[1, 2, 3].map((index) => (
-                <div
-                  key={index}
-                  className="max-w-md w-full mx-auto bg-[#181A20]/50 rounded-2xl shadow-xl p-6 mb-6 flex items-start gap-4 animate-pulse"
-                >
-                  <div className="w-12 h-12 rounded-full bg-gray-400/30 flex-shrink-0"></div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <div className="h-6 bg-gray-400/30 rounded w-24"></div>
-                      <div className="h-4 bg-gray-400/30 rounded w-16"></div>
-                    </div>
-                    <div className="h-6 bg-gray-400/30 rounded w-full mt-2"></div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
+      <div className="min-h-screen bg-gradient-to-br from-purple-600 via-blue-600 to-cyan-500 flex items-center justify-center p-4">
+        <div className="text-center text-white">
+          <h1 className="text-2xl font-bold mb-4">Error</h1>
+          <p className="mb-4">{error}</p>
+          <button 
+            onClick={() => window.location.reload()} 
+            className="btn-primary"
+          >
+            Retry
+          </button>
         </div>
       </div>
-    )
+    );
   }
 
   // Filtered and sorted data for rendering
   const filteredDetails = allConversations.length > 0 ? sortDetails(filterByDay(allConversations)) : [];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-600 via-blue-600 to-cyan-500 font-sans">
-      {/* Header Section */}
-      <div className="relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-purple-600/20 via-blue-600/20 to-cyan-500/20"></div>
-        <div className="relative px-6 pt-12 pb-8">
-          <div className="max-w-3xl mx-auto text-center">
-            {/* App Title */}
-            <div className="mb-8">
-              <h1 className="text-5xl md:text-6xl font-extrabold text-white mb-2 tracking-tight" style={{ fontFamily: 'Instrument Sans, Nunito, Inter, sans-serif' }}>
-                ReplyCast
-              </h1>
-              <p className="text-xl md:text-2xl font-medium text-white/90 mb-8" style={{ fontFamily: 'Instrument Sans, Nunito, Inter, sans-serif' }}>
-                Never miss a reply again
-              </p>
-            </div>
-            
-            {/* User Greeting */}
-            {user && (
-              <div className="mb-6 flex items-center justify-center gap-3 bg-white/10 backdrop-blur-sm rounded-2xl p-4 border border-white/20">
-                {user.pfpUrl && (
-                  <Image 
-                    src={`/api/image-proxy?url=${user.pfpUrl}`} 
-                    alt="Profile picture" 
-                    width={40} 
-                    height={40} 
-                    className="rounded-full border-2 border-white/30"
-                  />
-                )}
-                <div className="text-center">
-                  <div className="text-white font-semibold text-lg">
-                    Hi, @{user.username || user.displayName || user.fid}
-                  </div>
-                  <div className="text-white/70 text-sm">
-                    FID: {user.fid}
-                  </div>
-                </div>
-              </div>
-            )}
-            {/* Stats Card */}
-            <div className="glass rounded-3xl p-10 mb-8 animate-fade-in-up shadow-xl border border-white/30">
-              <div className="text-center">
-                <div className="text-gray-900/80 text-lg font-medium mb-2">
-                  {user?.username} has
-                </div>
-                <div className="text-7xl md:text-8xl font-extrabold text-gray-900 mb-2 tracking-tighter" style={{ fontFamily: 'Instrument Sans, Nunito, Inter, sans-serif' }}>
-                  {data ? data.unrepliedCount : '--'}
-                </div>
-                <div className="text-gray-800/90 text-xl font-semibold mb-2">
-                  unreplied conversations
-                </div>
-                {/* Error Display */}
-                {error && (
-                  <div className="mt-6 bg-red-500/10 border border-red-400/30 rounded-xl p-4">
-                    <div className="text-red-700 text-sm font-medium">
-                      {error}
-                    </div>
-                  </div>
-                )}
-                {/* Cache Status */}
-                <div className="text-xs text-white/60 bg-white/5 px-2 py-1 rounded-lg border border-white/10 mt-4">
-                  <span className="font-mono">
-                    Cache: {getCacheStatus().cachedFids} FIDs ({getCacheStatus().age}s)
-                  </span>
-                </div>
-                {/* Refresh Button */}
-                <button
-                  onClick={handleRefresh}
-                  disabled={isRefreshing}
-                  className="btn-secondary mt-6 inline-flex items-center gap-2 focus:outline-none focus:ring-2 focus:ring-blue-400 rounded-xl px-4 py-2 text-base"
-                  aria-label="Refresh"
-                >
-                  <svg
-                    width={16}
-                    height={16}
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth={2}
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    className={`${isRefreshing ? 'animate-spin' : ''}`}
-                    aria-hidden="true"
-                  >
-                    <path d="M23 4v6h-6" />
-                    <path d="M1 20v-6h6" />
-                    <path d="M3.51 9a9 9 0 0 1 14.13-3.36L23 10" />
-                    <path d="M20.49 15A9 9 0 0 1 6.36 18.36L1 14" />
-                  </svg>
-                  {isRefreshing ? 'Refreshing...' : 'Refresh'}
-                </button>
-              </div>
-            </div>
-            {/* Filter Section */}
-            <div className="glass rounded-2xl p-4 mt-6 border border-white/20">
-              <div className="flex flex-col md:flex-row items-center justify-center gap-2 md:gap-6">
-                <div className="flex items-center gap-2 mb-2 md:mb-0">
-                  <span className="text-white/80 text-sm font-medium mr-2">View:</span>
-                  <button
-                    onClick={() => setViewMode('list')}
-                    className={`p-2 rounded-xl transition-all duration-200 ${
-                      viewMode === 'list'
-                        ? 'bg-white/20 text-white shadow-lg'
-                        : 'bg-white/10 text-white/60 hover:bg-white/15 hover:text-white/80'
-                    }`}
-                    aria-label="List view"
-                  >
-                    <svg
-                      width={18}
-                      height={18}
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth={2}
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      aria-hidden="true"
-                    >
-                      <line x1="8" y1="6" x2="21" y2="6" />
-                      <line x1="8" y1="12" x2="21" y2="12" />
-                      <line x1="8" y1="18" x2="21" y2="18" />
-                      <line x1="3" y1="6" x2="3.01" y2="6" />
-                      <line x1="3" y1="12" x2="3.01" y2="12" />
-                      <line x1="3" y1="18" x2="3.01" y2="18" />
-                    </svg>
-                  </button>
-                  <button
-                    onClick={() => setViewMode('grid')}
-                    className={`p-2 rounded-xl transition-all duration-200 ${
-                      viewMode === 'grid'
-                        ? 'bg-white/20 text-white shadow-lg'
-                        : 'bg-white/10 text-white/60 hover:bg-white/15 hover:text-white/80'
-                    }`}
-                    aria-label="Grid view"
-                  >
-                    <svg
-                      width={18}
-                      height={18}
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth={2}
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      aria-hidden="true"
-                    >
-                      <rect x="3" y="3" width="7" height="7" />
-                      <rect x="14" y="3" width="7" height="7" />
-                      <rect x="14" y="14" width="7" height="7" />
-                      <rect x="3" y="14" width="7" height="7" />
-                    </svg>
-                  </button>
-                </div>
-                {/* Day Filter Dropdown */}
-                <div className="flex items-center gap-2">
-                  <span className="text-white/80 text-sm font-medium mr-2">Day:</span>
-                  <select
-                    value={dayFilter}
-                    onChange={e => setDayFilter(e.target.value as any)}
-                    className="bg-white/10 text-white/90 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 border border-white/20 shadow-sm"
-                    style={{ fontFamily: 'Instrument Sans, Nunito, Inter, sans-serif' }}
-                  >
-                    <option value="all">All</option>
-                    <option value="today">Today</option>
-                    <option value="3days">Last 3 days</option>
-                    <option value="7days">Last 7 days</option>
-                  </select>
-                </div>
-                {/* Sort Dropdown */}
-                <div className="flex items-center gap-2">
-                  <span className="text-white/80 text-sm font-medium mr-2">Sort:</span>
-                  <select
-                    value={sortOption}
-                    onChange={e => setSortOption(e.target.value as any)}
-                    className="bg-white/10 text-white/90 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 border border-white/20 shadow-sm"
-                    style={{ fontFamily: 'Instrument Sans, Nunito, Inter, sans-serif' }}
-                  >
-                    <option value="newest">Newest</option>
-                    <option value="oldest">Oldest</option>
-                    <option value="fid-asc">FID: Low → High</option>
-                    <option value="fid-desc">FID: High → Low</option>
-                    <option value="short">Cast: Short (&lt;20 chars)</option>
-                    <option value="medium">Cast: Medium (20–50 chars)</option>
-                    <option value="long">Cast: Long (&gt;50 chars)</option>
-                  </select>
-                </div>
-              </div>
-            </div>
-          </div>
+    <div className="min-h-screen bg-gradient-to-br from-purple-600 via-blue-600 to-cyan-500">
+      <div className="container mx-auto px-4 py-8">
+        <div className="text-center mb-8">
+          <h1 className="text-4xl font-black text-white mb-2 tracking-tight">
+            ReplyCast
+          </h1>
+          <p className="text-white/80 text-lg">
+            {processedData.length} conversations waiting for your reply
+          </p>
+        </div>
+
+        {/* Render processed data */}
+        <div className="grid gap-4">
+          {processedData.map((detail, index) => (
+            <ReplyCard 
+              key={`${detail.castHash}-${index}`} 
+              detail={detail}
+              openRank={openRankRanks[detail.authorFid] || null}
+            />
+          ))}
         </div>
       </div>
       {/* Conversations List */}
@@ -981,5 +751,9 @@ export default function FarcasterApp() {
         </div>
       )}
     </div>
-  )
-}
+  );
+});
+
+FarcasterApp.displayName = 'FarcasterApp';
+
+export default FarcasterApp;

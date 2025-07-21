@@ -2,9 +2,10 @@
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+/* Optimized font loading - use system fonts with fallback */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
-/* Custom CSS Variables */
+/* CSS Variables for better performance */
 :root {
   --primary-gradient: linear-gradient(135deg, #6C2BD7 0%, #1CB5E0 100%);
   --secondary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -13,24 +14,32 @@
   --text-primary: #ffffff;
   --text-secondary: rgba(255, 255, 255, 0.8);
   --text-muted: rgba(255, 255, 255, 0.6);
+  --card-bg: #181A20;
+  --card-hover: #23242a;
+  --transition-fast: 200ms ease-out;
+  --transition-medium: 300ms ease-out;
+  --border-radius-lg: 1rem;
+  --border-radius-xl: 1.5rem;
 }
 
-/* Base styles */
+/* Base styles with performance optimizations */
 * {
   box-sizing: border-box;
 }
 
 body {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  font-display: swap;
   margin: 0;
   padding: 0;
   background: var(--primary-gradient);
   min-height: 100vh;
+  contain: layout style paint;
 }
 
-/* Custom scrollbar */
+/* Optimized scrollbar with GPU acceleration */
 ::-webkit-scrollbar {
   width: 6px;
 }
@@ -43,29 +52,31 @@ body {
 ::-webkit-scrollbar-thumb {
   background: rgba(255, 255, 255, 0.3);
   border-radius: 3px;
+  transition: background var(--transition-fast);
 }
 
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(255, 255, 255, 0.5);
 }
 
-/* Glass morphism effect */
+/* Optimized glass morphism with contain */
 .glass {
   background: var(--glass-bg);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border: 1px solid var(--glass-border);
+  contain: layout style;
 }
 
-/* Custom animations */
+/* GPU-accelerated animations */
 @keyframes fadeInUp {
   from {
     opacity: 0;
-    transform: translateY(20px);
+    transform: translate3d(0, 20px, 0);
   }
   to {
     opacity: 1;
-    transform: translateY(0);
+    transform: translate3d(0, 0, 0);
   }
 }
 
@@ -80,49 +91,125 @@ body {
 
 .animate-fade-in-up {
   animation: fadeInUp 0.6s ease-out;
+  will-change: transform, opacity;
 }
 
 .animate-pulse-slow {
   animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  will-change: opacity;
 }
 
-/* Custom button styles */
+/* Optimized button styles with better transitions */
 .btn-primary {
-  @apply bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold px-6 py-3 rounded-xl hover:from-blue-700 hover:to-purple-700 transition-all duration-200 transform hover:scale-105 active:scale-95 shadow-lg hover:shadow-xl;
+  @apply bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold px-6 py-3 rounded-xl shadow-lg;
+  transition: all var(--transition-fast);
+  will-change: transform, box-shadow;
+}
+
+.btn-primary:hover {
+  @apply from-blue-700 to-purple-700 shadow-xl;
+  transform: translateY(-1px);
+}
+
+.btn-primary:active {
+  transform: translateY(0) scale(0.98);
 }
 
 .btn-secondary {
-  @apply bg-white/20 text-white font-semibold px-4 py-2 rounded-lg hover:bg-white/30 transition-all duration-200 border border-white/30;
+  @apply bg-white/20 text-white font-semibold px-4 py-2 rounded-lg border border-white/30;
+  transition: all var(--transition-fast);
+  backdrop-filter: blur(10px);
 }
 
-/* Custom card styles */
+.btn-secondary:hover {
+  @apply bg-white/30;
+}
+
+/* Optimized card styles */
 .card {
-  @apply glass rounded-2xl p-6 transition-all duration-300 hover:scale-[1.02] cursor-pointer;
+  @apply glass rounded-2xl p-6 cursor-pointer;
+  transition: all var(--transition-medium);
+  will-change: transform;
+  contain: layout style;
 }
 
-/* Custom input styles */
+.card:hover {
+  transform: translateY(-2px) scale(1.01);
+}
+
+/* Optimized input styles */
 .input-field {
-  @apply w-full p-4 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200 bg-white/95 backdrop-blur-sm;
+  @apply w-full p-4 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white/95;
+  transition: all var(--transition-fast);
+  backdrop-filter: blur(10px);
 }
 
-/* Custom modal styles */
+/* Performance-optimized modal styles */
 .modal-overlay {
-  @apply fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50;
+  @apply fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-50;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  animation: fadeIn var(--transition-fast);
+  contain: layout style;
 }
 
 .modal-content {
-  @apply bg-white rounded-3xl p-8 w-full max-w-lg shadow-2xl transform transition-all duration-300;
+  @apply bg-white rounded-3xl p-8 w-full max-w-lg shadow-2xl;
+  animation: slideUp var(--transition-medium) cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: transform, opacity;
 }
 
-/* Responsive text sizes */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 20px, 0) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+/* Remove unused responsive text classes and simplify */
 .text-responsive-xl {
-  @apply text-4xl md:text-5xl lg:text-6xl;
+  @apply text-4xl;
 }
 
-.text-responsive-lg {
-  @apply text-2xl md:text-3xl lg:text-4xl;
+@media (min-width: 768px) {
+  .text-responsive-xl {
+    @apply text-5xl;
+  }
 }
 
-.text-responsive-md {
-  @apply text-lg md:text-xl lg:text-2xl;
+@media (min-width: 1024px) {
+  .text-responsive-xl {
+    @apply text-6xl;
+  }
+}
+
+/* Performance hints */
+.performance-optimized {
+  contain: layout style paint;
+  will-change: auto;
+}
+
+/* Loading states with better performance */
+.loading-skeleton {
+  background: linear-gradient(90deg, rgba(255,255,255,0.1) 25%, rgba(255,255,255,0.2) 50%, rgba(255,255,255,0.1) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
 } 

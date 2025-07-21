@@ -36,8 +36,14 @@ export default async function handler(
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  // Add cache headers - cache for 5 minutes
-  res.setHeader('Cache-Control', 'public, s-maxage=300, stale-while-revalidate=600');
+  // Performance optimized cache headers
+  res.setHeader('Cache-Control', 'public, s-maxage=300, stale-while-revalidate=600, max-age=60');
+  res.setHeader('CDN-Cache-Control', 's-maxage=300');
+  res.setHeader('Vary', 'Accept-Encoding');
+  
+  // Security and performance headers
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'DENY');
 
   const { fid, limit = '5', cursor } = req.query;
   
