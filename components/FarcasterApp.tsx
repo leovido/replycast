@@ -384,6 +384,95 @@ const FarcasterApp = memo(() => {
     };
   }, [hasMore, isLoadingMore, loading, fetchData]);
 
+  const handleRefresh = useCallback(async () => {
+    setIsRefreshing(true)
+    setError(null)
+    
+    // Clear OpenRank cache to force fresh data
+    openRankCache.current = { data: {}, timestamp: 0 };
+    
+    // Force refresh by bypassing cache
+    const userFid = user?.fid || 203666;
+    try {
+      const res = await fetch(`/api/farcaster-replies?fid=${userFid}`, {
+        cache: 'no-store' // Force fresh data
+      });
+      const responseData = await res.json()
+      if (responseData) {
+        setData(responseData)
+        
+        // Fetch OpenRank ranks for all FIDs in the response
+        if (responseData.unrepliedDetails?.length > 0) {
+          const fids = responseData.unrepliedDetails.map((detail: UnrepliedDetail) => detail.authorFid);
+          await fetchOpenRankRanks(fids);
+        }
+      } else {
+        setError(responseData.error || 'Failed to fetch data')
+      }
+    } catch (err) {
+      setError('Failed to load conversations')
+    }
+    setIsRefreshing(false)
+  }, [user?.fid, fetchOpenRankRanks]);
+
+  const handleReply = useCallback((cast: UnrepliedDetail) => {
+    setSelectedCast(cast)
+    setReplyText('')
+    setReplyError(null)
+    // Focus the textarea after modal opens
+    setTimeout(() => {
+      textareaRef.current?.focus()
+    }, 100)
+  }, []);
+
+  const handleComposeCast = useCallback(async () => {
+    if (!selectedCast || !replyText.trim()) return
+    
+    setIsComposing(true)
+    setReplyError(null)
+    
+    try {
+      const result = await sdk.actions.composeCast({
+        text: replyText,
+        parent: {
+          type: 'cast',
+          hash: selectedCast.castHash
+        }
+      })
+      
+      if (result?.cast) {
+        // Success! Clear the form and refresh data
+        setSelectedCast(null)
+        setReplyText('')
+        await fetchData() // Refresh to update the list
+      }
+    } catch (error) {
+      console.error('Failed to compose cast:', error)
+      setReplyError('Failed to send reply. Please try again.')
+    } finally {
+      setIsComposing(false)
+    }
+  }, [selectedCast, replyText, fetchData]);
+
+  const handleCancelReply = useCallback(() => {
+    setSelectedCast(null)
+    setReplyText('')
+    setReplyError(null)
+  }, []);
+
+  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+      e.preventDefault()
+      handleComposeCast()
+    } else if (e.key === 'Escape') {
+      handleCancelReply()
+    }
+  }, [handleComposeCast, handleCancelReply]);
+
+  // Memoized character count
+  const charactersRemaining = useMemo(() => MAX_CHARACTERS - replyText.length, [replyText.length]);
+  const isOverLimit = useMemo(() => charactersRemaining < 0, [charactersRemaining]);
+
   useEffect(() => {
     const initializeApp = async () => {
       try {
@@ -522,26 +611,196 @@ const FarcasterApp = memo(() => {
   const filteredDetails = allConversations.length > 0 ? sortDetails(filterByDay(allConversations)) : [];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-600 via-blue-600 to-cyan-500">
-      <div className="container mx-auto px-4 py-8">
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-black text-white mb-2 tracking-tight">
-            ReplyCast
-          </h1>
-          <p className="text-white/80 text-lg">
-            {processedData.length} conversations waiting for your reply
-          </p>
-        </div>
-
-        {/* Render processed data */}
-        <div className="grid gap-4">
-          {processedData.map((detail, index) => (
-            <ReplyCard 
-              key={`${detail.castHash}-${index}`} 
-              detail={detail}
-              openRank={openRankRanks[detail.authorFid] || null}
-            />
-          ))}
+    <div className="min-h-screen bg-gradient-to-br from-purple-600 via-blue-600 to-cyan-500 font-sans">
+      {/* Header Section */}
+      <div className="relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-purple-600/20 via-blue-600/20 to-cyan-500/20"></div>
+        <div className="relative px-6 pt-12 pb-8">
+          <div className="max-w-3xl mx-auto text-center">
+            {/* App Title */}
+            <div className="mb-8">
+              <h1 className="text-5xl md:text-6xl font-extrabold text-white mb-2 tracking-tight" style={{ fontFamily: 'Instrument Sans, Nunito, Inter, sans-serif' }}>
+                ReplyCast
+              </h1>
+              <p className="text-xl md:text-2xl font-medium text-white/90 mb-8" style={{ fontFamily: 'Instrument Sans, Nunito, Inter, sans-serif' }}>
+                Never miss a reply again
+              </p>
+            </div>
+            
+            {/* User Greeting */}
+            {user && (
+              <div className="mb-6 flex items-center justify-center gap-3 bg-white/10 backdrop-blur-sm rounded-2xl p-4 border border-white/20">
+                {user.pfpUrl && (
+                  <Image 
+                    src={`/api/image-proxy?url=${user.pfpUrl}`} 
+                    alt="Profile picture" 
+                    width={40} 
+                    height={40} 
+                    className="rounded-full border-2 border-white/30"
+                  />
+                )}
+                <div className="text-center">
+                  <div className="text-white font-semibold text-lg">
+                    Hi, @{user.username || user.displayName || user.fid}
+                  </div>
+                  <div className="text-white/70 text-sm">
+                    FID: {user.fid}
+                  </div>
+                </div>
+              </div>
+            )}
+            
+            {/* Stats Card */}
+            <div className="glass rounded-3xl p-10 mb-8 animate-fade-in-up shadow-xl border border-white/30">
+              <div className="text-center">
+                <div className="text-gray-900/80 text-lg font-medium mb-2">
+                  {user?.username} has
+                </div>
+                <div className="text-7xl md:text-8xl font-extrabold text-gray-900 mb-2 tracking-tighter" style={{ fontFamily: 'Instrument Sans, Nunito, Inter, sans-serif' }}>
+                  {data ? data.unrepliedCount : '--'}
+                </div>
+                <div className="text-gray-800/90 text-xl font-semibold mb-2">
+                  unreplied conversations
+                </div>
+                {/* Error Display */}
+                {error && (
+                  <div className="mt-6 bg-red-500/10 border border-red-400/30 rounded-xl p-4">
+                    <div className="text-red-700 text-sm font-medium">
+                      {error}
+                    </div>
+                  </div>
+                )}
+                {/* Cache Status */}
+                <div className="text-xs text-white/60 bg-white/5 px-2 py-1 rounded-lg border border-white/10 mt-4">
+                  <span className="font-mono">
+                    Cache: {getCacheStatus().cachedFids} FIDs ({getCacheStatus().age}s)
+                  </span>
+                </div>
+                {/* Refresh Button */}
+                <button
+                  onClick={handleRefresh}
+                  disabled={isRefreshing}
+                  className="btn-secondary mt-6 inline-flex items-center gap-2 focus:outline-none focus:ring-2 focus:ring-blue-400 rounded-xl px-4 py-2 text-base"
+                  aria-label="Refresh"
+                >
+                  <svg
+                    width={16}
+                    height={16}
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth={2}
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className={`${isRefreshing ? 'animate-spin' : ''}`}
+                    aria-hidden="true"
+                  >
+                    <path d="M23 4v6h-6" />
+                    <path d="M1 20v-6h6" />
+                    <path d="M3.51 9a9 9 0 0 1 14.13-3.36L23 10" />
+                    <path d="M20.49 15A9 9 0 0 1 6.36 18.36L1 14" />
+                  </svg>
+                  {isRefreshing ? 'Refreshing...' : 'Refresh'}
+                </button>
+              </div>
+            </div>
+            
+            {/* Filter Section */}
+            <div className="glass rounded-2xl p-4 mt-6 border border-white/20">
+              <div className="flex flex-col md:flex-row items-center justify-center gap-2 md:gap-6">
+                <div className="flex items-center gap-2 mb-2 md:mb-0">
+                  <span className="text-white/80 text-sm font-medium mr-2">View:</span>
+                  <button
+                    onClick={() => setViewMode('list')}
+                    className={`p-2 rounded-xl transition-all duration-200 ${
+                      viewMode === 'list'
+                        ? 'bg-white/20 text-white shadow-lg'
+                        : 'bg-white/10 text-white/60 hover:bg-white/15 hover:text-white/80'
+                    }`}
+                    aria-label="List view"
+                  >
+                    <svg
+                      width={18}
+                      height={18}
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth={2}
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      aria-hidden="true"
+                    >
+                      <line x1="8" y1="6" x2="21" y2="6" />
+                      <line x1="8" y1="12" x2="21" y2="12" />
+                      <line x1="8" y1="18" x2="21" y2="18" />
+                      <line x1="3" y1="6" x2="3.01" y2="6" />
+                      <line x1="3" y1="12" x2="3.01" y2="12" />
+                      <line x1="3" y1="18" x2="3.01" y2="18" />
+                    </svg>
+                  </button>
+                  <button
+                    onClick={() => setViewMode('grid')}
+                    className={`p-2 rounded-xl transition-all duration-200 ${
+                      viewMode === 'grid'
+                        ? 'bg-white/20 text-white shadow-lg'
+                        : 'bg-white/10 text-white/60 hover:bg-white/15 hover:text-white/80'
+                    }`}
+                    aria-label="Grid view"
+                  >
+                    <svg
+                      width={18}
+                      height={18}
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth={2}
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      aria-hidden="true"
+                    >
+                      <rect x="3" y="3" width="7" height="7" />
+                      <rect x="14" y="3" width="7" height="7" />
+                      <rect x="14" y="14" width="7" height="7" />
+                      <rect x="3" y="14" width="7" height="7" />
+                    </svg>
+                  </button>
+                </div>
+                {/* Day Filter Dropdown */}
+                <div className="flex items-center gap-2">
+                  <span className="text-white/80 text-sm font-medium mr-2">Day:</span>
+                  <select
+                    value={dayFilter}
+                    onChange={e => setDayFilter(e.target.value as any)}
+                    className="bg-white/10 text-white/90 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 border border-white/20 shadow-sm"
+                    style={{ fontFamily: 'Instrument Sans, Nunito, Inter, sans-serif' }}
+                  >
+                    <option value="all">All</option>
+                    <option value="today">Today</option>
+                    <option value="3days">Last 3 days</option>
+                    <option value="7days">Last 7 days</option>
+                  </select>
+                </div>
+                {/* Sort Dropdown */}
+                <div className="flex items-center gap-2">
+                  <span className="text-white/80 text-sm font-medium mr-2">Sort:</span>
+                  <select
+                    value={sortOption}
+                    onChange={e => setSortOption(e.target.value as any)}
+                    className="bg-white/10 text-white/90 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 border border-white/20 shadow-sm"
+                    style={{ fontFamily: 'Instrument Sans, Nunito, Inter, sans-serif' }}
+                  >
+                    <option value="newest">Newest</option>
+                    <option value="oldest">Oldest</option>
+                    <option value="fid-asc">FID: Low → High</option>
+                    <option value="fid-desc">FID: High → Low</option>
+                    <option value="short">Cast: Short (&lt;20 chars)</option>
+                    <option value="medium">Cast: Medium (20–50 chars)</option>
+                    <option value="long">Cast: Long (&gt;50 chars)</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
       {/* Conversations List */}
