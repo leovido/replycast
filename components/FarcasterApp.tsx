@@ -1,7 +1,8 @@
 import { useEffect, useState, useRef, useCallback, useMemo, memo } from 'react'
 import Image from 'next/image'
 import dynamic from 'next/dynamic'
-import { sdk } from '@farcaster/miniapp-sdk'
+import sdk from '@farcaster/miniapp-sdk'
+import { ReplyCard } from './ReplyCard';
 import { User } from '@/types/types';
 
 // Lazy load ReplyCard component
@@ -937,3 +938,5 @@ const FarcasterApp = memo(() => {
 FarcasterApp.displayName = 'FarcasterApp';
 
 export default FarcasterApp;
+  )
+}
