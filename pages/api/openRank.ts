@@ -43,7 +43,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const rankMap: Record<string, number | null> = {};
     
     numericFids.forEach((fid, index) => {
-      const rank = ranks[index] ? parseInt(ranks[index].toString()) : null;
+      // Ensure we don't access array out of bounds and handle BigInt conversion safely
+      let rank: number | null = null;
+      if (index < ranks.length && ranks[index] != null) {
+        try {
+          const rankValue = ranks[index].toString();
+          const parsedRank = parseInt(rankValue);
+          rank = isNaN(parsedRank) || parsedRank === 0 ? null : parsedRank;
+        } catch (error) {
+          console.warn(`Failed to parse rank for FID ${fid}:`, error);
+          rank = null;
+        }
+      }
       
       rankMap[fid.toString()] = rank;
     });
