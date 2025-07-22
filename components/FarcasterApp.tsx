@@ -292,58 +292,67 @@ const FarcasterApp = memo(() => {
     return sorted;
   }, [data?.unrepliedDetails, filterByDay, sortDetails]);
 
-  const fetchData = useCallback(async (isInitialLoad = true) => {
-    try {
-      const userFid = user?.fid || 203666;
-      const url = new URL('/api/farcaster-replies', window.location.origin);
-      url.searchParams.set('fid', userFid.toString());
-      url.searchParams.set('limit', '5');
-      
-      if (!isInitialLoad && cursor) {
-        url.searchParams.set('cursor', cursor);
+  // 1. Fetch user context once on mount
+  useEffect(() => {
+    const getUser = async () => {
+      try {
+        const ctx = await sdk.context;
+        const farUser = ctx?.user ?? {
+          fid: 203666,
+          username: 'test',
+          displayName: 'test',
+          pfpUrl: 'https://cdn-icons-png.flaticon.com/512/1828/1828640.png',
+        };
+        setUser(farUser);
+      } catch (err) {
+        setError('Failed to load user');
+        setLoading(false);
       }
-      
-      const res = await fetch(url.toString(), {
-        cache: isInitialLoad ? 'default' : 'no-store'
-      });
-      const responseData = await res.json();
-      
-      if (responseData) {
-        if (isInitialLoad) {
-          // Initial load - replace all data
+    };
+    getUser();
+  }, []);
+
+  // 2. Fetch data when user is set
+  useEffect(() => {
+    console.log('user', user)
+    if (!user) return;
+    console.log('after user', user)
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        const url = new URL('/api/farcaster-replies', window.location.origin);
+        url.searchParams.set('fid', user.fid.toString());
+        const res = await fetch(url.toString(), {
+          signal: AbortSignal.timeout(15000)
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const responseData = await res.json();
+        if (responseData) {
           setData(responseData);
-          setAllConversations(responseData.unrepliedDetails || []);
-          setCursor(responseData.nextCursor || null);
-          setHasMore(!!responseData.nextCursor);
           setLoading(false);
-        } else {
-          // Pagination load - append data
-          setData(prev => ({
-            ...prev!,
-            unrepliedDetails: [...(prev?.unrepliedDetails || []), ...(responseData.unrepliedDetails || [])],
-            unrepliedCount: (prev?.unrepliedCount || 0) + (responseData.unrepliedDetails?.length || 0)
-          }));
-          setAllConversations(prev => [...prev, ...(responseData.unrepliedDetails || [])]);
-          setCursor(responseData.nextCursor || null);
-          setHasMore(!!responseData.nextCursor);
           setIsLoadingMore(false);
+          setAllConversations(prev => [
+            ...prev,
+            ...(responseData.unrepliedDetails || [])
+          ]);
+          setCursor(responseData.nextCursor || null);
+          setHasMore(!!responseData.nextCursor && responseData.unrepliedDetails.length > 0);
+          // Fetch OpenRank ranks for all FIDs in the response
+          if (responseData.unrepliedDetails?.length > 0) {
+            const fids = responseData.unrepliedDetails.map((detail: UnrepliedDetail) => detail.authorFid);
+            await fetchOpenRankRanks(fids);
+          }
+        } else {
+          setError(responseData.error || 'Failed to fetch data');
         }
-        
-        // Fetch OpenRank ranks for new FIDs
-        const newFids = responseData.unrepliedDetails?.map((detail: UnrepliedDetail) => detail.authorFid) || [];
-        if (newFids.length > 0) {
-          await fetchOpenRankRanks(newFids);
-        }
-      } else {
-        setError(responseData.error || 'Failed to fetch data');
+      } catch (err) {
+        setHasMore(false)
+        setError(err instanceof Error ? err.message : 'Failed to load conversations');
+        setLoading(false);
       }
-    } catch (err) {
-      setError('Failed to load conversations');
-      if (!isInitialLoad) {
-        setIsLoadingMore(false);
-      }
-    }
-  }, [user, fetchOpenRankRanks, cursor])
+    };
+    fetchData();
+  }, [user]);
 
   // Reset pagination when filters change
   useEffect(() => {
@@ -352,23 +361,49 @@ const FarcasterApp = memo(() => {
       setHasMore(true);
       setIsLoadingMore(false);
       setAllConversations([]);
-      fetchData(true);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dayFilter, sortOption]);
 
   // Intersection Observer for infinite scroll
+  const loadMoreConversations = useCallback(async () => {
+    if (!hasMore || isLoadingMore || loading) return;
+    setIsLoadingMore(true);
+    try {
+      const url = new URL('/api/farcaster-replies', window.location.origin);
+      url.searchParams.set('fid', user.fid.toString());
+      if (cursor) url.searchParams.set('cursor', cursor);
+
+      const res = await fetch(url.toString());
+      const responseData = await res.json();
+
+      // Append new conversations
+      setAllConversations(prev => [
+        ...prev,
+        ...(responseData.unrepliedDetails || [])
+      ]);
+      setCursor(responseData.nextCursor || null);
+
+      // If no more data, stop loading more
+      if (!responseData.nextCursor || !responseData.unrepliedDetails?.length) {
+        setHasMore(false);
+      }
+    } catch (e) {
+      setHasMore(false); // Stop trying if error
+    }
+    setIsLoadingMore(false); // Always reset spinner
+  }, [hasMore, isLoadingMore, loading, user, cursor]);
+
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
         const [entry] = entries;
         if (entry.isIntersecting && hasMore && !isLoadingMore && !loading) {
-          setIsLoadingMore(true);
-          fetchData(false);
+          loadMoreConversations();
         }
       },
       {
-        rootMargin: '100px', // Start loading when 100px from bottom
+        rootMargin: '100px',
         threshold: 0.1
       }
     );
@@ -382,7 +417,7 @@ const FarcasterApp = memo(() => {
         observer.unobserve(observerRef.current);
       }
     };
-  }, [hasMore, isLoadingMore, loading, fetchData]);
+  }, [hasMore, isLoadingMore, loading, loadMoreConversations]);
 
   const handleRefresh = useCallback(async () => {
     setIsRefreshing(true)
@@ -415,120 +450,13 @@ const FarcasterApp = memo(() => {
     setIsRefreshing(false)
   }, [user?.fid, fetchOpenRankRanks]);
 
-  const handleReply = useCallback((cast: UnrepliedDetail) => {
-    setSelectedCast(cast)
-    setReplyText('')
-    setReplyError(null)
-    // Focus the textarea after modal opens
-    setTimeout(() => {
-      textareaRef.current?.focus()
-    }, 100)
-  }, []);
-
-  const handleComposeCast = useCallback(async () => {
-    if (!selectedCast || !replyText.trim()) return
-    
-    setIsComposing(true)
-    setReplyError(null)
-    
-    try {
-      const result = await sdk.actions.composeCast({
-        text: replyText,
-        parent: {
-          type: 'cast',
-          hash: selectedCast.castHash
-        }
-      })
-      
-      if (result?.cast) {
-        // Success! Clear the form and refresh data
-        setSelectedCast(null)
-        setReplyText('')
-        await fetchData() // Refresh to update the list
-      }
-    } catch (error) {
-      console.error('Failed to compose cast:', error)
-      setReplyError('Failed to send reply. Please try again.')
-    } finally {
-      setIsComposing(false)
-    }
-  }, [selectedCast, replyText, fetchData]);
-
   const handleCancelReply = useCallback(() => {
     setSelectedCast(null)
     setReplyText('')
     setReplyError(null)
   }, []);
 
-  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
-      e.preventDefault()
-      handleComposeCast()
-    } else if (e.key === 'Escape') {
-      handleCancelReply()
-    }
-  }, [handleComposeCast, handleCancelReply]);
-
-  // Memoized character count
-  const charactersRemaining = useMemo(() => MAX_CHARACTERS - replyText.length, [replyText.length]);
-  const isOverLimit = useMemo(() => charactersRemaining < 0, [charactersRemaining]);
-
-  useEffect(() => {
-    const initializeApp = async () => {
-      try {
-        const ctx = await sdk.context;
-        const farUser = ctx?.user ?? {
-          fid: 203666,
-          username: 'test',
-          displayName: 'test',
-          pfpUrl: 'https://cdn-icons-png.flaticon.com/512/1828/1828640.png',
-        };
-
-        if (!farUser || !farUser.fid) throw new Error('Farcaster user not found');
-        setUser(farUser);
-
-        await fetchData(true)
-
-        await sdk.actions.ready()
-       } catch (err) {
-        const errorMessage = err instanceof Error ? err.message : 'Unknown error';
-        setError(`Error: ${errorMessage}`)
-        setLoading(false);
-      }
-    }
-    
-    initializeApp()
-  }, [fetchData])
-
-  const handleRefresh = async () => {
-    setIsRefreshing(true)
-    setError(null)
-    
-    // Clear OpenRank cache to force fresh data
-    openRankCache.current = { data: {}, timestamp: 0 };
-    
-    // Reset pagination state
-    setCursor(null)
-    setHasMore(true)
-    setIsLoadingMore(false)
-    setAllConversations([])
-    
-    // Force refresh by bypassing cache
-    await fetchData(true)
-    setIsRefreshing(false)
-  }
-
-  const handleReply = async (cast: UnrepliedDetail) => {
-    setSelectedCast(cast)
-    setReplyText('')
-    setReplyError(null)
-    // Focus the textarea after modal opens
-    setTimeout(() => {
-      textareaRef.current?.focus()
-    }, 100)
-  }
-
-  const handleComposeCast = async () => {
+  const handleComposeCast = useCallback(async () => {
     if (!selectedCast || !replyText.trim()) return
     
     setIsComposing(true)
@@ -552,7 +480,7 @@ const FarcasterApp = memo(() => {
         setHasMore(true)
         setIsLoadingMore(false)
         setAllConversations([])
-        await fetchData(true) // Refresh to update the list
+        // fetchData(true) // This will now be handled by the new useEffect
       }
     } catch (error) {
       console.error('Failed to compose cast:', error)
@@ -560,22 +488,55 @@ const FarcasterApp = memo(() => {
     } finally {
       setIsComposing(false)
     }
-  }
+  }, [selectedCast, replyText]); // Removed fetchData from dependencies
 
-  const handleCancelReply = () => {
-    setSelectedCast(null)
-    setReplyText('')
-    setReplyError(null)
-  }
-
-  const handleKeyDown = (e: React.KeyboardEvent) => {
+  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
       e.preventDefault()
       handleComposeCast()
     } else if (e.key === 'Escape') {
       handleCancelReply()
     }
+  }, [handleComposeCast, handleCancelReply]);
+
+  // useEffect(() => { // This useEffect is now redundant as user and data are fetched in the new useEffect
+  //   const initializeApp = async () => {
+  //     try {
+  //       const ctx = await sdk.context;
+  //       const farUser = ctx?.user ?? {
+  //         fid: 203666,
+  //         username: 'test',
+  //         displayName: 'test',
+  //         pfpUrl: 'https://cdn-icons-png.flaticon.com/512/1828/1828640.png',
+  //       };
+
+  //       if (!farUser || !farUser.fid) throw new Error('Farcaster user not found');
+  //       setUser(farUser);
+
+  //       await fetchData(true)
+
+  //       await sdk.actions.ready()
+  //      } catch (err) {
+  //       const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+  //       setError(`Error: ${errorMessage}`)
+  //       setLoading(false);
+  //     }
+  //   }
+    
+  //   initializeApp()
+  // }, [fetchData])
+
+  const handleReply = async (cast: UnrepliedDetail) => {
+    setSelectedCast(cast)
+    setReplyText('')
+    setReplyError(null)
+    // Focus the textarea after modal opens
+    setTimeout(() => {
+      textareaRef.current?.focus()
+    }, 100)
   }
+
+  
 
   const charactersRemaining = MAX_CHARACTERS - replyText.length
   const isOverLimit = charactersRemaining < 0
@@ -811,14 +772,9 @@ const FarcasterApp = memo(() => {
               {filteredDetails.map((cast, index) => (
                 <ReplyCard
                   key={index}
-                  avatarUrl={cast.avatarUrl}
-                  username={cast.username}
-                  timeAgo={cast.timeAgo}
-                  text={cast.text}
+                  detail={cast}
                   onClick={() => handleReply(cast)}
                   viewMode={viewMode}
-                  authorFid={cast.authorFid}
-                  openRankRank={openRankRanks[cast.authorFid] || null}
                 />
               ))}
             </div>
@@ -827,14 +783,9 @@ const FarcasterApp = memo(() => {
               {filteredDetails.map((cast, index) => (
                 <ReplyCard
                   key={index}
-                  avatarUrl={cast.avatarUrl}
-                  username={cast.username}
-                  timeAgo={cast.timeAgo}
-                  text={cast.text}
+                  detail={cast}
                   onClick={() => handleReply(cast)}
                   viewMode={viewMode}
-                  authorFid={cast.authorFid}
-                  openRankRank={openRankRanks[cast.authorFid] || null}
                 />
               ))}
             </div>
