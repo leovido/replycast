@@ -371,7 +371,7 @@ const FarcasterApp = memo(() => {
     setIsLoadingMore(true);
     try {
       const url = new URL('/api/farcaster-replies', window.location.origin);
-      url.searchParams.set('fid', user.fid.toString());
+      url.searchParams.set('fid', user?.fid.toString() || '203666');
       if (cursor) url.searchParams.set('cursor', cursor);
 
       const res = await fetch(url.toString());
