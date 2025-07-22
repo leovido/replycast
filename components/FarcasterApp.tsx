@@ -304,7 +304,8 @@ const FarcasterApp = memo(() => {
           pfpUrl: 'https://cdn-icons-png.flaticon.com/512/1828/1828640.png',
         };
         setUser(farUser);
-      } catch (err) {
+        await sdk.actions.ready();
+       } catch (err) {
         setError('Failed to load user');
         setLoading(false);
       }
@@ -314,9 +315,7 @@ const FarcasterApp = memo(() => {
 
   // 2. Fetch data when user is set
   useEffect(() => {
-    console.log('user', user)
     if (!user) return;
-    console.log('after user', user)
     const fetchData = async () => {
       setLoading(true);
       try {
@@ -499,44 +498,15 @@ const FarcasterApp = memo(() => {
     }
   }, [handleComposeCast, handleCancelReply]);
 
-  // useEffect(() => { // This useEffect is now redundant as user and data are fetched in the new useEffect
-  //   const initializeApp = async () => {
-  //     try {
-  //       const ctx = await sdk.context;
-  //       const farUser = ctx?.user ?? {
-  //         fid: 203666,
-  //         username: 'test',
-  //         displayName: 'test',
-  //         pfpUrl: 'https://cdn-icons-png.flaticon.com/512/1828/1828640.png',
-  //       };
-
-  //       if (!farUser || !farUser.fid) throw new Error('Farcaster user not found');
-  //       setUser(farUser);
-
-  //       await fetchData(true)
-
-  //       await sdk.actions.ready()
-  //      } catch (err) {
-  //       const errorMessage = err instanceof Error ? err.message : 'Unknown error';
-  //       setError(`Error: ${errorMessage}`)
-  //       setLoading(false);
-  //     }
-  //   }
-    
-  //   initializeApp()
-  // }, [fetchData])
-
   const handleReply = async (cast: UnrepliedDetail) => {
     setSelectedCast(cast)
     setReplyText('')
     setReplyError(null)
-    // Focus the textarea after modal opens
+
     setTimeout(() => {
       textareaRef.current?.focus()
     }, 100)
   }
-
-  
 
   const charactersRemaining = MAX_CHARACTERS - replyText.length
   const isOverLimit = charactersRemaining < 0
