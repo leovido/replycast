@@ -45,13 +45,13 @@ export default async function handler(
   res.setHeader('X-Content-Type-Options', 'nosniff');
   res.setHeader('X-Frame-Options', 'DENY');
 
-  const { fid, limit = '5', cursor } = req.query;
+  const { fid, limit = '10', cursor } = req.query;
   
   if (!fid || typeof fid !== 'string') {
     return res.status(400).json({ error: 'FID parameter is required' });
   }
 
-  const limitNum = parseInt(limit as string, 10) || 5;
+  const limitNum = parseInt(limit as string, 10) || 10;
 
   if (!API_KEY) {
     return res.status(500).json({ error: 'API key not configured' });
@@ -59,7 +59,7 @@ export default async function handler(
 
   try {
     // === Step 1: Fetch your recent casts with pagination ===
-    let userCastsUrl = `https://api.neynar.com/v2/farcaster/feed/user/casts?limit=25&fid=${fid}`;
+    let userCastsUrl = `https://api.neynar.com/v2/farcaster/feed/user/casts?limit=${limitNum}&fid=${fid}`;
     if (cursor) {
       userCastsUrl += `&cursor=${cursor}`;
     }

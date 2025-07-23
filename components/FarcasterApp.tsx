@@ -2,7 +2,6 @@ import { useEffect, useState, useRef, useCallback, useMemo, memo } from 'react'
 import Image from 'next/image'
 import dynamic from 'next/dynamic'
 import sdk from '@farcaster/miniapp-sdk'
-import { ReplyCard } from './ReplyCard';
 import { User } from '@/types/types';
 
 // Lazy load ReplyCard component
@@ -104,7 +103,7 @@ const LoadingScreen = memo(() => {
         </div>
         
         {/* App Title */}
-        <h1 className="text-3xl font-black text-white mb-2 tracking-tight">
+        <h1 className="text-3xl font-black text-white mb-2 tracking-tight" style={{ fontFamily: 'Instrument Sans, Nunito, Inter, sans-serif' }}>
           ReplyCast
         </h1>
         <p className="text-white/80 text-lg font-medium mb-8">
@@ -300,9 +299,9 @@ const FarcasterApp = memo(() => {
         const ctx = await sdk.context;
         const farUser = ctx?.user ?? {
           fid: 203666,
-          username: 'test',
-          displayName: 'test',
-          pfpUrl: 'https://cdn-icons-png.flaticon.com/512/1828/1828640.png',
+          username: 'leovido',
+          displayName: 'Leovido',
+          pfpUrl: 'https://wrpcd.net/cdn-cgi/imagedelivery/BXluQx4ige9GuW0Ia56BHw/252c844e-7be7-4dd5-6938-c1affcfd7e00/anim=false,fit=contain,f=auto,w=576',
         };
         setUser(farUser);
         await sdk.actions.ready();
@@ -549,19 +548,28 @@ const FarcasterApp = memo(() => {
         <div className="absolute inset-0 bg-gradient-to-br from-purple-600/20 via-blue-600/20 to-cyan-500/20"></div>
         <div className="relative px-6 pt-12 pb-8">
           <div className="max-w-3xl mx-auto text-center">
-            {/* App Title */}
-            <div className="mb-8">
-              <h1 className="text-5xl md:text-6xl font-extrabold text-white mb-2 tracking-tight" style={{ fontFamily: 'Instrument Sans, Nunito, Inter, sans-serif' }}>
+            {/* App Title with Logo */}
+            <div className="flex flex-col items-center justify-center mb-2">
+              <Image
+                src="/logo.png"
+                alt="ReplyCast Logo"
+                width={75}
+                height={75}
+                className="mb-2 rounded-xl shadow-lg"
+                priority
+              />
+              <h1 className="text-5xl font-black text-white tracking-tight" style={{ fontFamily: 'Instrument Sans, Nunito, Inter, sans-serif' }}>
                 ReplyCast
               </h1>
               <p className="text-xl md:text-2xl font-medium text-white/90 mb-8" style={{ fontFamily: 'Instrument Sans, Nunito, Inter, sans-serif' }}>
                 Never miss a reply again
               </p>
+
             </div>
             
             {/* User Greeting */}
             {user && (
-              <div className="mb-6 flex items-center justify-center gap-3 bg-white/10 backdrop-blur-sm rounded-2xl p-4 border border-white/20">
+              <div className="mb-6 flex items-center justify-left gap-3 bg-white/10 backdrop-blur-sm rounded-2xl p-4 border border-white/20">
                 {user.pfpUrl && (
                   <Image 
                     src={`/api/image-proxy?url=${user.pfpUrl}`} 
@@ -571,9 +579,9 @@ const FarcasterApp = memo(() => {
                     className="rounded-full border-2 border-white/30"
                   />
                 )}
-                <div className="text-center">
+                <div className="text-left">
                   <div className="text-white font-semibold text-lg">
-                    Hi, @{user.username || user.displayName || user.fid}
+                    {user.displayName} (@{user.username})
                   </div>
                   <div className="text-white/70 text-sm">
                     FID: {user.fid}
@@ -585,13 +593,13 @@ const FarcasterApp = memo(() => {
             {/* Stats Card */}
             <div className="glass rounded-3xl p-10 mb-8 animate-fade-in-up shadow-xl border border-white/30">
               <div className="text-center">
-                <div className="text-gray-900/80 text-lg font-medium mb-2">
+                <div className="text-white/80 text-lg font-medium mb-2">
                   {user?.username} has
                 </div>
-                <div className="text-7xl md:text-8xl font-extrabold text-gray-900 mb-2 tracking-tighter" style={{ fontFamily: 'Instrument Sans, Nunito, Inter, sans-serif' }}>
+                <div className="text-7xl md:text-8xl font-extrabold text-white mb-2 tracking-tighter" style={{ fontFamily: 'Instrument Sans, Nunito, Inter, sans-serif' }}>
                   {data ? data.unrepliedCount : '--'}
                 </div>
-                <div className="text-gray-800/90 text-xl font-semibold mb-2">
+                <div className="text-white text-xl font-semibold mb-2">
                   unreplied conversations
                 </div>
                 {/* Error Display */}
@@ -603,11 +611,13 @@ const FarcasterApp = memo(() => {
                   </div>
                 )}
                 {/* Cache Status */}
+                {process.env.NODE_ENV === 'development' && (
                 <div className="text-xs text-white/60 bg-white/5 px-2 py-1 rounded-lg border border-white/10 mt-4">
                   <span className="font-mono">
                     Cache: {getCacheStatus().cachedFids} FIDs ({getCacheStatus().age}s)
-                  </span>
-                </div>
+                    </span>
+                  </div>
+                )}
                 {/* Refresh Button */}
                 <button
                   onClick={handleRefresh}
@@ -812,7 +822,7 @@ const FarcasterApp = memo(() => {
             <div className="text-center py-12">
               <div className="glass rounded-3xl p-12">
                 <div className="text-6xl mb-4">🎉</div>
-                <h3 className="text-2xl font-bold text-gray-900 mb-2" style={{ fontFamily: 'Instrument Sans, Nunito, Inter, sans-serif' }}>All caught up!</h3>
+                <h3 className="text-2xl font-bold text-white mb-2" style={{ fontFamily: 'Instrument Sans, Nunito, Inter, sans-serif' }}>All caught up!</h3>
                 <p className="text-gray-700/80 text-lg">You&apos;ve replied to all your conversations.</p>
               </div>
             </div>
@@ -834,7 +844,7 @@ const FarcasterApp = memo(() => {
                 onError={e => (e.currentTarget.src = '/default-avatar.png')}
               />
               <div>
-                <div className="font-bold text-lg text-gray-900" style={{ fontFamily: 'Instrument Sans, Nunito, Inter, sans-serif' }}>@{selectedCast.username}</div>
+                <div className="font-bold text-lg text-white" style={{ fontFamily: 'Instrument Sans, Nunito, Inter, sans-serif' }}>@{selectedCast.username}</div>
                 <div className="text-xs text-gray-500">{selectedCast.timeAgo}</div>
               </div>
             </div>
@@ -938,5 +948,3 @@ const FarcasterApp = memo(() => {
 FarcasterApp.displayName = 'FarcasterApp';
 
 export default FarcasterApp;
-  )
-}
