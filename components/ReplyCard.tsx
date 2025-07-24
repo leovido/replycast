@@ -1,5 +1,5 @@
-import React, { memo } from 'react';
-import Image          from 'next/image';
+import React, { memo } from "react";
+import Image from "next/image";
 
 interface UnrepliedDetail {
   username: string;
@@ -19,7 +19,7 @@ export interface ReplyCardProps {
   detail: UnrepliedDetail;
   openRank?: number | null;
   onClick?: () => void;
-  viewMode?: 'list' | 'grid';
+  viewMode?: "list" | "grid";
 }
 
 export const ReplyCard = memo<ReplyCardProps>(({ detail, onClick }) => {
@@ -29,34 +29,31 @@ export const ReplyCard = memo<ReplyCardProps>(({ detail, onClick }) => {
       role="button"
       aria-label={`Open reply from @${detail.username}`}
       onClick={onClick}
-      onKeyDown={e => {
-        if (onClick && (e.key === 'Enter' || e.key === ' ')) {
+      onKeyDown={(e) => {
+        if (onClick && (e.key === "Enter" || e.key === " ")) {
           e.preventDefault();
           onClick();
         }
       }}
       className="
-  relative isolate flex flex-col gap-6
-  w-full max-w-lg mx-auto
-  rounded-2xl p-8 shadow-xl ring-1 ring-white/10
-  bg-zinc-900/75 backdrop-blur-lg overflow-hidden          /* ① overflow-hidden keeps glow inside */
-  transition hover:bg-zinc-900/80
-  focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400
-  group
-"
-      style={{ fontFamily: 'Instrument Sans, Nunito, Inter, sans-serif' }}
+        relative isolate flex flex-col gap-6
+        w-full max-w-lg mx-auto
+        rounded-2xl p-8 shadow-xl ring-1 ring-white/10
+        bg-zinc-900/75 backdrop-blur-lg overflow-hidden
+        transition hover:bg-zinc-900/80
+        focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400
+        group
+      "
+      style={{ fontFamily: "Instrument Sans, Nunito, Inter, sans-serif" }}
     >
-      {/* 0️⃣  - behind everything except the edge bar */}
       <span
-  className="
-    pointer-events-none absolute inset-0 rounded-[inherit]
-    bg-gradient-to-br from-white/20 via-white/5 to-transparent
-    opacity-25 saturate-150 blur-sm
-  "
-/>
+        className="
+          pointer-events-none absolute inset-0 rounded-[inherit]
+          bg-gradient-to-br from-white/20 via-white/5 to-transparent
+          opacity-25 saturate-150 blur-sm
+        "
+      />
 
-
-      {/* 2️⃣  avatar & meta */}
       <header className="flex items-center gap-4 z-10">
         <Image
           src={`/api/image-proxy?url=${detail.avatarUrl}`}
@@ -66,8 +63,8 @@ export const ReplyCard = memo<ReplyCardProps>(({ detail, onClick }) => {
           className="h-12 w-12 rounded-full object-cover"
           loading="lazy"
           quality={80}
-          onError={e => {
-            (e.currentTarget as HTMLImageElement).src = '/default-avatar.png';
+          onError={(e) => {
+            (e.currentTarget as HTMLImageElement).src = "/default-avatar.png";
           }}
         />
         <div className="flex flex-col">
@@ -105,4 +102,4 @@ export const ReplyCard = memo<ReplyCardProps>(({ detail, onClick }) => {
   );
 });
 
-ReplyCard.displayName = 'ReplyCard';
+ReplyCard.displayName = "ReplyCard";
