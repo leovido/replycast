@@ -13,6 +13,7 @@
     "bundle:analyze": "npx @next/bundle-analyzer"
   },
   "dependencies": {
+    "@farcaster/hub-nodejs": "^0.15.5",
     "@farcaster/miniapp-sdk": "^0.1.7",
     "@hono/node-server": "^1.11.1",
     "@tailwindcss/postcss": "^4.1.11",
@@ -22,7 +23,8 @@
     "next": "^14.0.0",
     "react": "18.2.0",
     "react-dom": "18.2.0",
-    "satori": "^0.10.13"
+    "satori": "^0.10.13",
+    "viem": "^2.33.0"
   },
   "devDependencies": {
     "@next/bundle-analyzer": "^14.0.0",
