@@ -427,8 +427,6 @@ const FarcasterApp = memo(() => {
             );
             await fetchOpenRankRanks(fids);
           }
-        } else {
-          setError(responseData.error || "Failed to fetch data");
         }
       } catch (err) {
         setHasMore(false);
@@ -939,14 +937,7 @@ const FarcasterApp = memo(() => {
 
           {/* Intersection Observer Element */}
           {hasMore && (
-            <div
-              ref={observerRef}
-              className="h-4 w-full"
-              aria-hidden="true"
-              style={{ background: "rgba(255,0,0,0.1)" }}
-            >
-              {console.log("Rendering observer element", observerRef.current)}
-            </div>
+            <div ref={observerRef} className="h-4 w-full" aria-hidden="true" />
           )}
 
           {/* Empty State */}
