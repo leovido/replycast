@@ -5,6 +5,8 @@ export interface User {
   fid: number;
 }
 
+export type Cursor = string | null | undefined;
+
 export interface UnrepliedDetail {
   username: string;
   timeAgo: string;

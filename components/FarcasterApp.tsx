@@ -2,7 +2,12 @@ import { useEffect, useState, useRef, useCallback, useMemo, memo } from "react";
 import Image from "next/image";
 import dynamic from "next/dynamic";
 import sdk from "@farcaster/miniapp-sdk";
-import { FarcasterRepliesResponse, UnrepliedDetail, User } from "@/types/types";
+import {
+  Cursor,
+  FarcasterRepliesResponse,
+  UnrepliedDetail,
+  User,
+} from "@/types/types";
 
 // Lazy load ReplyCard component
 const ReplyCard = dynamic(
@@ -15,11 +20,7 @@ const ReplyCard = dynamic(
   }
 );
 
-async function fetchTodaysReplies(
-  fid: number,
-  limit = 25,
-  cursor: string | null
-) {
+async function fetchTodaysReplies(fid: number, limit = 25, cursor: Cursor) {
   let allReplies = [];
   let keepGoing = true;
 
@@ -221,7 +222,7 @@ const FarcasterApp = memo(() => {
   >({});
 
   // Pagination state
-  const [cursor, setCursor] = useState<string | null>(null);
+  const [cursor, setCursor] = useState<Cursor>(null);
   const [hasMore, setHasMore] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [allConversations, setAllConversations] = useState<UnrepliedDetail[]>(
