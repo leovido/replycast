@@ -1,98 +1,108 @@
-import React from 'react';
-import Image from 'next/image';
+import React, { memo } from 'react';
+import Image          from 'next/image';
+
+interface UnrepliedDetail {
+  username: string;
+  timeAgo: string;
+  castUrl: string;
+  text: string;
+  avatarUrl: string;
+  castHash: string;
+  authorFid: number;
+  originalCastText: string;
+  originalCastHash: string;
+  originalAuthorUsername: string;
+  replyCount: number;
+}
 
 export interface ReplyCardProps {
-  avatarUrl: string;
-  username: string;
-  text: string;
-  timeAgo: string;
+  detail: UnrepliedDetail;
+  openRank?: number | null;
   onClick?: () => void;
   viewMode?: 'list' | 'grid';
-  authorFid?: number;
-  openRankRank?: number | null;
 }
 
-export function ReplyCard({
-  avatarUrl,
-  username,
-  text,
-  timeAgo,
-  onClick,
-  viewMode = 'list',
-  authorFid,
-  openRankRank,
-}: ReplyCardProps) {
-  const isGrid = viewMode === 'grid';
-  
-  // Helper to get rank badge
-  const getRankBadge = (rank: number | null) => {
-    if (!rank) return null;
-    
-    if (rank <= 100) return { text: 'Top 100', color: 'bg-yellow-500 text-yellow-900' };
-    if (rank <= 500) return { text: 'Top 500', color: 'bg-blue-500 text-white' };
-    if (rank <= 1000) return { text: 'Top 1K', color: 'bg-green-500 text-white' };
-    if (rank <= 5000) return { text: 'Top 5K', color: 'bg-purple-500 text-white' };
-    return null;
-  };
-  
-
-  
-  const rankBadge = getRankBadge(openRankRank || null);
-  
+export const ReplyCard = memo<ReplyCardProps>(({ detail, onClick }) => {
   return (
-    <div
-      className={`bg-[#181A20] rounded-2xl shadow-xl p-6 transition hover:bg-[#23242a] focus-within:bg-[#23242a] outline-none ${
-        isGrid 
-          ? 'w-full' 
-          : 'max-w-md w-full mx-auto mb-6'
-      } flex items-start gap-4`}
+    <article
       tabIndex={0}
       role="button"
-      aria-label={`Open reply from @${username}`}
+      aria-label={`Open reply from @${detail.username}`}
       onClick={onClick}
-      onKeyDown={e => (onClick && (e.key === 'Enter' || e.key === ' ') && onClick())}
+      onKeyDown={e => {
+        if (onClick && (e.key === 'Enter' || e.key === ' ')) {
+          e.preventDefault();
+          onClick();
+        }
+      }}
+      className="
+  relative isolate flex flex-col gap-6
+  w-full max-w-lg mx-auto
+  rounded-2xl p-8 shadow-xl ring-1 ring-white/10
+  bg-zinc-900/75 backdrop-blur-lg overflow-hidden          /* ① overflow-hidden keeps glow inside */
+  transition hover:bg-zinc-900/80
+  focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400
+  group
+"
       style={{ fontFamily: 'Instrument Sans, Nunito, Inter, sans-serif' }}
     >
-      <Image
-        src={`/api/image-proxy?url=${avatarUrl}`}
-        alt={username}
-        width={isGrid ? 40 : 48}
-        height={isGrid ? 40 : 48}
-        className="rounded-full object-cover flex-shrink-0 border-2 border-[#23242a]"
-        style={{ background: 'linear-gradient(135deg, #7f5af0 0%, #23242a 100%)' }}
-        onError={e => (e.currentTarget.src = '/default-avatar.png')}
-      />
-      <div className="flex-1 min-w-0">
-        <div className="flex flex-col gap-0 mb-1">
-          <span className={`font-bold text-white font-sans ${
-            isGrid ? 'text-lg' : 'text-xl'
-          }`}>@{username}</span>
-          {authorFid !== undefined && (
-            <span className="text-sm text-white font-sans-rounded font-light">{authorFid}</span>
-          )}
-          {openRankRank && (
-            <div className="flex items-center gap-2 mt-1">
-              <span className="text-xs text-gray-400 font-sans">Rank: #{openRankRank}</span>
-              {rankBadge && (
-                <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${rankBadge.color}`}>
-                  {rankBadge.text}
-                </span>
-              )}
-            </div>
-          )}
+      {/* 0️⃣  - behind everything except the edge bar */}
+      <span
+  className="
+    pointer-events-none absolute inset-0 rounded-[inherit]
+    bg-gradient-to-br from-white/20 via-white/5 to-transparent
+    opacity-25 saturate-150 blur-sm
+  "
+/>
+
+
+      {/* 2️⃣  avatar & meta */}
+      <header className="flex items-center gap-4 z-10">
+        <Image
+          src={`/api/image-proxy?url=${detail.avatarUrl}`}
+          alt={`${detail.username}'s avatar`}
+          width={48}
+          height={48}
+          className="h-12 w-12 rounded-full object-cover"
+          loading="lazy"
+          quality={80}
+          onError={e => {
+            (e.currentTarget as HTMLImageElement).src = '/default-avatar.png';
+          }}
+        />
+        <div className="flex flex-col">
+          <span className="text-white font-semibold leading-tight text-lg">
+            @{detail.username}
+          </span>
+          <span className="text-sm text-white/60">{detail.timeAgo}</span>
         </div>
-        <div className="flex items-center gap-2 mb-1">
-          <span className="text-xs text-gray-400 font-sans">{timeAgo}</span>
-        </div>
-        <div className={`text-white font-sans leading-snug break-words ${
-          isGrid ? 'text-sm' : 'text-lg'
-        } mt-2`}>
-          {isGrid && text.length > 100 
-            ? `${text.substring(0, 100)}...` 
-            : text
-          }
-        </div>
-      </div>
-    </div>
+      </header>
+
+      {/* 3️⃣  reply text */}
+      <p className="z-10 text-white text-base leading-relaxed break-words">
+        {detail.text}
+      </p>
+
+      {/* 4️⃣  CTA */}
+      <button
+        type="button"
+        onClick={onClick}
+        className="
+          mt-auto self-start inline-flex items-center gap-2
+          rounded-xl px-6 py-3
+          bg-white/10 border border-white/20 text-white
+          text-base font-medium
+          transition hover:bg-white/20
+          focus:outline-none focus-visible:ring-2
+          focus-visible:ring-indigo-400
+          z-10"
+        aria-label="Reply"
+      >
+        {/* <ArrowRight className="h-4 w-4" /> */}
+        Reply
+      </button>
+    </article>
   );
-}
+});
+
+ReplyCard.displayName = 'ReplyCard';

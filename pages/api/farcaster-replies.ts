@@ -36,23 +36,36 @@ export default async function handler(
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  // Add cache headers - cache for 5 minutes
-  res.setHeader('Cache-Control', 'public, s-maxage=300, stale-while-revalidate=600');
+  // Performance optimized cache headers
+  res.setHeader('Cache-Control', 'public, s-maxage=300, stale-while-revalidate=600, max-age=60');
+  res.setHeader('CDN-Cache-Control', 's-maxage=300');
+  res.setHeader('Vary', 'Accept-Encoding');
+  
+  // Security and performance headers
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'DENY');
 
-  const { fid } = req.query;
+  const { fid, limit = '10', cursor } = req.query;
   
   if (!fid || typeof fid !== 'string') {
     return res.status(400).json({ error: 'FID parameter is required' });
   }
+
+  const limitNum = parseInt(limit as string, 10) || 10;
 
   if (!API_KEY) {
     return res.status(500).json({ error: 'API key not configured' });
   }
 
   try {
-    // === Step 1: Fetch your recent casts ===
+    // === Step 1: Fetch your recent casts with pagination ===
+    let userCastsUrl = `https://api.neynar.com/v2/farcaster/feed/user/casts?limit=${limitNum}&fid=${fid}`;
+    if (cursor) {
+      userCastsUrl += `&cursor=${cursor}`;
+    }
+    
     const userCastsRes = await fetch(
-      `https://api.neynar.com/v2/farcaster/feed/user/casts?limit=10&fid=${fid}`,
+      userCastsUrl,
       { headers: { "x-api-key": API_KEY } }
     ).then((res) => res.json());
 
@@ -60,7 +73,8 @@ export default async function handler(
       return res.status(200).json({
         unrepliedCount: 0,
         unrepliedDetails: [],
-        message: "No recent casts found."
+        message: "No recent casts found.",
+        nextCursor: null
       });
     }
 
@@ -79,7 +93,13 @@ export default async function handler(
       replyCount: number;
     }> = [];
 
+    // Process casts until we have enough unreplied conversations or run out of casts
     for (const cast of userCastsRes.casts) {
+      // Stop if we have enough items
+      if (unrepliedDetails.length >= limitNum) {
+        break;
+      }
+
       const hash = cast.hash;
       // === Step 2: Fetch the conversation for each cast ===
       const convoRes = await fetch(
@@ -132,10 +152,14 @@ export default async function handler(
       }
     }
 
+    // Determine next cursor - if we processed all casts and still need more, use the next cursor from Neynar
+    const nextCursor = userCastsRes.next?.cursor || null;
+
     return res.status(200).json({
       unrepliedCount,
       unrepliedDetails,
-      message: `You have ${unrepliedCount} unreplied comments today.`
+      message: `You have ${unrepliedCount} unreplied comments today.`,
+      nextCursor
     });
 
   } catch (error) {
