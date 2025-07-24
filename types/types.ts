@@ -8,6 +8,7 @@ export interface User {
 export interface UnrepliedDetail {
   username: string;
   timeAgo: string;
+  timestamp: number;
   castUrl: string;
   text: string;
   avatarUrl: string;

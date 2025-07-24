@@ -2,7 +2,7 @@ import { useEffect, useState, useRef, useCallback, useMemo, memo } from "react";
 import Image from "next/image";
 import dynamic from "next/dynamic";
 import sdk from "@farcaster/miniapp-sdk";
-import { FarcasterRepliesResponse, User } from "@/types/types";
+import { FarcasterRepliesResponse, UnrepliedDetail, User } from "@/types/types";
 
 // Lazy load ReplyCard component
 const ReplyCard = dynamic(
@@ -14,6 +14,71 @@ const ReplyCard = dynamic(
     ssr: false,
   }
 );
+
+async function fetchTodaysReplies(fid: number, limit = 25) {
+  let allReplies = [];
+  let cursor = undefined;
+  let keepGoing = true;
+
+  while (keepGoing) {
+    const url =
+      `/api/farcaster-notification-replies?fid=${fid}&limit=${limit}` +
+      (cursor ? `&cursor=${cursor}` : "");
+    const res = await fetch(url);
+    const data: FarcasterRepliesResponse = await res.json();
+
+    if (!res.ok || !data.unrepliedDetails) {
+      return {
+        unrepliedCount: 0,
+        unrepliedDetails: [],
+        message: "No unreplied comments found",
+      };
+    }
+
+    for (const reply of data.unrepliedDetails) {
+      if (!isToday(reply.timestamp)) {
+        keepGoing = false;
+        break;
+      }
+      allReplies.push(reply);
+    }
+
+    cursor = data.nextCursor;
+    if (!cursor) break;
+  }
+
+  const unrepliedDetails = allReplies.map((reply) => ({
+    username: reply.username,
+    timeAgo: reply.timeAgo,
+    timestamp: reply.timestamp,
+    castUrl: reply.castUrl,
+    text: reply.text,
+    avatarUrl: reply.avatarUrl,
+    castHash: reply.castHash,
+    authorFid: reply.authorFid,
+    originalCastText: reply.originalCastText,
+    originalCastHash: reply.originalCastHash,
+    originalAuthorUsername: reply.originalAuthorUsername,
+    replyCount: reply.replyCount,
+  }));
+
+  const response: FarcasterRepliesResponse = {
+    unrepliedCount: unrepliedDetails.length,
+    unrepliedDetails: unrepliedDetails,
+    message: `You have ${unrepliedDetails.length} unreplied comments today.`,
+  };
+  return response;
+}
+
+function isToday(timestamp: number) {
+  const replyDate = new Date(timestamp);
+  const now = new Date();
+  return (
+    replyDate.getFullYear() === now.getFullYear() &&
+    replyDate.getMonth() === now.getMonth() &&
+    replyDate.getDate() === now.getDate()
+  );
+}
 
 const mockReplies: FarcasterRepliesResponse = {
   unrepliedCount: 3,
@@ -162,8 +227,6 @@ const FarcasterApp = memo(() => {
     data: Record<number, number | null>;
     timestamp: number;
   }>({ data: {}, timestamp: 0 });
-
-  // Memoized utility functions
   const getCacheStatus = useCallback(() => {
     const now = Date.now();
     const isCacheValid = now - openRankCache.current.timestamp < CACHE_TTL;
@@ -257,20 +320,6 @@ const FarcasterApp = memo(() => {
     return 0;
   }, []);
 
-  const filterByDay = useCallback(
-    (details: UnrepliedDetail[]) => {
-      if (dayFilter === "all") return details;
-      return details.filter((detail) => {
-        const minutesAgo = getMinutesAgo(detail.timeAgo);
-        if (dayFilter === "today") return minutesAgo <= 60 * 24;
-        if (dayFilter === "3days") return minutesAgo <= 60 * 24 * 3;
-        if (dayFilter === "7days") return minutesAgo <= 60 * 24 * 7;
-        return true;
-      });
-    },
-    [dayFilter, getMinutesAgo]
-  );
-
   const sortDetails = useCallback(
     (details: UnrepliedDetail[]) => {
       const arr = [...details]; // Create copy to avoid mutation
@@ -309,10 +358,10 @@ const FarcasterApp = memo(() => {
   const processedData = useMemo(() => {
     if (!data?.unrepliedDetails) return [];
 
-    const filtered = filterByDay(data.unrepliedDetails);
+    const filtered = data.unrepliedDetails;
     const sorted = sortDetails(filtered);
     return sorted;
-  }, [data?.unrepliedDetails, filterByDay, sortDetails]);
+  }, [data?.unrepliedDetails, sortDetails]);
 
   // 1. Fetch user context once on mount
   useEffect(() => {
@@ -342,16 +391,18 @@ const FarcasterApp = memo(() => {
     const fetchData = async () => {
       setLoading(true);
       try {
-        const url = new URL(
-          "/api/farcaster-notification-replies",
-          window.location.origin
-        );
-        url.searchParams.set("fid", user.fid.toString());
-        const res = await fetch(url.toString(), {
-          signal: AbortSignal.timeout(15000),
-        });
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const responseData = await res.json();
+        // const url = new URL(
+        //   "/api/farcaster-notification-replies",
+        //   window.location.origin
+        // );
+        // url.searchParams.set("fid", user.fid.toString());
+
+        // const res = await fetch(url.toString(), {
+        //   signal: AbortSignal.timeout(15000),
+        // });
+        const responseData = await fetchTodaysReplies(user.fid, 25);
+        // if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        // const responseData = await res.json();
         if (responseData) {
           console.log("responseData", responseData);
           setData(responseData);
@@ -462,9 +513,12 @@ const FarcasterApp = memo(() => {
     // Force refresh by bypassing cache
     const userFid = user?.fid || 203666;
     try {
-      const res = await fetch(`/api/farcaster-replies?fid=${userFid}`, {
-        cache: "no-store", // Force fresh data
-      });
+      const res = await fetch(
+        `/api/farcaster-notification-replies?fid=${userFid}`,
+        {
+          cache: "no-store",
+        }
+      );
       const responseData = await res.json();
       if (responseData) {
         setData(responseData);
@@ -579,9 +633,7 @@ const FarcasterApp = memo(() => {
 
   // Filtered and sorted data for rendering
   const filteredDetails =
-    allConversations.length > 0
-      ? sortDetails(filterByDay(allConversations))
-      : [];
+    allConversations.length > 0 ? sortDetails(allConversations) : [];
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-600 via-blue-600 to-cyan-500 font-sans">
@@ -625,8 +677,8 @@ const FarcasterApp = memo(() => {
                   <Image
                     src={`/api/image-proxy?url=${user.pfpUrl}`}
                     alt="Profile picture"
-                    width={40}
-                    height={40}
+                    width={60}
+                    height={60}
                     className="rounded-full border-2 border-white/30"
                   />
                 )}
