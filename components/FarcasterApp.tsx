@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef, useCallback } from 'react'
 import Image from 'next/image'
-import { sdk } from '@farcaster/miniapp-sdk'
+import sdk from '@farcaster/miniapp-sdk'
 import { ReplyCard } from './ReplyCard';
 import { User } from '@/types/types';
 
