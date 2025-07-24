@@ -15,6 +15,7 @@
   "dependencies": {
     "@farcaster/miniapp-sdk": "^0.1.7",
     "@hono/node-server": "^1.11.1",
+    "@neynar/nodejs-sdk": "^3.27.0",
     "@tailwindcss/postcss": "^4.1.11",
     "dotenv": "^16.4.5",
     "ethers": "^6.15.0",
