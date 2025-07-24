@@ -1,11 +1,8 @@
 import { NextApiRequest, NextApiResponse } from "next";
 import { FetchAllNotificationsTypeEnum } from "@neynar/nodejs-sdk/build/api/apis/notifications-api";
-import { NeynarAPIClient, Configuration } from "@neynar/nodejs-sdk";
-import { FarcasterRepliesResponse } from "@/types/types";
+import { FarcasterRepliesResponse, UnrepliedDetail } from "@/types/types";
+import { client } from "@/client";
 
-const API_KEY = process.env.NEYNAR_API_KEY;
-
-// Helper to format time ago
 const timeAgo = (dateString: string): string => {
   const now = new Date();
   const then = new Date(dateString);
@@ -28,31 +25,25 @@ export default async function handler(
     return res.status(405).json({ error: "Method not allowed" });
   }
 
-  const { fid, limit = "100", cursor, type = "replies" } = req.query;
+  const { fid, limit = "25", cursor, type = "replies" } = req.query;
   if (!fid) {
     return res.status(400).json({ error: "fid query parameter is required" });
   }
 
-  if (!API_KEY) {
-    return res.status(500).json({ error: "Neynar API key not configured" });
-  }
-
   try {
-    const config = new Configuration({ apiKey: API_KEY });
-    const client = new NeynarAPIClient(config);
     const request = await client.fetchAllNotifications({
       fid: parseInt(fid as string, 10),
       limit: parseInt(limit as string),
       type: [type as FetchAllNotificationsTypeEnum],
-      cursor: cursor as string | undefined,
+      cursor: cursor ? (cursor as string) : undefined,
     });
     const replies = request.notifications;
     const nextCursor = request.next;
 
-    const unrepliedDetails = replies.map((reply) => ({
+    const unrepliedDetails: UnrepliedDetail[] = replies.map((reply) => ({
       username: reply.cast?.author?.username || "",
       timeAgo: reply.cast?.timestamp ? timeAgo(reply.cast.timestamp) : "",
-      timestamp: reply.cast?.timestamp || 0,
+      timestamp: reply.cast?.timestamp ? Number(reply.cast.timestamp) : 0,
       castUrl: `https://farcaster.xyz/${reply.cast?.author?.username}/${reply.cast?.hash}`,
       text: reply.cast?.text || "",
       avatarUrl: reply.cast?.author?.pfp_url || "",
@@ -68,7 +59,7 @@ export default async function handler(
       unrepliedCount: replies.length,
       unrepliedDetails: unrepliedDetails,
       message: `You have ${replies.length} unreplied comments today.`,
-      nextCursor: nextCursor ? nextCursor.toString() : null,
+      nextCursor: nextCursor ? nextCursor.cursor : null,
     };
 
     return res.status(200).json(response);

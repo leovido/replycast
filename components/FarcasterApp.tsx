@@ -15,15 +15,21 @@ const ReplyCard = dynamic(
   }
 );
 
-async function fetchTodaysReplies(fid: number, limit = 25) {
+async function fetchTodaysReplies(
+  fid: number,
+  limit = 25,
+  cursor: string | null
+) {
   let allReplies = [];
-  let cursor = undefined;
   let keepGoing = true;
 
   while (keepGoing) {
-    const url =
-      `/api/farcaster-notification-replies?fid=${fid}&limit=${limit}` +
-      (cursor ? `&cursor=${cursor}` : "");
+    let url = `/api/farcaster-notification-replies?fid=${fid}&limit=${limit}`;
+
+    if (cursor) {
+      url += `&cursor=${cursor}`;
+    }
+
     const res = await fetch(url);
     const data: FarcasterRepliesResponse = await res.json();
 
@@ -88,6 +94,7 @@ const mockReplies: FarcasterRepliesResponse = {
       username: "sophia",
       text: "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
       timeAgo: "2h",
+      timestamp: 1716666666,
       authorFid: 123,
       castUrl: "https://farcaster.xyz/cast/123",
       castHash: "123",
@@ -101,6 +108,7 @@ const mockReplies: FarcasterRepliesResponse = {
       username: "alex",
       text: "Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
       timeAgo: "1h",
+      timestamp: 1716666666,
       authorFid: 123,
       castUrl: "https://farcaster.xyz/cast/123",
       castHash: "123",
@@ -114,6 +122,7 @@ const mockReplies: FarcasterRepliesResponse = {
       username: "olivia",
       text: "Ut enim ad minim veniam, quis nostrud exercitation ullamco.",
       timeAgo: "5m",
+      timestamp: 1716666666,
       authorFid: 123,
       castUrl: "https://farcaster.xyz/cast/123",
       castHash: "123",
@@ -391,20 +400,13 @@ const FarcasterApp = memo(() => {
     const fetchData = async () => {
       setLoading(true);
       try {
-        // const url = new URL(
-        //   "/api/farcaster-notification-replies",
-        //   window.location.origin
-        // );
-        // url.searchParams.set("fid", user.fid.toString());
+        const responseData = await fetchTodaysReplies(
+          user.fid,
+          25,
+          cursor ? cursor : null
+        );
 
-        // const res = await fetch(url.toString(), {
-        //   signal: AbortSignal.timeout(15000),
-        // });
-        const responseData = await fetchTodaysReplies(user.fid, 25);
-        // if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        // const responseData = await res.json();
         if (responseData) {
-          console.log("responseData", responseData);
           setData(responseData);
           setLoading(false);
           setIsLoadingMore(false);
@@ -451,10 +453,14 @@ const FarcasterApp = memo(() => {
 
   // Intersection Observer for infinite scroll
   const loadMoreConversations = useCallback(async () => {
+    console.log("Loading more conversations");
     if (!hasMore || isLoadingMore || loading) return;
     setIsLoadingMore(true);
     try {
-      const url = new URL("/api/farcaster-replies", window.location.origin);
+      const url = new URL(
+        "/api/farcaster-notification-replies",
+        window.location.origin
+      );
       url.searchParams.set("fid", user?.fid.toString() || "203666");
       if (cursor) url.searchParams.set("cursor", cursor);
 
@@ -479,27 +485,26 @@ const FarcasterApp = memo(() => {
   }, [hasMore, isLoadingMore, loading, user, cursor]);
 
   useEffect(() => {
+    const current = observerRef.current;
+    console.log("Setting up observer on:", current);
+    if (!current) return;
+
     const observer = new IntersectionObserver(
       (entries) => {
         const [entry] = entries;
+        console.log("Observer entry:", entry);
         if (entry.isIntersecting && hasMore && !isLoadingMore && !loading) {
+          console.log("Triggering loadMoreConversations");
           loadMoreConversations();
         }
       },
-      {
-        rootMargin: "100px",
-        threshold: 0.1,
-      }
+      { rootMargin: "100px", threshold: 0.1 }
     );
 
-    if (observerRef.current) {
-      observer.observe(observerRef.current);
-    }
+    observer.observe(current);
 
     return () => {
-      if (observerRef.current) {
-        observer.unobserve(observerRef.current);
-      }
+      observer.unobserve(current);
     };
   }, [hasMore, isLoadingMore, loading, loadMoreConversations]);
 
@@ -514,14 +519,16 @@ const FarcasterApp = memo(() => {
     const userFid = user?.fid || 203666;
     try {
       const res = await fetch(
-        `/api/farcaster-notification-replies?fid=${userFid}`,
+        `/api/farcaster-notification-replies?fid=${userFid}&cursor=${cursor}`,
         {
           cache: "no-store",
         }
       );
       const responseData = await res.json();
       if (responseData) {
+        console.log("nextCursor", responseData.nextCursor);
         setData(responseData);
+        setAllConversations(responseData.unrepliedDetails);
 
         // Fetch OpenRank ranks for all FIDs in the response
         if (responseData.unrepliedDetails?.length > 0) {
@@ -931,7 +938,14 @@ const FarcasterApp = memo(() => {
 
           {/* Intersection Observer Element */}
           {hasMore && (
-            <div ref={observerRef} className="h-4 w-full" aria-hidden="true" />
+            <div
+              ref={observerRef}
+              className="h-4 w-full"
+              aria-hidden="true"
+              style={{ background: "rgba(255,0,0,0.1)" }}
+            >
+              {console.log("Rendering observer element", observerRef.current)}
+            </div>
           )}
 
           {/* Empty State */}
