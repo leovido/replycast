@@ -3,6 +3,8 @@ import Image from 'next/image'
 import dynamic from 'next/dynamic'
 import sdk from '@farcaster/miniapp-sdk'
 import { User } from '@/types/types';
+import { useSigner } from '@/hooks/useSigner';
+import { SignerSetup } from './SignerSetup';
 
 // Lazy load ReplyCard component
 const ReplyCard = dynamic(() => import('./ReplyCard').then(mod => ({ default: mod.ReplyCard })), {
@@ -141,6 +143,9 @@ const FarcasterApp = memo(() => {
   const [dayFilter, setDayFilter] = useState<'all' | 'today' | '3days' | '7days'>('all')
   const [sortOption, setSortOption] = useState<'newest' | 'oldest' | 'fid-asc' | 'fid-desc' | 'short' | 'medium' | 'long'>('newest')
   const [openRankRanks, setOpenRankRanks] = useState<Record<number, number | null>>({})
+  
+  // Signer functionality
+  const { signerState, hasSigner } = useSigner(user);
   
   // Pagination state
   const [cursor, setCursor] = useState<string | null>(null)
@@ -297,12 +302,16 @@ const FarcasterApp = memo(() => {
     const getUser = async () => {
       try {
         const ctx = await sdk.context;
-        const farUser = ctx?.user ?? {
-          fid: 203666,
-          username: 'leovido',
-          displayName: 'Leovido',
-          pfpUrl: 'https://wrpcd.net/cdn-cgi/imagedelivery/BXluQx4ige9GuW0Ia56BHw/252c844e-7be7-4dd5-6938-c1affcfd7e00/anim=false,fit=contain,f=auto,w=576',
+        const contextUser = ctx?.user;
+        
+        // Convert context user to our User type
+        const farUser: User = {
+          fid: contextUser?.fid ?? 203666,
+          username: contextUser?.username ?? 'leovido',
+          displayName: contextUser?.displayName ?? 'Leovido',
+          pfpUrl: contextUser?.pfpUrl ?? 'https://wrpcd.net/cdn-cgi/imagedelivery/BXluQx4ige9GuW0Ia56BHw/252c844e-7be7-4dd5-6938-c1affcfd7e00/anim=false,fit=contain,f=auto,w=576',
         };
+        
         setUser(farUser);
         await sdk.actions.ready();
        } catch (err) {
@@ -456,21 +465,32 @@ const FarcasterApp = memo(() => {
   }, []);
 
   const handleComposeCast = useCallback(async () => {
-    if (!selectedCast || !replyText.trim()) return
+    if (!selectedCast || !replyText.trim() || !hasSigner || !signerState.token) return
     
     setIsComposing(true)
     setReplyError(null)
     
     try {
-      const result = await sdk.actions.composeCast({
-        text: replyText,
-        parent: {
-          type: 'cast',
-          hash: selectedCast.castHash
-        }
-      })
+      // Use our custom signer API instead of the Mini App SDK
+      const response = await fetch('/api/signer/cast', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          text: replyText,
+          parentHash: selectedCast.castHash,
+          signerToken: signerState.token,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to send reply: ${response.status}`);
+      }
+
+      const result = await response.json();
       
-      if (result?.cast) {
+      if (result.success) {
         // Success! Clear the form and refresh data
         setSelectedCast(null)
         setReplyText('')
@@ -479,7 +499,6 @@ const FarcasterApp = memo(() => {
         setHasMore(true)
         setIsLoadingMore(false)
         setAllConversations([])
-        // fetchData(true) // This will now be handled by the new useEffect
       }
     } catch (error) {
       console.error('Failed to compose cast:', error)
@@ -487,7 +506,7 @@ const FarcasterApp = memo(() => {
     } finally {
       setIsComposing(false)
     }
-  }, [selectedCast, replyText]); // Removed fetchData from dependencies
+  }, [selectedCast, replyText, hasSigner, signerState.token]);
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
@@ -499,6 +518,12 @@ const FarcasterApp = memo(() => {
   }, [handleComposeCast, handleCancelReply]);
 
   const handleReply = async (cast: UnrepliedDetail) => {
+    // Check if user has a signer before allowing reply
+    if (!hasSigner) {
+      setReplyError('Please set up a signer first to reply to casts.');
+      return;
+    }
+    
     setSelectedCast(cast)
     setReplyText('')
     setReplyError(null)
@@ -646,6 +671,19 @@ const FarcasterApp = memo(() => {
                 </button>
               </div>
             </div>
+            
+            {/* Signer Setup Section */}
+            {user && !hasSigner && (
+              <div className="mt-6">
+                <SignerSetup 
+                  user={user} 
+                  onSignerApproved={(publicKey) => {
+                    // Update user state to include signer
+                    setUser(prev => prev ? { ...prev, signerPublicKey: publicKey } : null);
+                  }}
+                />
+              </div>
+            )}
             
             {/* Filter Section */}
             <div className="glass rounded-2xl p-4 mt-6 border border-white/20">
@@ -904,7 +942,7 @@ const FarcasterApp = memo(() => {
               </button>
               <button
                 onClick={handleComposeCast}
-                disabled={isComposing || !replyText.trim() || isOverLimit}
+                disabled={isComposing || !replyText.trim() || isOverLimit || !hasSigner}
                 className="btn-primary flex-1 disabled:opacity-50 disabled:cursor-not-allowed"
                 style={{ fontFamily: 'Instrument Sans, Nunito, Inter, sans-serif' }}
               >
@@ -929,8 +967,10 @@ const FarcasterApp = memo(() => {
                     </svg>
                     Sending...
                   </span>
-                ) : (
+                ) : hasSigner ? (
                   'Reply'
+                ) : (
+                  'Setup Signer First'
                 )}
               </button>
             </div>
