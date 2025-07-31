@@ -392,7 +392,7 @@ const FarcasterApp = memo(() => {
         // Get user context
         const ctx = await sdk.context;
         const farUser = ctx?.user ?? {
-          fid: 234616,
+          fid: 203666,
           username: "leovido",
           displayName: "Leovido",
           pfpUrl:
