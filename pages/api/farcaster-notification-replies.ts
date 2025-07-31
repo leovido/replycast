@@ -70,7 +70,6 @@ export default async function handler(
   }
 
   const { fid, limit = "25", cursor, type = "replies" } = req.query;
-  console.log("📥 API Request:", { fid, limit, cursor, type });
 
   if (!fid) {
     return res.status(400).json({ error: "fid query parameter is required" });
@@ -125,13 +124,6 @@ export default async function handler(
       message: `You have ${unrepliedReplies.length} unreplied comments today.`,
       nextCursor: nextCursor ? nextCursor.cursor : null,
     };
-
-    console.log("📤 API Response:", {
-      unrepliedCount: response.unrepliedCount,
-      detailsCount: response.unrepliedDetails.length,
-      nextCursor: response.nextCursor,
-      hasMore: !!response.nextCursor,
-    });
 
     return res.status(200).json(response);
   } catch (error) {
