@@ -835,10 +835,18 @@ const FarcasterApp = memo(() => {
                       fontFamily: "Instrument Sans, Nunito, Inter, sans-serif",
                     }}
                   >
-                    <option value="all">All</option>
-                    <option value="today">Today</option>
-                    <option value="3days">Last 3 days</option>
-                    <option value="7days">Last 7 days</option>
+                    <option value="all" className="bg-gray-800 text-white">
+                      All
+                    </option>
+                    <option value="today" className="bg-gray-800 text-white">
+                      Today
+                    </option>
+                    <option value="3days" className="bg-gray-800 text-white">
+                      Last 3 days
+                    </option>
+                    <option value="7days" className="bg-gray-800 text-white">
+                      Last 7 days
+                    </option>
                   </select>
                 </div>
                 {/* Sort Dropdown */}
@@ -854,13 +862,27 @@ const FarcasterApp = memo(() => {
                       fontFamily: "Instrument Sans, Nunito, Inter, sans-serif",
                     }}
                   >
-                    <option value="newest">Newest</option>
-                    <option value="oldest">Oldest</option>
-                    <option value="fid-asc">FID: Low → High</option>
-                    <option value="fid-desc">FID: High → Low</option>
-                    <option value="short">Cast: Short (&lt;20 chars)</option>
-                    <option value="medium">Cast: Medium (20–50 chars)</option>
-                    <option value="long">Cast: Long (&gt;50 chars)</option>
+                    <option value="newest" className="bg-gray-800 text-white">
+                      Newest
+                    </option>
+                    <option value="oldest" className="bg-gray-800 text-white">
+                      Oldest
+                    </option>
+                    <option value="fid-asc" className="bg-gray-800 text-white">
+                      FID: Low → High
+                    </option>
+                    <option value="fid-desc" className="bg-gray-800 text-white">
+                      FID: High → Low
+                    </option>
+                    <option value="short" className="bg-gray-800 text-white">
+                      Cast: Short (&lt;20 chars)
+                    </option>
+                    <option value="medium" className="bg-gray-800 text-white">
+                      Cast: Medium (20–50 chars)
+                    </option>
+                    <option value="long" className="bg-gray-800 text-white">
+                      Cast: Long (&gt;50 chars)
+                    </option>
                   </select>
                 </div>
               </div>
@@ -977,7 +999,7 @@ const FarcasterApp = memo(() => {
               />
               <div>
                 <div
-                  className="font-bold text-lg text-white"
+                  className="font-bold text-lg text-gray-900"
                   style={{
                     fontFamily: "Instrument Sans, Nunito, Inter, sans-serif",
                   }}
