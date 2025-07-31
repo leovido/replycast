@@ -376,6 +376,7 @@ const FarcasterApp = memo(() => {
   // 1. Fetch user context once on mount
   useEffect(() => {
     const getUser = async () => {
+      await sdk.actions.ready();
       try {
         const ctx = await sdk.context;
         const farUser = ctx?.user ?? {
@@ -386,7 +387,6 @@ const FarcasterApp = memo(() => {
             "https://wrpcd.net/cdn-cgi/imagedelivery/BXluQx4ige9GuW0Ia56BHw/252c844e-7be7-4dd5-6938-c1affcfd7e00/anim=false,fit=contain,f=auto,w=576",
         };
         setUser(farUser);
-        await sdk.actions.ready();
       } catch (err) {
         setError("Failed to load user");
         setLoading(false);
@@ -599,7 +599,7 @@ const FarcasterApp = memo(() => {
 
   const handleReply = async (cast: UnrepliedDetail) => {
     try {
-      console.log('viewing cast...')
+      console.log("viewing cast...");
       await sdk.actions.viewCast({
         hash: cast.castHash,
       });
