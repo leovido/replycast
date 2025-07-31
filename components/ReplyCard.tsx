@@ -1,5 +1,5 @@
-import React, { memo } from 'react';
-import Image          from 'next/image';
+import React, { memo } from "react";
+import Image from "next/image";
 
 interface UnrepliedDetail {
   username: string;
@@ -19,7 +19,7 @@ export interface ReplyCardProps {
   detail: UnrepliedDetail;
   openRank?: number | null;
   onClick?: () => void;
-  viewMode?: 'list' | 'grid';
+  viewMode?: "list" | "grid";
 }
 
 export const ReplyCard = memo<ReplyCardProps>(({ detail, onClick }) => {
@@ -29,8 +29,8 @@ export const ReplyCard = memo<ReplyCardProps>(({ detail, onClick }) => {
       role="button"
       aria-label={`Open reply from @${detail.username}`}
       onClick={onClick}
-      onKeyDown={e => {
-        if (onClick && (e.key === 'Enter' || e.key === ' ')) {
+      onKeyDown={(e) => {
+        if (onClick && (e.key === "Enter" || e.key === " ")) {
           e.preventDefault();
           onClick();
         }
@@ -44,19 +44,15 @@ export const ReplyCard = memo<ReplyCardProps>(({ detail, onClick }) => {
   focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400
   group
 "
-      style={{ fontFamily: 'Instrument Sans, Nunito, Inter, sans-serif' }}
+      style={{ fontFamily: "Instrument Sans, Nunito, Inter, sans-serif" }}
     >
-      {/* 0️⃣  - behind everything except the edge bar */}
       <span
-  className="
-    pointer-events-none absolute inset-0 rounded-[inherit]
-    bg-gradient-to-br from-white/20 via-white/5 to-transparent
-    opacity-25 saturate-150 blur-sm
-  "
-/>
-
-
-      {/* 2️⃣  avatar & meta */}
+        className="
+          pointer-events-none absolute inset-0 rounded-[inherit]
+          bg-gradient-to-br from-white/20 via-white/5 to-transparent
+          opacity-25 saturate-150 blur-sm
+        "
+      />
       <header className="flex items-center gap-4 z-10">
         <Image
           src={`/api/image-proxy?url=${detail.avatarUrl}`}
@@ -66,24 +62,23 @@ export const ReplyCard = memo<ReplyCardProps>(({ detail, onClick }) => {
           className="h-12 w-12 rounded-full object-cover"
           loading="lazy"
           quality={80}
-          onError={e => {
-            (e.currentTarget as HTMLImageElement).src = '/default-avatar.png';
+          onError={(e) => {
+            (e.currentTarget as HTMLImageElement).src = "/default-avatar.png";
           }}
         />
         <div className="flex flex-col">
           <span className="text-white font-semibold leading-tight text-lg">
             @{detail.username}
           </span>
+          <span className="text-white/70 text-sm">{detail.authorFid}</span>
           <span className="text-sm text-white/60">{detail.timeAgo}</span>
         </div>
       </header>
 
-      {/* 3️⃣  reply text */}
       <p className="z-10 text-white text-base leading-relaxed break-words">
         {detail.text}
       </p>
 
-      {/* 4️⃣  CTA */}
       <button
         type="button"
         onClick={onClick}
@@ -105,4 +100,4 @@ export const ReplyCard = memo<ReplyCardProps>(({ detail, onClick }) => {
   );
 });
 
-ReplyCard.displayName = 'ReplyCard';
+ReplyCard.displayName = "ReplyCard";

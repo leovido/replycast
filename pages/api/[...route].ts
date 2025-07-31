@@ -9,6 +9,6 @@ export const config: PageConfig = {
   // runtime: "edge",
 };
 
-const app = new Hono().basePath("/api");
+const app = new Hono();
 
 export default handle(app);

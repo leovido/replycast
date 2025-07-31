@@ -1,4 +1,5 @@
-import { NextApiRequest, NextApiResponse } from 'next';
+import { client } from "@/client";
+import { NextApiRequest, NextApiResponse } from "next";
 
 // === CONFIG ===
 const API_KEY = process.env.NEYNAR_API_KEY;
@@ -15,7 +16,7 @@ const timeAgo = (dateString: string): string => {
   if (diffHr < 24) return `${diffHr}h ago`;
   const diffDay = Math.floor(diffHr / 24);
   return `${diffDay}d ago`;
-}
+};
 
 const flattenReplies = (replies: any[]): any[] => {
   let all: any[] = [];
@@ -26,64 +27,64 @@ const flattenReplies = (replies: any[]): any[] => {
     }
   }
   return all;
-}
+};
 
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
-  if (req.method !== 'GET') {
-    return res.status(405).json({ error: 'Method not allowed' });
+  if (req.method !== "GET") {
+    return res.status(405).json({ error: "Method not allowed" });
   }
 
   // Performance optimized cache headers
-  res.setHeader('Cache-Control', 'public, s-maxage=300, stale-while-revalidate=600, max-age=60');
-  res.setHeader('CDN-Cache-Control', 's-maxage=300');
-  res.setHeader('Vary', 'Accept-Encoding');
-  
-  // Security and performance headers
-  res.setHeader('X-Content-Type-Options', 'nosniff');
-  res.setHeader('X-Frame-Options', 'DENY');
+  res.setHeader(
+    "Cache-Control",
+    "public, s-maxage=300, stale-while-revalidate=600, max-age=60"
+  );
+  res.setHeader("CDN-Cache-Control", "s-maxage=300");
+  res.setHeader("Vary", "Accept-Encoding");
 
-  const { fid, limit = '10', cursor } = req.query;
-  
-  if (!fid || typeof fid !== 'string') {
-    return res.status(400).json({ error: 'FID parameter is required' });
+  // Security and performance headers
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  res.setHeader("X-Frame-Options", "DENY");
+
+  const { fid, limit = "10", cursor } = req.query;
+
+  if (!fid || typeof fid !== "string") {
+    return res.status(400).json({ error: "FID parameter is required" });
   }
 
   const limitNum = parseInt(limit as string, 10) || 10;
 
   if (!API_KEY) {
-    return res.status(500).json({ error: 'API key not configured' });
+    return res.status(500).json({ error: "API key not configured" });
   }
 
   try {
     // === Step 1: Fetch your recent casts with pagination ===
-    let userCastsUrl = `https://api.neynar.com/v2/farcaster/feed/user/casts?limit=${limitNum}&fid=${fid}`;
-    if (cursor) {
-      userCastsUrl += `&cursor=${cursor}`;
-    }
-    
-    const userCastsRes = await fetch(
-      userCastsUrl,
-      { headers: { "x-api-key": API_KEY } }
-    ).then((res) => res.json());
+    const userCastsRes = await client.fetchCastsForUser({
+      fid: parseInt(fid as string, 10),
+      limit: limitNum,
+      includeReplies: true,
+      cursor: cursor as string,
+    });
 
     if (!userCastsRes || !Array.isArray(userCastsRes.casts)) {
       return res.status(200).json({
         unrepliedCount: 0,
         unrepliedDetails: [],
         message: "No recent casts found.",
-        nextCursor: null
+        nextCursor: null,
       });
     }
 
     let unrepliedCount = 0;
-    const unrepliedDetails: Array<{ 
-      username: string; 
-      timeAgo: string; 
-      castUrl: string; 
-      text: string; 
+    const unrepliedDetails: Array<{
+      username: string;
+      timeAgo: string;
+      castUrl: string;
+      text: string;
       avatarUrl: string;
       castHash: string;
       authorFid: number;
@@ -102,10 +103,12 @@ export default async function handler(
 
       const hash = cast.hash;
       // === Step 2: Fetch the conversation for each cast ===
-      const convoRes = await fetch(
-        `https://api.neynar.com/v2/farcaster/cast/conversation?identifier=${hash}&type=hash&reply_depth=2&limit=50`,
-        { headers: { "x-api-key": API_KEY } }
-      ).then((res) => res.json());
+      const convoRes = await client.lookupCastConversation({
+        identifier: hash,
+        type: "hash",
+        replyDepth: 2,
+        limit: 50,
+      });
 
       const convo = convoRes.conversation?.cast;
       if (!convo) continue;
@@ -126,28 +129,30 @@ export default async function handler(
         const firstReply = replies[0];
         const username = firstReply?.author?.username || "(unknown)";
         const timeAgoStr = timeAgo(firstReply?.timestamp || cast.timestamp);
-        const castUrl = `https://farcaster.xyz/${cast.author?.username || 'unknown'}/${cast.hash}`;
-        const text = firstReply?.text || '';
-        const avatarUrl = firstReply?.author?.pfp_url || '';
+        const castUrl = `https://farcaster.xyz/${
+          cast.author?.username || "unknown"
+        }/${cast.hash}`;
+        const text = firstReply?.text || "";
+        const avatarUrl = firstReply?.author?.pfp_url || "";
         const castHash = cast.hash;
         const authorFid = firstReply?.author?.fid || 0;
-        const originalCastText = cast.text || '';
+        const originalCastText = cast.text || "";
         const originalCastHash = cast.hash;
-        const originalAuthorUsername = cast.author?.username || 'unknown';
+        const originalAuthorUsername = cast.author?.username || "unknown";
         const replyCount = replies.length;
-        
-        unrepliedDetails.push({ 
-          username, 
-          timeAgo: timeAgoStr, 
-          castUrl, 
-          text, 
-          avatarUrl, 
-          castHash, 
+
+        unrepliedDetails.push({
+          username,
+          timeAgo: timeAgoStr,
+          castUrl,
+          text,
+          avatarUrl,
+          castHash,
           authorFid,
           originalCastText,
           originalCastHash,
           originalAuthorUsername,
-          replyCount
+          replyCount,
         });
       }
     }
@@ -159,14 +164,13 @@ export default async function handler(
       unrepliedCount,
       unrepliedDetails,
       message: `You have ${unrepliedCount} unreplied comments today.`,
-      nextCursor
+      nextCursor,
     });
-
   } catch (error) {
-    console.error('API Error:', error);
-    return res.status(500).json({ 
+    console.error("API Error:", error);
+    return res.status(500).json({
       error: "Internal server error",
-      message: error instanceof Error ? error.message : "Unknown error"
+      message: error instanceof Error ? error.message : "Unknown error",
     });
   }
-} 
+}

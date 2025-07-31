@@ -1,80 +1,139 @@
-import { useEffect, useState, useRef, useCallback, useMemo, memo } from 'react'
-import Image from 'next/image'
-import dynamic from 'next/dynamic'
-import sdk from '@farcaster/miniapp-sdk'
-import { User } from '@/types/types';
+import { useEffect, useState, useRef, useCallback, useMemo, memo } from "react";
+import Image from "next/image";
+import dynamic from "next/dynamic";
+import { sdk } from "@farcaster/miniapp-sdk";
+import {
+  Cursor,
+  FarcasterRepliesResponse,
+  UnrepliedDetail,
+  User,
+} from "@/types/types";
 
 // Lazy load ReplyCard component
-const ReplyCard = dynamic(() => import('./ReplyCard').then(mod => ({ default: mod.ReplyCard })), {
-  loading: () => <div className="animate-pulse bg-white/10 rounded-xl h-32" />,
-  ssr: false
-});
+const ReplyCard = dynamic(
+  () => import("./ReplyCard").then((mod) => ({ default: mod.ReplyCard })),
+  {
+    loading: () => (
+      <div className="animate-pulse bg-white/10 rounded-xl h-32" />
+    ),
+    ssr: false,
+  }
+);
 
-interface UnrepliedDetail {
-  username: string;
-  timeAgo: string;
-  castUrl: string;
-  text: string;
-  avatarUrl: string;
-  castHash: string;
-  authorFid: number;
-  originalCastText: string;
-  originalCastHash: string;
-  originalAuthorUsername: string;
-  replyCount: number;
+async function fetchTodaysReplies(fid: number, limit = 25, cursor: Cursor) {
+  let allReplies = [];
+  let keepGoing = true;
+
+  while (keepGoing) {
+    let url = `/api/farcaster-notification-replies?fid=${fid}&limit=${limit}`;
+
+    if (cursor) {
+      url += `&cursor=${cursor}`;
+    }
+
+    const res = await fetch(url);
+    const data: FarcasterRepliesResponse = await res.json();
+
+    if (!res.ok || !data.unrepliedDetails) {
+      return {
+        unrepliedCount: 0,
+        unrepliedDetails: [],
+        message: "No unreplied comments found",
+      };
+    }
+
+    for (const reply of data.unrepliedDetails) {
+      if (!isToday(reply.timestamp)) {
+        keepGoing = false;
+        break;
+      }
+      allReplies.push(reply);
+    }
+
+    cursor = data.nextCursor;
+    if (!cursor) break;
+  }
+
+  const unrepliedDetails = allReplies.map((reply) => ({
+    username: reply.username,
+    timeAgo: reply.timeAgo,
+    timestamp: reply.timestamp,
+    castUrl: reply.castUrl,
+    text: reply.text,
+    avatarUrl: reply.avatarUrl,
+    castHash: reply.castHash,
+    authorFid: reply.authorFid,
+    originalCastText: reply.originalCastText,
+    originalCastHash: reply.originalCastHash,
+    originalAuthorUsername: reply.originalAuthorUsername,
+    replyCount: reply.replyCount,
+  }));
+
+  const response: FarcasterRepliesResponse = {
+    unrepliedCount: unrepliedDetails.length,
+    unrepliedDetails: unrepliedDetails,
+    message: `You have ${unrepliedDetails.length} unreplied comments today.`,
+  };
+  return response;
 }
 
-interface FarcasterRepliesResponse {
-  unrepliedCount: number;
-  unrepliedDetails: UnrepliedDetail[];
-  message: string;
-  nextCursor?: string | null;
+function isToday(timestamp: number) {
+  const replyDate = new Date(timestamp);
+  const now = new Date();
+  return (
+    replyDate.getFullYear() === now.getFullYear() &&
+    replyDate.getMonth() === now.getMonth() &&
+    replyDate.getDate() === now.getDate()
+  );
 }
 
 const mockReplies: FarcasterRepliesResponse = {
   unrepliedCount: 3,
   unrepliedDetails: [
-  {
-    avatarUrl: 'https://randomuser.me/api/portraits/women/68.jpg',
-    username: 'sophia',
-    text: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
-    timeAgo: '2h',
-    authorFid: 123,
-    castUrl: 'https://farcaster.xyz/cast/123',
-    castHash: '123',
-    originalCastText: 'Original text',
-    originalCastHash: '123',
-    originalAuthorUsername: 'original_author',
-    replyCount: 0,
-  },
-  {
-    avatarUrl: 'https://randomuser.me/api/portraits/men/32.jpg',
-    username: 'alex',
-    text: 'Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.',
-    timeAgo: '1h',
-    authorFid: 123,
-    castUrl: 'https://farcaster.xyz/cast/123',
-    castHash: '123',
-    originalCastText: 'Original text',
-    originalCastHash: '123',
-    originalAuthorUsername: 'original_author',
-    replyCount: 0,
-  },
-  {
-    avatarUrl: 'https://randomuser.me/api/portraits/women/65.jpg',
-    username: 'olivia',
-    text: 'Ut enim ad minim veniam, quis nostrud exercitation ullamco.',
-    timeAgo: '5m',
-    authorFid: 123,
-    castUrl: 'https://farcaster.xyz/cast/123',
-    castHash: '123',
-    originalCastText: 'Original text',
-    originalCastHash: '123',
-    originalAuthorUsername: 'original_author',
-    replyCount: 0,
-  },
+    {
+      avatarUrl: "https://randomuser.me/api/portraits/women/68.jpg",
+      username: "sophia",
+      text: "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+      timeAgo: "2h",
+      timestamp: 1716666666,
+      authorFid: 123,
+      castUrl: "https://farcaster.xyz/cast/123",
+      castHash: "123",
+      originalCastText: "Original text",
+      originalCastHash: "123",
+      originalAuthorUsername: "original_author",
+      replyCount: 0,
+    },
+    {
+      avatarUrl: "https://randomuser.me/api/portraits/men/32.jpg",
+      username: "alex",
+      text: "Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
+      timeAgo: "1h",
+      timestamp: 1716666666,
+      authorFid: 123,
+      castUrl: "https://farcaster.xyz/cast/123",
+      castHash: "123",
+      originalCastText: "Original text",
+      originalCastHash: "123",
+      originalAuthorUsername: "original_author",
+      replyCount: 0,
+    },
+    {
+      avatarUrl: "https://randomuser.me/api/portraits/women/65.jpg",
+      username: "olivia",
+      text: "Ut enim ad minim veniam, quis nostrud exercitation ullamco.",
+      timeAgo: "5m",
+      timestamp: 1716666666,
+      authorFid: 123,
+      castUrl: "https://farcaster.xyz/cast/123",
+      castHash: "123",
+      originalCastText: "Original text",
+      originalCastHash: "123",
+      originalAuthorUsername: "original_author",
+      replyCount: 0,
+    },
   ],
-  message: 'Success',
+  message: "Success",
 };
 
 // Memoized Loading Screen Component
@@ -101,27 +160,39 @@ const LoadingScreen = memo(() => {
             </svg>
           </div>
         </div>
-        
+
         {/* App Title */}
-        <h1 className="text-3xl font-black text-white mb-2 tracking-tight" style={{ fontFamily: 'Instrument Sans, Nunito, Inter, sans-serif' }}>
+        <h1
+          className="text-3xl font-black text-white mb-2 tracking-tight"
+          style={{ fontFamily: "Instrument Sans, Nunito, Inter, sans-serif" }}
+        >
           ReplyCast
         </h1>
         <p className="text-white/80 text-lg font-medium mb-8">
           Loading your conversations...
         </p>
-        
+
         {/* Loading Animation */}
         <div className="flex justify-center space-x-2">
-          <div className="w-3 h-3 bg-white/60 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
-          <div className="w-3 h-3 bg-white/60 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
-          <div className="w-3 h-3 bg-white/60 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+          <div
+            className="w-3 h-3 bg-white/60 rounded-full animate-bounce"
+            style={{ animationDelay: "0ms" }}
+          ></div>
+          <div
+            className="w-3 h-3 bg-white/60 rounded-full animate-bounce"
+            style={{ animationDelay: "150ms" }}
+          ></div>
+          <div
+            className="w-3 h-3 bg-white/60 rounded-full animate-bounce"
+            style={{ animationDelay: "300ms" }}
+          ></div>
         </div>
       </div>
     </div>
-  )
+  );
 });
 
-LoadingScreen.displayName = 'LoadingScreen';
+LoadingScreen.displayName = "LoadingScreen";
 
 // Constants moved outside component to prevent recreation
 const CACHE_TTL = 5 * 60 * 1000; // 5 minutes in milliseconds
@@ -129,107 +200,121 @@ const MAX_CHARACTERS = 320; // Farcaster cast limit
 
 const FarcasterApp = memo(() => {
   const [user, setUser] = useState<User | null>(null);
-  const [data, setData] = useState<FarcasterRepliesResponse | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const [selectedCast, setSelectedCast] = useState<UnrepliedDetail | null>(null)
-  const [replyText, setReplyText] = useState('')
-  const [isComposing, setIsComposing] = useState(false)
-  const [replyError, setReplyError] = useState<string | null>(null)
-  const [isRefreshing, setIsRefreshing] = useState(false)
-  const [viewMode, setViewMode] = useState<'list' | 'grid'>('list')
-  const [dayFilter, setDayFilter] = useState<'all' | 'today' | '3days' | '7days'>('all')
-  const [sortOption, setSortOption] = useState<'newest' | 'oldest' | 'fid-asc' | 'fid-desc' | 'short' | 'medium' | 'long'>('newest')
-  const [openRankRanks, setOpenRankRanks] = useState<Record<number, number | null>>({})
-  
+  const [data, setData] = useState<FarcasterRepliesResponse | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [selectedCast, setSelectedCast] = useState<UnrepliedDetail | null>(
+    null
+  );
+  const [replyText, setReplyText] = useState("");
+  const [isComposing, setIsComposing] = useState(false);
+  const [replyError, setReplyError] = useState<string | null>(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [viewMode, setViewMode] = useState<"list" | "grid">("list");
+  const [dayFilter, setDayFilter] = useState<
+    "all" | "today" | "3days" | "7days"
+  >("all");
+  const [sortOption, setSortOption] = useState<
+    "newest" | "oldest" | "fid-asc" | "fid-desc" | "short" | "medium" | "long"
+  >("newest");
+  const [openRankRanks, setOpenRankRanks] = useState<
+    Record<number, number | null>
+  >({});
+
   // Pagination state
-  const [cursor, setCursor] = useState<string | null>(null)
-  const [hasMore, setHasMore] = useState(true)
-  const [isLoadingMore, setIsLoadingMore] = useState(false)
-  const [allConversations, setAllConversations] = useState<UnrepliedDetail[]>([])
-  
-  const textareaRef = useRef<HTMLTextAreaElement>(null)
-  const observerRef = useRef<HTMLDivElement>(null)
-  
+  const [cursor, setCursor] = useState<Cursor>(null);
+  const [hasMore, setHasMore] = useState(true);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [allConversations, setAllConversations] = useState<UnrepliedDetail[]>(
+    []
+  );
+
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const observerRef = useRef<HTMLDivElement>(null);
+
   // Cache for OpenRank data with TTL (5 minutes)
   const openRankCache = useRef<{
     data: Record<number, number | null>;
     timestamp: number;
   }>({ data: {}, timestamp: 0 });
-
-  // Memoized utility functions
   const getCacheStatus = useCallback(() => {
     const now = Date.now();
-    const isCacheValid = (now - openRankCache.current.timestamp) < CACHE_TTL;
+    const isCacheValid = now - openRankCache.current.timestamp < CACHE_TTL;
     const cacheAge = Math.round((now - openRankCache.current.timestamp) / 1000);
     const cachedFids = Object.keys(openRankCache.current.data).length;
-    
+
     return {
       isValid: isCacheValid,
       age: cacheAge,
       cachedFids,
-      ttl: Math.round(CACHE_TTL / 1000)
+      ttl: Math.round(CACHE_TTL / 1000),
     };
   }, []);
 
   // Helper to fetch OpenRank ranks with caching (optimized)
   const fetchOpenRankRanks = useCallback(async (fids: number[]) => {
     if (fids.length === 0) return;
-    
+
     const now = Date.now();
     const uniqueFids = Array.from(new Set(fids)); // More efficient Set conversion
-    
+
     // Check if cache is still valid
-    const isCacheValid = (now - openRankCache.current.timestamp) < CACHE_TTL;
-    
+    const isCacheValid = now - openRankCache.current.timestamp < CACHE_TTL;
+
     // Filter out FIDs that are already cached and valid
-    const fidsToFetch = uniqueFids.filter(fid => 
-      !isCacheValid || !openRankCache.current.data.hasOwnProperty(fid)
+    const fidsToFetch = uniqueFids.filter(
+      (fid) => !isCacheValid || !openRankCache.current.data.hasOwnProperty(fid)
     );
-    
+
     // If we have cached data, use it immediately
     if (isCacheValid) {
       const cachedRanks: Record<number, number | null> = {};
-      uniqueFids.forEach(fid => {
+      uniqueFids.forEach((fid) => {
         if (openRankCache.current.data.hasOwnProperty(fid)) {
           cachedRanks[fid] = openRankCache.current.data[fid];
         }
       });
-      
+
       if (Object.keys(cachedRanks).length > 0) {
-        setOpenRankRanks(prev => ({ ...prev, ...cachedRanks }));
+        setOpenRankRanks((prev) => ({ ...prev, ...cachedRanks }));
       }
     }
-    
+
     // If no FIDs need fetching, we're done
     if (fidsToFetch.length === 0) return;
-    
+
     try {
-      const response = await fetch(`/api/openRank?fids=${fidsToFetch.join(',')}`, {
-        signal: AbortSignal.timeout(10000) // 10 second timeout
-      });
-      
+      const response = await fetch(
+        `/api/openRank?fids=${fidsToFetch.join(",")}`,
+        {
+          signal: AbortSignal.timeout(10000), // 10 second timeout
+        }
+      );
+
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
-      
+
       const data = await response.json();
-      
+
       if (data.ranks) {
         // Convert string keys to numbers for consistency
         const newRankMap: Record<number, number | null> = {};
-        
+
         Object.entries(data.ranks).forEach(([fid, rank]) => {
           newRankMap[parseInt(fid)] = rank as number | null;
         });
-        
+
         // Update cache with new data
-        openRankCache.current.data = { ...openRankCache.current.data, ...newRankMap };
+        openRankCache.current.data = {
+          ...openRankCache.current.data,
+          ...newRankMap,
+        };
         openRankCache.current.timestamp = now;
-        
+
         // Update state with new data
-        setOpenRankRanks(prev => ({ ...prev, ...newRankMap }));
+        setOpenRankRanks((prev) => ({ ...prev, ...newRankMap }));
       }
     } catch (error) {
-      console.error('Failed to fetch OpenRank ranks:', error);
+      console.error("Failed to fetch OpenRank ranks:", error);
     }
   }, []);
 
@@ -239,78 +324,89 @@ const FarcasterApp = memo(() => {
     if (!match) return 0;
     const value = parseInt(match[1], 10);
     const unit = match[2];
-    if (unit === 'm') return value;
-    if (unit === 'h') return value * 60;
-    if (unit === 'd') return value * 60 * 24;
+    if (unit === "m") return value;
+    if (unit === "h") return value * 60;
+    if (unit === "d") return value * 60 * 24;
     return 0;
   }, []);
 
-  const filterByDay = useCallback((details: UnrepliedDetail[]) => {
-    if (dayFilter === 'all') return details;
-    return details.filter(detail => {
-      const minutesAgo = getMinutesAgo(detail.timeAgo);
-      if (dayFilter === 'today') return minutesAgo <= 60 * 24;
-      if (dayFilter === '3days') return minutesAgo <= 60 * 24 * 3;
-      if (dayFilter === '7days') return minutesAgo <= 60 * 24 * 7;
-      return true;
-    });
-  }, [dayFilter, getMinutesAgo]);
-
-  const sortDetails = useCallback((details: UnrepliedDetail[]) => {
-    const arr = [...details]; // Create copy to avoid mutation
-    switch (sortOption) {
-      case 'newest':
-        arr.sort((a, b) => getMinutesAgo(a.timeAgo) - getMinutesAgo(b.timeAgo));
-        break;
-      case 'oldest':
-        arr.sort((a, b) => getMinutesAgo(b.timeAgo) - getMinutesAgo(a.timeAgo));
-        break;
-      case 'fid-asc':
-        arr.sort((a, b) => a.authorFid - b.authorFid);
-        break;
-      case 'fid-desc':
-        arr.sort((a, b) => b.authorFid - a.authorFid);
-        break;
-      case 'short':
-        return arr.filter(d => d.text.length < 20);
-      case 'medium':
-        return arr.filter(d => d.text.length >= 20 && d.text.length <= 50);
-      case 'long':
-        return arr.filter(d => d.text.length > 50);
-      default:
-        break;
-    }
-    return arr;
-  }, [sortOption, getMinutesAgo]);
+  const sortDetails = useCallback(
+    (details: UnrepliedDetail[]) => {
+      const arr = [...details]; // Create copy to avoid mutation
+      switch (sortOption) {
+        case "newest":
+          arr.sort(
+            (a, b) => getMinutesAgo(a.timeAgo) - getMinutesAgo(b.timeAgo)
+          );
+          break;
+        case "oldest":
+          arr.sort(
+            (a, b) => getMinutesAgo(b.timeAgo) - getMinutesAgo(a.timeAgo)
+          );
+          break;
+        case "fid-asc":
+          arr.sort((a, b) => a.authorFid - b.authorFid);
+          break;
+        case "fid-desc":
+          arr.sort((a, b) => b.authorFid - a.authorFid);
+          break;
+        case "short":
+          return arr.filter((d) => d.text.length < 20);
+        case "medium":
+          return arr.filter((d) => d.text.length >= 20 && d.text.length <= 50);
+        case "long":
+          return arr.filter((d) => d.text.length > 50);
+        default:
+          break;
+      }
+      return arr;
+    },
+    [sortOption, getMinutesAgo]
+  );
 
   // Memoized processed data
   const processedData = useMemo(() => {
     if (!data?.unrepliedDetails) return [];
-    
-    const filtered = filterByDay(data.unrepliedDetails);
+
+    const filtered = data.unrepliedDetails;
     const sorted = sortDetails(filtered);
     return sorted;
-  }, [data?.unrepliedDetails, filterByDay, sortDetails]);
+  }, [data?.unrepliedDetails, sortDetails]);
 
-  // 1. Fetch user context once on mount
+  // 1. Call ready() immediately to hide splash screen
   useEffect(() => {
-    const getUser = async () => {
+    async function hideSplash() {
       try {
+        await sdk.actions.ready();
+      } catch (error) {
+        console.error("Failed to call ready():", error);
+      }
+    }
+    hideSplash();
+  }, []);
+
+  // 2. Fetch user context once on mount
+  useEffect(() => {
+    const initializeApp = async () => {
+      try {
+        // Get user context
         const ctx = await sdk.context;
         const farUser = ctx?.user ?? {
-          fid: 203666,
-          username: 'leovido',
-          displayName: 'Leovido',
-          pfpUrl: 'https://wrpcd.net/cdn-cgi/imagedelivery/BXluQx4ige9GuW0Ia56BHw/252c844e-7be7-4dd5-6938-c1affcfd7e00/anim=false,fit=contain,f=auto,w=576',
+          fid: 234616,
+          username: "leovido",
+          displayName: "Leovido",
+          pfpUrl:
+            "https://wrpcd.net/cdn-cgi/imagedelivery/BXluQx4ige9GuW0Ia56BHw/252c844e-7be7-4dd5-6938-c1affcfd7e00/anim=false,fit=contain,f=auto,w=576",
         };
         setUser(farUser);
-        await sdk.actions.ready();
-       } catch (err) {
-        setError('Failed to load user');
+      } catch (err) {
+        console.error("Failed to initialize app:", err);
+        setError("Failed to load user");
+      } finally {
         setLoading(false);
       }
     };
-    getUser();
+    initializeApp();
   }, []);
 
   // 2. Fetch data when user is set
@@ -319,34 +415,40 @@ const FarcasterApp = memo(() => {
     const fetchData = async () => {
       setLoading(true);
       try {
-        const url = new URL('/api/farcaster-replies', window.location.origin);
-        url.searchParams.set('fid', user.fid.toString());
-        const res = await fetch(url.toString(), {
-          signal: AbortSignal.timeout(15000)
-        });
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        // Use the same API endpoint as infinite scroll for consistency
+        const url = new URL(
+          "/api/farcaster-notification-replies",
+          window.location.origin
+        );
+        url.searchParams.set("fid", user.fid.toString());
+        url.searchParams.set("limit", "25");
+
+        const res = await fetch(url.toString());
         const responseData = await res.json();
+
         if (responseData) {
           setData(responseData);
           setLoading(false);
           setIsLoadingMore(false);
-          setAllConversations(prev => [
-            ...prev,
-            ...(responseData.unrepliedDetails || [])
-          ]);
+          setAllConversations(responseData.unrepliedDetails || []);
           setCursor(responseData.nextCursor || null);
-          setHasMore(!!responseData.nextCursor && responseData.unrepliedDetails.length > 0);
+
+          // Set hasMore based on nextCursor availability
+          setHasMore(!!responseData.nextCursor);
+
           // Fetch OpenRank ranks for all FIDs in the response
           if (responseData.unrepliedDetails?.length > 0) {
-            const fids = responseData.unrepliedDetails.map((detail: UnrepliedDetail) => detail.authorFid);
+            const fids = responseData.unrepliedDetails.map(
+              (detail: UnrepliedDetail) => detail.authorFid
+            );
             await fetchOpenRankRanks(fids);
           }
-        } else {
-          setError(responseData.error || 'Failed to fetch data');
         }
       } catch (err) {
-        setHasMore(false)
-        setError(err instanceof Error ? err.message : 'Failed to load conversations');
+        setHasMore(false);
+        setError(
+          err instanceof Error ? err.message : "Failed to load conversations"
+        );
         setLoading(false);
       }
     };
@@ -361,26 +463,33 @@ const FarcasterApp = memo(() => {
       setIsLoadingMore(false);
       setAllConversations([]);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dayFilter, sortOption]);
 
   // Intersection Observer for infinite scroll
   const loadMoreConversations = useCallback(async () => {
     if (!hasMore || isLoadingMore || loading) return;
+
     setIsLoadingMore(true);
     try {
-      const url = new URL('/api/farcaster-replies', window.location.origin);
-      url.searchParams.set('fid', user?.fid.toString() || '203666');
-      if (cursor) url.searchParams.set('cursor', cursor);
+      const url = new URL(
+        "/api/farcaster-notification-replies",
+        window.location.origin
+      );
+      url.searchParams.set("fid", user?.fid.toString() || "203666");
+      if (cursor) {
+        url.searchParams.set("cursor", cursor);
+      }
 
       const res = await fetch(url.toString());
       const responseData = await res.json();
 
       // Append new conversations
-      setAllConversations(prev => [
+      setAllConversations((prev) => [
         ...prev,
-        ...(responseData.unrepliedDetails || [])
+        ...(responseData.unrepliedDetails || []),
       ]);
+
       setCursor(responseData.nextCursor || null);
 
       // If no more data, stop loading more
@@ -394,6 +503,9 @@ const FarcasterApp = memo(() => {
   }, [hasMore, isLoadingMore, loading, user, cursor]);
 
   useEffect(() => {
+    const current = observerRef.current;
+    if (!current) return;
+
     const observer = new IntersectionObserver(
       (entries) => {
         const [entry] = entries;
@@ -401,117 +513,129 @@ const FarcasterApp = memo(() => {
           loadMoreConversations();
         }
       },
-      {
-        rootMargin: '100px',
-        threshold: 0.1
-      }
+      { rootMargin: "100px", threshold: 0.1 }
     );
 
-    if (observerRef.current) {
-      observer.observe(observerRef.current);
-    }
+    observer.observe(current);
 
     return () => {
-      if (observerRef.current) {
-        observer.unobserve(observerRef.current);
-      }
+      observer.unobserve(current);
     };
   }, [hasMore, isLoadingMore, loading, loadMoreConversations]);
 
   const handleRefresh = useCallback(async () => {
-    setIsRefreshing(true)
-    setError(null)
-    
+    setIsRefreshing(true);
+    setError(null);
+
     // Clear OpenRank cache to force fresh data
     openRankCache.current = { data: {}, timestamp: 0 };
-    
+
     // Force refresh by bypassing cache
     const userFid = user?.fid || 203666;
     try {
-      const res = await fetch(`/api/farcaster-replies?fid=${userFid}`, {
-        cache: 'no-store' // Force fresh data
-      });
-      const responseData = await res.json()
+      const res = await fetch(
+        `/api/farcaster-notification-replies?fid=${userFid}&cursor=${cursor}`,
+        {
+          cache: "no-store",
+        }
+      );
+      const responseData = await res.json();
       if (responseData) {
-        setData(responseData)
-        
+        console.log("nextCursor", responseData.nextCursor);
+        setData(responseData);
+        setAllConversations(responseData.unrepliedDetails);
+
         // Fetch OpenRank ranks for all FIDs in the response
         if (responseData.unrepliedDetails?.length > 0) {
-          const fids = responseData.unrepliedDetails.map((detail: UnrepliedDetail) => detail.authorFid);
+          const fids = responseData.unrepliedDetails.map(
+            (detail: UnrepliedDetail) => detail.authorFid
+          );
           await fetchOpenRankRanks(fids);
         }
       } else {
-        setError(responseData.error || 'Failed to fetch data')
+        setError(responseData.error || "Failed to fetch data");
       }
     } catch (err) {
-      setError('Failed to load conversations')
+      setError("Failed to load conversations");
     }
-    setIsRefreshing(false)
+    setIsRefreshing(false);
   }, [user?.fid, fetchOpenRankRanks]);
 
   const handleCancelReply = useCallback(() => {
-    setSelectedCast(null)
-    setReplyText('')
-    setReplyError(null)
+    setSelectedCast(null);
+    setReplyText("");
+    setReplyError(null);
   }, []);
 
   const handleComposeCast = useCallback(async () => {
-    if (!selectedCast || !replyText.trim()) return
-    
-    setIsComposing(true)
-    setReplyError(null)
-    
+    if (!selectedCast || !replyText.trim()) return;
+
+    setIsComposing(true);
+    setReplyError(null);
+
     try {
       const result = await sdk.actions.composeCast({
         text: replyText,
         parent: {
-          type: 'cast',
-          hash: selectedCast.castHash
-        }
-      })
-      
+          type: "cast",
+          hash: selectedCast.castHash,
+        },
+      });
+
       if (result?.cast) {
         // Success! Clear the form and refresh data
-        setSelectedCast(null)
-        setReplyText('')
+        setSelectedCast(null);
+        setReplyText("");
         // Reset pagination and refresh all data
-        setCursor(null)
-        setHasMore(true)
-        setIsLoadingMore(false)
-        setAllConversations([])
+        setCursor(null);
+        setHasMore(true);
+        setIsLoadingMore(false);
+        setAllConversations([]);
         // fetchData(true) // This will now be handled by the new useEffect
       }
     } catch (error) {
-      console.error('Failed to compose cast:', error)
-      setReplyError('Failed to send reply. Please try again.')
+      console.error("Failed to compose cast:", error);
+      setReplyError("Failed to send reply. Please try again.");
     } finally {
-      setIsComposing(false)
+      setIsComposing(false);
     }
   }, [selectedCast, replyText]); // Removed fetchData from dependencies
 
-  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
-      e.preventDefault()
-      handleComposeCast()
-    } else if (e.key === 'Escape') {
-      handleCancelReply()
-    }
-  }, [handleComposeCast, handleCancelReply]);
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+        e.preventDefault();
+        handleComposeCast();
+      } else if (e.key === "Escape") {
+        handleCancelReply();
+      }
+    },
+    [handleComposeCast, handleCancelReply]
+  );
 
   const handleReply = async (cast: UnrepliedDetail) => {
-    setSelectedCast(cast)
-    setReplyText('')
-    setReplyError(null)
+    try {
+      console.log("viewing cast...");
+      await sdk.actions.viewCast({
+        hash: cast.castHash,
+      });
+    } catch (error) {
+      console.error("Failed to view cast:", error);
+      // Fallback to modal if viewCast fails
+      setSelectedCast(cast);
+      setReplyText("");
+      setReplyError(null);
 
-    setTimeout(() => {
-      textareaRef.current?.focus()
-    }, 100)
-  }
+      setTimeout(() => {
+        textareaRef.current?.focus();
+      }, 100);
+    }
+  };
 
-  const charactersRemaining = MAX_CHARACTERS - replyText.length
-  const isOverLimit = charactersRemaining < 0
+  const charactersRemaining = MAX_CHARACTERS - replyText.length;
+  const isOverLimit = charactersRemaining < 0;
 
-  let username = '@username';
+  let username = "@username";
   if (data && data.unrepliedDetails.length > 0) {
     username = `@${data.unrepliedDetails[0].username}`;
   }
@@ -527,8 +651,8 @@ const FarcasterApp = memo(() => {
         <div className="text-center text-white">
           <h1 className="text-2xl font-bold mb-4">Error</h1>
           <p className="mb-4">{error}</p>
-          <button 
-            onClick={() => window.location.reload()} 
+          <button
+            onClick={() => window.location.reload()}
             className="btn-primary"
           >
             Retry
@@ -539,7 +663,8 @@ const FarcasterApp = memo(() => {
   }
 
   // Filtered and sorted data for rendering
-  const filteredDetails = allConversations.length > 0 ? sortDetails(filterByDay(allConversations)) : [];
+  const filteredDetails =
+    allConversations.length > 0 ? sortDetails(allConversations) : [];
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-600 via-blue-600 to-cyan-500 font-sans">
@@ -558,24 +683,33 @@ const FarcasterApp = memo(() => {
                 className="mb-2 rounded-xl shadow-lg"
                 priority
               />
-              <h1 className="text-5xl font-black text-white tracking-tight" style={{ fontFamily: 'Instrument Sans, Nunito, Inter, sans-serif' }}>
+              <h1
+                className="text-5xl font-black text-white tracking-tight"
+                style={{
+                  fontFamily: "Instrument Sans, Nunito, Inter, sans-serif",
+                }}
+              >
                 ReplyCast
               </h1>
-              <p className="text-xl md:text-2xl font-medium text-white/90 mb-8" style={{ fontFamily: 'Instrument Sans, Nunito, Inter, sans-serif' }}>
+              <p
+                className="text-xl md:text-2xl font-medium text-white/90 mb-8"
+                style={{
+                  fontFamily: "Instrument Sans, Nunito, Inter, sans-serif",
+                }}
+              >
                 Never miss a reply again
               </p>
-
             </div>
-            
+
             {/* User Greeting */}
             {user && (
               <div className="mb-6 flex items-center justify-left gap-3 bg-white/10 backdrop-blur-sm rounded-2xl p-4 border border-white/20">
                 {user.pfpUrl && (
-                  <Image 
-                    src={`/api/image-proxy?url=${user.pfpUrl}`} 
-                    alt="Profile picture" 
-                    width={40} 
-                    height={40} 
+                  <Image
+                    src={`/api/image-proxy?url=${user.pfpUrl}`}
+                    alt="Profile picture"
+                    width={60}
+                    height={60}
                     className="rounded-full border-2 border-white/30"
                   />
                 )}
@@ -583,21 +717,28 @@ const FarcasterApp = memo(() => {
                   <div className="text-white font-semibold text-lg">
                     {user.displayName} (@{user.username})
                   </div>
-                  <div className="text-white/70 text-sm">
-                    FID: {user.fid}
-                  </div>
+                  <div className="text-white/70 text-sm">FID: {user.fid}</div>
                 </div>
               </div>
             )}
-            
+
             {/* Stats Card */}
             <div className="glass rounded-3xl p-10 mb-8 animate-fade-in-up shadow-xl border border-white/30">
               <div className="text-center">
                 <div className="text-white/80 text-lg font-medium mb-2">
                   {user?.username} has
                 </div>
-                <div className="text-7xl md:text-8xl font-extrabold text-white mb-2 tracking-tighter" style={{ fontFamily: 'Instrument Sans, Nunito, Inter, sans-serif' }}>
-                  {data ? data.unrepliedCount : '--'}
+                <div
+                  className="text-7xl md:text-8xl font-extrabold text-white mb-2 tracking-tighter"
+                  style={{
+                    fontFamily: "Instrument Sans, Nunito, Inter, sans-serif",
+                  }}
+                >
+                  {allConversations.length > 0
+                    ? allConversations.length
+                    : data
+                    ? data.unrepliedCount
+                    : "--"}
                 </div>
                 <div className="text-white text-xl font-semibold mb-2">
                   unreplied conversations
@@ -611,10 +752,11 @@ const FarcasterApp = memo(() => {
                   </div>
                 )}
                 {/* Cache Status */}
-                {process.env.NODE_ENV === 'development' && (
-                <div className="text-xs text-white/60 bg-white/5 px-2 py-1 rounded-lg border border-white/10 mt-4">
-                  <span className="font-mono">
-                    Cache: {getCacheStatus().cachedFids} FIDs ({getCacheStatus().age}s)
+                {process.env.NODE_ENV === "development" && (
+                  <div className="text-xs text-white/60 bg-white/5 px-2 py-1 rounded-lg border border-white/10 mt-4">
+                    <span className="font-mono">
+                      Cache: {getCacheStatus().cachedFids} FIDs (
+                      {getCacheStatus().age}s)
                     </span>
                   </div>
                 )}
@@ -634,7 +776,7 @@ const FarcasterApp = memo(() => {
                     strokeWidth={2}
                     strokeLinecap="round"
                     strokeLinejoin="round"
-                    className={`${isRefreshing ? 'animate-spin' : ''}`}
+                    className={`${isRefreshing ? "animate-spin" : ""}`}
                     aria-hidden="true"
                   >
                     <path d="M23 4v6h-6" />
@@ -642,22 +784,24 @@ const FarcasterApp = memo(() => {
                     <path d="M3.51 9a9 9 0 0 1 14.13-3.36L23 10" />
                     <path d="M20.49 15A9 9 0 0 1 6.36 18.36L1 14" />
                   </svg>
-                  {isRefreshing ? 'Refreshing...' : 'Refresh'}
+                  {isRefreshing ? "Refreshing..." : "Refresh"}
                 </button>
               </div>
             </div>
-            
+
             {/* Filter Section */}
             <div className="glass rounded-2xl p-4 mt-6 border border-white/20">
               <div className="flex flex-col md:flex-row items-center justify-center gap-2 md:gap-6">
                 <div className="flex items-center gap-2 mb-2 md:mb-0">
-                  <span className="text-white/80 text-sm font-medium mr-2">View:</span>
+                  <span className="text-white/80 text-sm font-medium mr-2">
+                    View:
+                  </span>
                   <button
-                    onClick={() => setViewMode('list')}
+                    onClick={() => setViewMode("list")}
                     className={`p-2 rounded-xl transition-all duration-200 ${
-                      viewMode === 'list'
-                        ? 'bg-white/20 text-white shadow-lg'
-                        : 'bg-white/10 text-white/60 hover:bg-white/15 hover:text-white/80'
+                      viewMode === "list"
+                        ? "bg-white/20 text-white shadow-lg"
+                        : "bg-white/10 text-white/60 hover:bg-white/15 hover:text-white/80"
                     }`}
                     aria-label="List view"
                   >
@@ -681,11 +825,11 @@ const FarcasterApp = memo(() => {
                     </svg>
                   </button>
                   <button
-                    onClick={() => setViewMode('grid')}
+                    onClick={() => setViewMode("grid")}
                     className={`p-2 rounded-xl transition-all duration-200 ${
-                      viewMode === 'grid'
-                        ? 'bg-white/20 text-white shadow-lg'
-                        : 'bg-white/10 text-white/60 hover:bg-white/15 hover:text-white/80'
+                      viewMode === "grid"
+                        ? "bg-white/20 text-white shadow-lg"
+                        : "bg-white/10 text-white/60 hover:bg-white/15 hover:text-white/80"
                     }`}
                     aria-label="Grid view"
                   >
@@ -709,35 +853,65 @@ const FarcasterApp = memo(() => {
                 </div>
                 {/* Day Filter Dropdown */}
                 <div className="flex items-center gap-2">
-                  <span className="text-white/80 text-sm font-medium mr-2">Day:</span>
+                  <span className="text-white/80 text-sm font-medium mr-2">
+                    Day:
+                  </span>
                   <select
                     value={dayFilter}
-                    onChange={e => setDayFilter(e.target.value as any)}
+                    onChange={(e) => setDayFilter(e.target.value as any)}
                     className="bg-white/10 text-white/90 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 border border-white/20 shadow-sm"
-                    style={{ fontFamily: 'Instrument Sans, Nunito, Inter, sans-serif' }}
+                    style={{
+                      fontFamily: "Instrument Sans, Nunito, Inter, sans-serif",
+                    }}
                   >
-                    <option value="all">All</option>
-                    <option value="today">Today</option>
-                    <option value="3days">Last 3 days</option>
-                    <option value="7days">Last 7 days</option>
+                    <option value="all" className="bg-gray-800 text-white">
+                      All
+                    </option>
+                    <option value="today" className="bg-gray-800 text-white">
+                      Today
+                    </option>
+                    <option value="3days" className="bg-gray-800 text-white">
+                      Last 3 days
+                    </option>
+                    <option value="7days" className="bg-gray-800 text-white">
+                      Last 7 days
+                    </option>
                   </select>
                 </div>
                 {/* Sort Dropdown */}
                 <div className="flex items-center gap-2">
-                  <span className="text-white/80 text-sm font-medium mr-2">Sort:</span>
+                  <span className="text-white/80 text-sm font-medium mr-2">
+                    Sort:
+                  </span>
                   <select
                     value={sortOption}
-                    onChange={e => setSortOption(e.target.value as any)}
+                    onChange={(e) => setSortOption(e.target.value as any)}
                     className="bg-white/10 text-white/90 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 border border-white/20 shadow-sm"
-                    style={{ fontFamily: 'Instrument Sans, Nunito, Inter, sans-serif' }}
+                    style={{
+                      fontFamily: "Instrument Sans, Nunito, Inter, sans-serif",
+                    }}
                   >
-                    <option value="newest">Newest</option>
-                    <option value="oldest">Oldest</option>
-                    <option value="fid-asc">FID: Low → High</option>
-                    <option value="fid-desc">FID: High → Low</option>
-                    <option value="short">Cast: Short (&lt;20 chars)</option>
-                    <option value="medium">Cast: Medium (20–50 chars)</option>
-                    <option value="long">Cast: Long (&gt;50 chars)</option>
+                    <option value="newest" className="bg-gray-800 text-white">
+                      Newest
+                    </option>
+                    <option value="oldest" className="bg-gray-800 text-white">
+                      Oldest
+                    </option>
+                    <option value="fid-asc" className="bg-gray-800 text-white">
+                      FID: Low → High
+                    </option>
+                    <option value="fid-desc" className="bg-gray-800 text-white">
+                      FID: High → Low
+                    </option>
+                    <option value="short" className="bg-gray-800 text-white">
+                      Cast: Short (&lt;20 chars)
+                    </option>
+                    <option value="medium" className="bg-gray-800 text-white">
+                      Cast: Medium (20–50 chars)
+                    </option>
+                    <option value="long" className="bg-gray-800 text-white">
+                      Cast: Long (&gt;50 chars)
+                    </option>
                   </select>
                 </div>
               </div>
@@ -748,7 +922,7 @@ const FarcasterApp = memo(() => {
       {/* Conversations List */}
       <div className="px-4 pb-12">
         <div className="max-w-6xl mx-auto">
-          {viewMode === 'list' ? (
+          {viewMode === "list" ? (
             <div className="space-y-6">
               {filteredDetails.map((cast, index) => (
                 <ReplyCard
@@ -771,7 +945,7 @@ const FarcasterApp = memo(() => {
               ))}
             </div>
           )}
-          
+
           {/* Loading More Indicator */}
           {isLoadingMore && (
             <div className="text-center py-8">
@@ -793,47 +967,53 @@ const FarcasterApp = memo(() => {
                   <path d="M3.51 9a9 9 0 0 1 14.13-3.36L23 10" />
                   <path d="M20.49 15A9 9 0 0 1 6.36 18.36L1 14" />
                 </svg>
-                <span className="text-sm font-medium">Loading more conversations...</span>
+                <span className="text-sm font-medium">
+                  Loading more conversations...
+                </span>
               </div>
             </div>
           )}
-          
+
           {/* End of Results */}
           {!hasMore && filteredDetails.length > 0 && (
             <div className="text-center py-8">
               <div className="text-white/60 text-sm">
                 <span className="font-medium">🎉 All caught up!</span>
-                <p className="mt-1">You&apos;ve seen all your unreplied conversations.</p>
+                <p className="mt-1">
+                  You&apos;ve seen all your unreplied conversations.
+                </p>
               </div>
             </div>
           )}
-          
+
           {/* Intersection Observer Element */}
-          {hasMore && (
-            <div 
-              ref={observerRef} 
-              className="h-4 w-full"
-              aria-hidden="true"
-            />
-          )}
-          
+          <div ref={observerRef} className="h-4 w-full" aria-hidden="true" />
+
           {/* Empty State */}
           {filteredDetails.length === 0 && !loading && (
             <div className="text-center py-12">
               <div className="glass rounded-3xl p-12">
                 <div className="text-6xl mb-4">🎉</div>
-                <h3 className="text-2xl font-bold text-white mb-2" style={{ fontFamily: 'Instrument Sans, Nunito, Inter, sans-serif' }}>All caught up!</h3>
-                <p className="text-gray-700/80 text-lg">You&apos;ve replied to all your conversations.</p>
+                <h3
+                  className="text-2xl font-bold text-white mb-2"
+                  style={{
+                    fontFamily: "Instrument Sans, Nunito, Inter, sans-serif",
+                  }}
+                >
+                  All caught up!
+                </h3>
+                <p className="text-gray-700/80 text-lg">
+                  You&apos;ve replied to all your conversations.
+                </p>
               </div>
             </div>
           )}
         </div>
       </div>
-      {/* Reply Modal (unchanged for now) */}
-      {selectedCast && (
+      {/* Reply Modal - Temporarily hidden */}
+      {/* {selectedCast && (
         <div className="modal-overlay" onClick={handleCancelReply}>
-          <div className="modal-content" onClick={e => e.stopPropagation()}>
-            {/* Header */}
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center gap-3 mb-6">
               <Image
                 src={`/api/image-proxy?url=${selectedCast.avatarUrl}`}
@@ -841,14 +1021,22 @@ const FarcasterApp = memo(() => {
                 width={40}
                 height={40}
                 className="rounded-full border-2 border-gray-200 object-cover"
-                onError={e => (e.currentTarget.src = '/default-avatar.png')}
+                onError={(e) => (e.currentTarget.src = "/default-avatar.png")}
               />
               <div>
-                <div className="font-bold text-lg text-white" style={{ fontFamily: 'Instrument Sans, Nunito, Inter, sans-serif' }}>@{selectedCast.username}</div>
-                <div className="text-xs text-gray-500">{selectedCast.timeAgo}</div>
+                <div
+                  className="font-bold text-lg text-gray-900"
+                  style={{
+                    fontFamily: "Instrument Sans, Nunito, Inter, sans-serif",
+                  }}
+                >
+                  @{selectedCast.username}
+                </div>
+                <div className="text-xs text-gray-500">
+                  {selectedCast.timeAgo}
+                </div>
               </div>
             </div>
-            {/* Original Cast Context */}
             <div className="mb-6 p-4 bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl border-l-4 border-blue-400">
               <div className="text-xs text-blue-600 mb-2 font-semibold">
                 Original cast by @{selectedCast.originalAuthorUsername}
@@ -857,13 +1045,11 @@ const FarcasterApp = memo(() => {
                 {selectedCast.originalCastText}
               </div>
             </div>
-            {/* Reply Text */}
             <div className="mb-6 p-4 bg-gray-50 rounded-xl max-h-32 overflow-y-auto">
               <div className="text-sm text-gray-700 leading-relaxed">
                 {selectedCast.text}
               </div>
             </div>
-            {/* Reply Input */}
             <div className="relative mb-6">
               <textarea
                 ref={textareaRef}
@@ -872,19 +1058,22 @@ const FarcasterApp = memo(() => {
                 onKeyDown={handleKeyDown}
                 placeholder="Write your reply... (⌘+Enter to send, Esc to cancel)"
                 className={`input-field resize-none h-32 ${
-                  isOverLimit ? 'border-red-300 focus:ring-red-500' : ''
+                  isOverLimit ? "border-red-300 focus:ring-red-500" : ""
                 }`}
                 disabled={isComposing}
                 maxLength={MAX_CHARACTERS}
-                style={{ fontFamily: 'Instrument Sans, Nunito, Inter, sans-serif' }}
+                style={{
+                  fontFamily: "Instrument Sans, Nunito, Inter, sans-serif",
+                }}
               />
-              <div className={`absolute bottom-4 right-4 text-sm font-medium ${
-                isOverLimit ? 'text-red-500' : 'text-gray-400'
-              }`}>
+              <div
+                className={`absolute bottom-4 right-4 text-sm font-medium ${
+                  isOverLimit ? "text-red-500" : "text-gray-400"
+                }`}
+              >
                 {charactersRemaining}
               </div>
             </div>
-            {/* Error Message */}
             {replyError && (
               <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
                 <div className="text-red-600 text-sm font-medium">
@@ -892,13 +1081,14 @@ const FarcasterApp = memo(() => {
                 </div>
               </div>
             )}
-            {/* Action Buttons */}
             <div className="flex gap-3">
               <button
                 onClick={handleCancelReply}
                 disabled={isComposing}
                 className="flex-1 px-6 py-3 text-gray-600 border border-gray-300 rounded-xl hover:bg-gray-50 disabled:opacity-50 font-semibold transition-all"
-                style={{ fontFamily: 'Instrument Sans, Nunito, Inter, sans-serif' }}
+                style={{
+                  fontFamily: "Instrument Sans, Nunito, Inter, sans-serif",
+                }}
               >
                 Cancel
               </button>
@@ -906,7 +1096,9 @@ const FarcasterApp = memo(() => {
                 onClick={handleComposeCast}
                 disabled={isComposing || !replyText.trim() || isOverLimit}
                 className="btn-primary flex-1 disabled:opacity-50 disabled:cursor-not-allowed"
-                style={{ fontFamily: 'Instrument Sans, Nunito, Inter, sans-serif' }}
+                style={{
+                  fontFamily: "Instrument Sans, Nunito, Inter, sans-serif",
+                }}
               >
                 {isComposing ? (
                   <span className="flex items-center gap-2">
@@ -930,21 +1122,20 @@ const FarcasterApp = memo(() => {
                     Sending...
                   </span>
                 ) : (
-                  'Reply'
+                  "Reply"
                 )}
               </button>
             </div>
-            {/* Keyboard Shortcut Hint */}
             <div className="mt-4 text-center text-xs text-gray-500">
               Press ⌘+Enter to send quickly
             </div>
           </div>
         </div>
-      )}
+      )} */}
     </div>
   );
 });
 
-FarcasterApp.displayName = 'FarcasterApp';
+FarcasterApp.displayName = "FarcasterApp";
 
 export default FarcasterApp;
