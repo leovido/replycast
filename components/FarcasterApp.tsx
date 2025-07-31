@@ -598,13 +598,22 @@ const FarcasterApp = memo(() => {
   );
 
   const handleReply = async (cast: UnrepliedDetail) => {
-    setSelectedCast(cast);
-    setReplyText("");
-    setReplyError(null);
+    try {
+      console.log('viewing cast...')
+      await sdk.actions.viewCast({
+        hash: cast.castHash,
+      });
+    } catch (error) {
+      console.error("Failed to view cast:", error);
+      // Fallback to modal if viewCast fails
+      setSelectedCast(cast);
+      setReplyText("");
+      setReplyError(null);
 
-    setTimeout(() => {
-      textareaRef.current?.focus();
-    }, 100);
+      setTimeout(() => {
+        textareaRef.current?.focus();
+      }, 100);
+    }
   };
 
   const charactersRemaining = MAX_CHARACTERS - replyText.length;
@@ -983,11 +992,10 @@ const FarcasterApp = memo(() => {
           )}
         </div>
       </div>
-      {/* Reply Modal (unchanged for now) */}
-      {selectedCast && (
+      {/* Reply Modal - Temporarily hidden */}
+      {/* {selectedCast && (
         <div className="modal-overlay" onClick={handleCancelReply}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            {/* Header */}
             <div className="flex items-center gap-3 mb-6">
               <Image
                 src={`/api/image-proxy?url=${selectedCast.avatarUrl}`}
@@ -1011,7 +1019,6 @@ const FarcasterApp = memo(() => {
                 </div>
               </div>
             </div>
-            {/* Original Cast Context */}
             <div className="mb-6 p-4 bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl border-l-4 border-blue-400">
               <div className="text-xs text-blue-600 mb-2 font-semibold">
                 Original cast by @{selectedCast.originalAuthorUsername}
@@ -1020,13 +1027,11 @@ const FarcasterApp = memo(() => {
                 {selectedCast.originalCastText}
               </div>
             </div>
-            {/* Reply Text */}
             <div className="mb-6 p-4 bg-gray-50 rounded-xl max-h-32 overflow-y-auto">
               <div className="text-sm text-gray-700 leading-relaxed">
                 {selectedCast.text}
               </div>
             </div>
-            {/* Reply Input */}
             <div className="relative mb-6">
               <textarea
                 ref={textareaRef}
@@ -1051,7 +1056,6 @@ const FarcasterApp = memo(() => {
                 {charactersRemaining}
               </div>
             </div>
-            {/* Error Message */}
             {replyError && (
               <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
                 <div className="text-red-600 text-sm font-medium">
@@ -1059,7 +1063,6 @@ const FarcasterApp = memo(() => {
                 </div>
               </div>
             )}
-            {/* Action Buttons */}
             <div className="flex gap-3">
               <button
                 onClick={handleCancelReply}
@@ -1105,13 +1108,12 @@ const FarcasterApp = memo(() => {
                 )}
               </button>
             </div>
-            {/* Keyboard Shortcut Hint */}
             <div className="mt-4 text-center text-xs text-gray-500">
               Press ⌘+Enter to send quickly
             </div>
           </div>
         </div>
-      )}
+      )} */}
     </div>
   );
 });
