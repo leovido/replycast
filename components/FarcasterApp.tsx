@@ -8,6 +8,7 @@ import {
   UnrepliedDetail,
   User,
 } from "@/types/types";
+import { FarcasterSignIn } from "./FarcasterSignIn";
 
 // Lazy load ReplyCard component
 const ReplyCard = dynamic(
@@ -228,6 +229,7 @@ const FarcasterApp = memo(() => {
   const [allConversations, setAllConversations] = useState<UnrepliedDetail[]>(
     []
   );
+  const [isInMiniApp, setIsInMiniApp] = useState<boolean | null>(null);
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const observerRef = useRef<HTMLDivElement>(null);
@@ -385,24 +387,37 @@ const FarcasterApp = memo(() => {
     hideSplash();
   }, []);
 
-  // 2. Fetch user context once on mount
+  // 2. Check environment and initialize app
   useEffect(() => {
     const initializeApp = async () => {
       try {
-        // Get user context
-        const ctx = await sdk.context;
-        const farUser = ctx?.user ?? {
-          fid: 203666,
-          username: "leovido",
-          displayName: "Leovido",
-          pfpUrl:
-            "https://wrpcd.net/cdn-cgi/imagedelivery/BXluQx4ige9GuW0Ia56BHw/252c844e-7be7-4dd5-6938-c1affcfd7e00/anim=false,fit=contain,f=auto,w=576",
-        };
-        setUser(farUser);
+        // Check if we're in a Mini App environment
+        const miniAppCheck = await sdk.isInMiniApp();
+        setIsInMiniApp(miniAppCheck);
+
+        if (miniAppCheck) {
+          // If we're in a Mini App, try to get context
+          try {
+            const ctx = await sdk.context;
+            const farUser = ctx?.user ?? {
+              fid: 203666,
+              username: "leovido",
+              displayName: "Leovido",
+              pfpUrl:
+                "https://wrpcd.net/cdn-cgi/imagedelivery/BXluQx4ige9GuW0Ia56BHw/252c844e-7be7-4dd5-6938-c1affcfd7e00/anim=false,fit=contain,f=auto,w=576",
+            };
+            setUser(farUser);
+          } catch (err) {
+            console.error("Failed to get Mini App context:", err);
+            setError("Failed to load user");
+          }
+        } else {
+          // Not in Mini App - user will need to sign in
+          setLoading(false);
+        }
       } catch (err) {
         console.error("Failed to initialize app:", err);
-        setError("Failed to load user");
-      } finally {
+        setIsInMiniApp(false);
         setLoading(false);
       }
     };
@@ -613,6 +628,21 @@ const FarcasterApp = memo(() => {
     [handleComposeCast, handleCancelReply]
   );
 
+  const handleSignIn = (user: {
+    fid: number;
+    username?: string;
+    displayName?: string;
+    pfpUrl?: string;
+  }) => {
+    setUser(user);
+    setLoading(false);
+  };
+
+  const handleSignInError = (error: string) => {
+    setError(error);
+    setLoading(false);
+  };
+
   const handleReply = async (cast: UnrepliedDetail) => {
     try {
       console.log("viewing cast...");
@@ -643,6 +673,13 @@ const FarcasterApp = memo(() => {
   // Show loading screen when loading is true
   if (loading) {
     return <LoadingScreen />;
+  }
+
+  // Show sign-in screen if not in Mini App and no user
+  if (!isInMiniApp && !user) {
+    return (
+      <FarcasterSignIn onSignIn={handleSignIn} onError={handleSignInError} />
+    );
   }
 
   if (error) {
