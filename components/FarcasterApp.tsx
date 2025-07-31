@@ -373,11 +373,23 @@ const FarcasterApp = memo(() => {
     return sorted;
   }, [data?.unrepliedDetails, sortDetails]);
 
-  // 1. Fetch user context once on mount
+  // 1. Call ready() immediately to hide splash screen
+  useEffect(() => {
+    const hideSplash = async () => {
+      try {
+        await sdk.actions.ready();
+      } catch (error) {
+        console.error("Failed to call ready():", error);
+      }
+    };
+    hideSplash();
+  }, []);
+
+  // 2. Fetch user context once on mount
   useEffect(() => {
     const initializeApp = async () => {
       try {
-        // Then get user context
+        // Get user context
         const ctx = await sdk.context;
         const farUser = ctx?.user ?? {
           fid: 234616,
@@ -390,11 +402,8 @@ const FarcasterApp = memo(() => {
       } catch (err) {
         console.error("Failed to initialize app:", err);
         setError("Failed to load user");
-        setLoading(false);
       } finally {
-        await sdk.actions.ready();
         setLoading(false);
-        setError(null);
       }
     };
     initializeApp();
