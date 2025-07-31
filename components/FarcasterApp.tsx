@@ -375,13 +375,13 @@ const FarcasterApp = memo(() => {
 
   // 1. Call ready() immediately to hide splash screen
   useEffect(() => {
-    const hideSplash = async () => {
+    async function hideSplash() {
       try {
         await sdk.actions.ready();
       } catch (error) {
         console.error("Failed to call ready():", error);
       }
-    };
+    }
     hideSplash();
   }, []);
 
