@@ -1,6 +1,6 @@
-const withBundleAnalyzer = require('@next/bundle-analyzer')({
-  enabled: process.env.ANALYZE === 'true',
-})
+const withBundleAnalyzer = require("@next/bundle-analyzer")({
+  enabled: process.env.ANALYZE === "true",
+});
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
@@ -10,99 +10,100 @@ const nextConfig = {
   compress: true,
   poweredByHeader: false,
   generateEtags: true,
-  
+
   // Bundle optimization
   experimental: {
-    optimizePackageImports: ['react-icons', '@farcaster/miniapp-sdk'],
+    optimizePackageImports: ["react-icons", "@farcaster/miniapp-sdk"],
   },
-  
+
   // Image optimization
   images: {
     domains: [
-      'localhost',
-      'commentcast.xyz',
-      'randomuser.me',
-      'imagedelivery.net',
-      'i.imgur.com'
+      "localhost",
+      "commentcast.xyz",
+      "randomuser.me",
+      "imagedelivery.net",
+      "i.imgur.com",
     ],
-    formats: ['image/avif', 'image/webp'],
+    formats: ["image/avif", "image/webp"],
     minimumCacheTTL: 86400, // 24 hours
     dangerouslyAllowSVG: false,
     deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],
     imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
   },
-  
+
   // Security headers for performance
   async headers() {
     return [
       {
-        source: '/(.*)',
+        source: "/(.*)",
         headers: [
           {
-            key: 'X-DNS-Prefetch-Control',
-            value: 'on'
+            key: "X-DNS-Prefetch-Control",
+            value: "on",
+          },
+          // Removed X-Frame-Options to allow iframe embedding for Mini Apps
+          // {
+          //   key: "X-Frame-Options",
+          //   value: "SAMEORIGIN",
+          // },
+          {
+            key: "X-Content-Type-Options",
+            value: "nosniff",
           },
           {
-            key: 'X-Frame-Options',
-            value: 'DENY'
+            key: "Referrer-Policy",
+            value: "origin-when-cross-origin",
           },
-          {
-            key: 'X-Content-Type-Options',
-            value: 'nosniff'
-          },
-          {
-            key: 'Referrer-Policy',
-            value: 'origin-when-cross-origin'
-          }
-        ]
+        ],
       },
       {
-        source: '/api/(.*)',
+        source: "/api/(.*)",
         headers: [
           {
-            key: 'Cache-Control',
-            value: 'public, s-maxage=300, stale-while-revalidate=600'
-          }
-        ]
-      }
-    ]
+            key: "Cache-Control",
+            value: "public, s-maxage=300, stale-while-revalidate=600",
+          },
+        ],
+      },
+    ];
   },
-  
+
   // Webpack optimizations
   webpack: (config, { dev, isServer }) => {
     // Production optimizations
     if (!dev) {
       config.optimization = {
         ...config.optimization,
-        moduleIds: 'deterministic',
+        moduleIds: "deterministic",
         splitChunks: {
-          chunks: 'all',
+          chunks: "all",
           cacheGroups: {
             vendor: {
               test: /[\\/]node_modules[\\/]/,
-              name: 'vendors',
+              name: "vendors",
               priority: 10,
               reuseExistingChunk: true,
             },
             farcaster: {
               test: /[\\/]node_modules[\\/](@farcaster)[\\/]/,
-              name: 'farcaster',
+              name: "farcaster",
               priority: 20,
               reuseExistingChunk: true,
             },
             common: {
-              name: 'common',
+              name: "common",
               minChunks: 2,
               priority: 5,
               reuseExistingChunk: true,
             },
           },
         },
-      }
+      };
     }
-    
-    return config
+
+    return config;
   },
-}
+};
 
 module.exports = withBundleAnalyzer(nextConfig);
