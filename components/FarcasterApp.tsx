@@ -380,7 +380,7 @@ const FarcasterApp = memo(() => {
       try {
         const ctx = await sdk.context;
         const farUser = ctx?.user ?? {
-          fid: 203666,
+          fid: 234616,
           username: "leovido",
           displayName: "Leovido",
           pfpUrl:
@@ -401,25 +401,42 @@ const FarcasterApp = memo(() => {
     const fetchData = async () => {
       setLoading(true);
       try {
-        const responseData = await fetchTodaysReplies(
-          user.fid,
-          25,
-          cursor ? cursor : null
+        // Use the same API endpoint as infinite scroll for consistency
+        const url = new URL(
+          "/api/farcaster-notification-replies",
+          window.location.origin
         );
+        url.searchParams.set("fid", user.fid.toString());
+        url.searchParams.set("limit", "25");
+
+        console.log("🌐 Initial fetch URL:", url.toString());
+        const res = await fetch(url.toString());
+        const responseData = await res.json();
+
+        console.log("📦 Initial response data:", {
+          unrepliedCount: responseData.unrepliedCount,
+          detailsCount: responseData.unrepliedDetails?.length || 0,
+          nextCursor: responseData.nextCursor,
+          hasMore: !!responseData.nextCursor,
+        });
 
         if (responseData) {
           setData(responseData);
           setLoading(false);
           setIsLoadingMore(false);
-          setAllConversations((prev) => [
-            ...prev,
-            ...(responseData.unrepliedDetails || []),
-          ]);
+          setAllConversations(responseData.unrepliedDetails || []);
           setCursor(responseData.nextCursor || null);
-          setHasMore(
-            !!responseData.nextCursor &&
-              responseData.unrepliedDetails.length > 0
+
+          // Set hasMore based on nextCursor availability
+          const hasMoreData = !!responseData.nextCursor;
+          console.log(
+            "🎯 Setting hasMore to:",
+            hasMoreData,
+            "because nextCursor:",
+            responseData.nextCursor
           );
+          setHasMore(hasMoreData);
+
           // Fetch OpenRank ranks for all FIDs in the response
           if (responseData.unrepliedDetails?.length > 0) {
             const fids = responseData.unrepliedDetails.map(
@@ -429,6 +446,7 @@ const FarcasterApp = memo(() => {
           }
         }
       } catch (err) {
+        console.error("❌ Error in initial fetch:", err);
         setHasMore(false);
         setError(
           err instanceof Error ? err.message : "Failed to load conversations"
@@ -452,8 +470,23 @@ const FarcasterApp = memo(() => {
 
   // Intersection Observer for infinite scroll
   const loadMoreConversations = useCallback(async () => {
-    console.log("Loading more conversations");
-    if (!hasMore || isLoadingMore || loading) return;
+    console.log("🔄 Loading more conversations...");
+    console.log("📊 Current state:", {
+      hasMore,
+      isLoadingMore,
+      loading,
+      cursor,
+    });
+
+    if (!hasMore || isLoadingMore || loading) {
+      console.log("❌ Skipping load - conditions not met:", {
+        hasMore,
+        isLoadingMore,
+        loading,
+      });
+      return;
+    }
+
     setIsLoadingMore(true);
     try {
       const url = new URL(
@@ -461,40 +494,85 @@ const FarcasterApp = memo(() => {
         window.location.origin
       );
       url.searchParams.set("fid", user?.fid.toString() || "203666");
-      if (cursor) url.searchParams.set("cursor", cursor);
+      if (cursor) {
+        url.searchParams.set("cursor", cursor);
+        console.log("📎 Using cursor:", cursor);
+      } else {
+        console.log("📎 No cursor - first page");
+      }
 
+      console.log("🌐 Fetching URL:", url.toString());
       const res = await fetch(url.toString());
       const responseData = await res.json();
 
+      console.log("📦 Response data:", {
+        unrepliedCount: responseData.unrepliedCount,
+        detailsCount: responseData.unrepliedDetails?.length || 0,
+        nextCursor: responseData.nextCursor,
+        hasMore: !!responseData.nextCursor,
+      });
+
       // Append new conversations
-      setAllConversations((prev) => [
-        ...prev,
-        ...(responseData.unrepliedDetails || []),
-      ]);
+      setAllConversations((prev) => {
+        const newConversations = [
+          ...prev,
+          ...(responseData.unrepliedDetails || []),
+        ];
+        console.log("📈 Total conversations now:", newConversations.length);
+        return newConversations;
+      });
+
       setCursor(responseData.nextCursor || null);
+      console.log("🔄 New cursor set:", responseData.nextCursor);
 
       // If no more data, stop loading more
       if (!responseData.nextCursor || !responseData.unrepliedDetails?.length) {
+        console.log("🏁 No more data - stopping infinite scroll");
         setHasMore(false);
+      } else {
+        console.log("✅ More data available - continuing infinite scroll");
       }
     } catch (e) {
+      console.error("❌ Error loading more conversations:", e);
       setHasMore(false); // Stop trying if error
     }
     setIsLoadingMore(false); // Always reset spinner
+    console.log("🏁 Finished loading more conversations");
   }, [hasMore, isLoadingMore, loading, user, cursor]);
 
   useEffect(() => {
     const current = observerRef.current;
-    console.log("Setting up observer on:", current);
-    if (!current) return;
+    console.log("🔧 Setting up observer on:", current);
+    console.log("🔧 Observer state:", { hasMore, isLoadingMore, loading });
+
+    if (!current) {
+      console.log("❌ Observer ref is null - cannot set up observer");
+      return;
+    }
 
     const observer = new IntersectionObserver(
       (entries) => {
         const [entry] = entries;
-        console.log("Observer entry:", entry);
+        console.log("👁️ Observer triggered:", {
+          isIntersecting: entry.isIntersecting,
+          hasMore,
+          isLoadingMore,
+          loading,
+          shouldLoad:
+            entry.isIntersecting && hasMore && !isLoadingMore && !loading,
+        });
+
         if (entry.isIntersecting && hasMore && !isLoadingMore && !loading) {
-          console.log("Triggering loadMoreConversations");
+          console.log(
+            "🚀 Triggering loadMoreConversations from intersection observer"
+          );
           loadMoreConversations();
+        } else if (entry.isIntersecting) {
+          console.log("⏸️ Observer triggered but conditions not met:", {
+            hasMore,
+            isLoadingMore,
+            loading,
+          });
         }
       },
       { rootMargin: "100px", threshold: 0.1 }
@@ -967,9 +1045,22 @@ const FarcasterApp = memo(() => {
           )}
 
           {/* Intersection Observer Element */}
-          {hasMore && (
-            <div ref={observerRef} className="h-4 w-full" aria-hidden="true" />
-          )}
+          <div
+            ref={observerRef}
+            className="h-4 w-full"
+            aria-hidden="true"
+            style={{
+              backgroundColor: hasMore
+                ? "rgba(0,255,0,0.1)"
+                : "rgba(255,0,0,0.1)",
+              border: "1px solid rgba(255,255,255,0.3)",
+            }}
+          />
+          {/* Debug info */}
+          <div className="text-xs text-white/60 text-center py-2">
+            hasMore: {hasMore.toString()} | isLoadingMore:{" "}
+            {isLoadingMore.toString()} | loading: {loading.toString()}
+          </div>
 
           {/* Empty State */}
           {filteredDetails.length === 0 && !loading && (

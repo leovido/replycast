@@ -3,6 +3,50 @@ import { FetchAllNotificationsTypeEnum } from "@neynar/nodejs-sdk/build/api/apis
 import { FarcasterRepliesResponse, UnrepliedDetail } from "@/types/types";
 import { client } from "@/client";
 
+// Cache for user reply checks to avoid repeated API calls
+const replyCheckCache = new Map<string, boolean>();
+
+// Helper function to check if user has replied to a conversation
+async function hasUserReplied(
+  userFid: number,
+  castHash: string
+): Promise<boolean> {
+  const cacheKey = `${userFid}-${castHash}`;
+
+  // Check cache first
+  if (replyCheckCache.has(cacheKey)) {
+    return replyCheckCache.get(cacheKey)!;
+  }
+
+  try {
+    // Fetch the conversation to check if user has replied
+    const conversation = await client.lookupCastConversation({
+      identifier: castHash,
+      type: "hash",
+      replyDepth: 1, // Only check direct replies for efficiency
+      limit: 5, // Reduced limit for faster response
+    });
+
+    if (!conversation.conversation?.cast?.direct_replies) {
+      replyCheckCache.set(cacheKey, false);
+      return false;
+    }
+
+    // Check if any of the direct replies are from the user
+    const userReplies = conversation.conversation.cast.direct_replies.filter(
+      (reply: any) => reply.author.fid === userFid
+    );
+
+    const hasReplied = userReplies.length > 0;
+    replyCheckCache.set(cacheKey, hasReplied);
+    return hasReplied;
+  } catch (error) {
+    console.error("Error checking if user replied:", error);
+    replyCheckCache.set(cacheKey, false);
+    return false; // Default to false if we can't check
+  }
+}
+
 const timeAgo = (dateString: string): string => {
   const now = new Date();
   const then = new Date(dateString);
@@ -26,13 +70,16 @@ export default async function handler(
   }
 
   const { fid, limit = "25", cursor, type = "replies" } = req.query;
+  console.log("📥 API Request:", { fid, limit, cursor, type });
+
   if (!fid) {
     return res.status(400).json({ error: "fid query parameter is required" });
   }
 
   try {
+    const userFid = parseInt(fid as string, 10);
     const request = await client.fetchAllNotifications({
-      fid: parseInt(fid as string, 10),
+      fid: userFid,
       limit: parseInt(limit as string),
       type: [type as FetchAllNotificationsTypeEnum],
       cursor: cursor ? (cursor as string) : undefined,
@@ -40,27 +87,51 @@ export default async function handler(
     const replies = request.notifications;
     const nextCursor = request.next;
 
-    const unrepliedDetails: UnrepliedDetail[] = replies.map((reply) => ({
-      username: reply.cast?.author?.username || "",
-      timeAgo: reply.cast?.timestamp ? timeAgo(reply.cast.timestamp) : "",
-      timestamp: reply.cast?.timestamp ? Number(reply.cast.timestamp) : 0,
-      castUrl: `https://farcaster.xyz/${reply.cast?.author?.username}/${reply.cast?.hash}`,
-      text: reply.cast?.text || "",
-      avatarUrl: reply.cast?.author?.pfp_url || "",
-      castHash: reply.cast?.hash || "",
-      authorFid: reply.cast?.author?.fid || 0,
-      originalCastText: reply.cast?.text || "",
-      originalCastHash: reply.cast?.hash || "",
-      originalAuthorUsername: reply.cast?.author?.username || "",
-      replyCount: reply.cast?.replies?.count || 0,
-    }));
+    // Filter out conversations where the user has already replied
+    // Process in parallel for better performance
+    const replyChecks = await Promise.all(
+      replies.map(async (reply) => {
+        if (!reply.cast?.hash) return { reply, hasReplied: false };
+
+        const userHasReplied = await hasUserReplied(userFid, reply.cast.hash);
+        return { reply, hasReplied: userHasReplied };
+      })
+    );
+
+    const unrepliedReplies = replyChecks
+      .filter(({ hasReplied }) => !hasReplied)
+      .map(({ reply }) => reply);
+
+    const unrepliedDetails: UnrepliedDetail[] = unrepliedReplies.map(
+      (reply) => ({
+        username: reply.cast?.author?.username || "",
+        timeAgo: reply.cast?.timestamp ? timeAgo(reply.cast.timestamp) : "",
+        timestamp: reply.cast?.timestamp ? Number(reply.cast.timestamp) : 0,
+        castUrl: `https://farcaster.xyz/${reply.cast?.author?.username}/${reply.cast?.hash}`,
+        text: reply.cast?.text || "",
+        avatarUrl: reply.cast?.author?.pfp_url || "",
+        castHash: reply.cast?.hash || "",
+        authorFid: reply.cast?.author?.fid || 0,
+        originalCastText: reply.cast?.text || "",
+        originalCastHash: reply.cast?.hash || "",
+        originalAuthorUsername: reply.cast?.author?.username || "",
+        replyCount: reply.cast?.replies?.count || 0,
+      })
+    );
 
     const response: FarcasterRepliesResponse = {
-      unrepliedCount: replies.length,
+      unrepliedCount: unrepliedReplies.length,
       unrepliedDetails: unrepliedDetails,
-      message: `You have ${replies.length} unreplied comments today.`,
+      message: `You have ${unrepliedReplies.length} unreplied comments today.`,
       nextCursor: nextCursor ? nextCursor.cursor : null,
     };
+
+    console.log("📤 API Response:", {
+      unrepliedCount: response.unrepliedCount,
+      detailsCount: response.unrepliedDetails.length,
+      nextCursor: response.nextCursor,
+      hasMore: !!response.nextCursor,
+    });
 
     return res.status(200).json(response);
   } catch (error) {
