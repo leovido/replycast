@@ -375,9 +375,12 @@ const FarcasterApp = memo(() => {
 
   // 1. Fetch user context once on mount
   useEffect(() => {
-    const getUser = async () => {
-      await sdk.actions.ready();
+    const initializeApp = async () => {
       try {
+        // Call ready() first to hide splash screen
+        await sdk.actions.ready();
+
+        // Then get user context
         const ctx = await sdk.context;
         const farUser = ctx?.user ?? {
           fid: 234616,
@@ -388,11 +391,12 @@ const FarcasterApp = memo(() => {
         };
         setUser(farUser);
       } catch (err) {
+        console.error("Failed to initialize app:", err);
         setError("Failed to load user");
         setLoading(false);
       }
     };
-    getUser();
+    initializeApp();
   }, []);
 
   // 2. Fetch data when user is set
@@ -720,7 +724,11 @@ const FarcasterApp = memo(() => {
                     fontFamily: "Instrument Sans, Nunito, Inter, sans-serif",
                   }}
                 >
-                  {data ? data.unrepliedCount : "--"}
+                  {allConversations.length > 0
+                    ? allConversations.length
+                    : data
+                    ? data.unrepliedCount
+                    : "--"}
                 </div>
                 <div className="text-white text-xl font-semibold mb-2">
                   unreplied conversations
