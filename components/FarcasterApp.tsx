@@ -375,35 +375,14 @@ const FarcasterApp = memo(() => {
 
   // 1. Call ready() immediately to hide splash screen
   useEffect(() => {
-    // Call ready() immediately and also after a short delay to ensure it's called
-    const hideSplash = async () => {
+    async function hideSplash() {
       try {
-        console.log("Calling sdk.actions.ready()...");
-        console.log("SDK available:", !!sdk);
-        console.log("SDK actions available:", !!sdk?.actions);
-        console.log("SDK ready method available:", !!sdk?.actions?.ready);
-
-        if (sdk && sdk.actions && sdk.actions.ready) {
-          await sdk.actions.ready();
-          console.log("sdk.actions.ready() completed successfully");
-        } else {
-          console.error("SDK or ready method not available");
-        }
+        await sdk.actions.ready();
       } catch (error) {
         console.error("Failed to call ready():", error);
       }
-    };
-
-    // Call immediately
+    }
     hideSplash();
-
-    // Also call after a short delay to ensure it's called even if there are timing issues
-    const timeoutId = setTimeout(() => {
-      console.log("Calling sdk.actions.ready() with timeout...");
-      hideSplash();
-    }, 100);
-
-    return () => clearTimeout(timeoutId);
   }, []);
 
   // 2. Fetch user context once on mount
