@@ -7,11 +7,11 @@ export default function Document() {
         {/* Farcaster Mini App Embed */}
         <meta
           name="fc:miniapp"
-          content='{"version":"1","imageUrl":"https://replycast-be-widget.vercel.app/api/og-image","button":{"title":"📝 Check Replies","action":{"type":"launch_miniapp","name":"ReplyCast","url":"https://replycast-be-widget.vercel.app","splashImageUrl":"https://replycast-be-widget.vercel.app/api/og-image","splashBackgroundColor":"#6C2BD7"}}}'
+          content='{"version":"1","imageUrl":"https://replycast.vercel.app/api/og-image","button":{"title":"📝 Check Replies","action":{"type":"launch_miniapp","name":"ReplyCast","url":"https://replycast.vercel.app","splashImageUrl":"https://replycast.vercel.app/api/og-image","splashBackgroundColor":"#6C2BD7"}}}'
         />
         <meta
           name="fc:frame"
-          content='{"version":"1","imageUrl":"https://replycast-be-widget.vercel.app/api/og-image","button":{"title":"📝 Check Replies","action":{"type":"launch_frame","name":"ReplyCast","url":"https://replycast-be-widget.vercel.app","splashImageUrl":"https://replycast-be-widget.vercel.app/api/og-image","splashBackgroundColor":"#6C2BD7"}}}'
+          content='{"version":"1","imageUrl":"https://replycast.vercel.app/api/og-image","button":{"title":"📝 Check Replies","action":{"type":"launch_frame","name":"ReplyCast","url":"https://replycast.vercel.app","splashImageUrl":"https://replycast.vercel.app/api/og-image","splashBackgroundColor":"#6C2BD7"}}}'
         />
 
         {/* Open Graph Metadata for better social sharing */}
@@ -22,12 +22,9 @@ export default function Document() {
         />
         <meta
           property="og:image"
-          content="https://replycast-be-widget.vercel.app/api/og-image"
+          content="https://replycast.vercel.app/api/og-image"
         />
-        <meta
-          property="og:url"
-          content="https://replycast-be-widget.vercel.app"
-        />
+        <meta property="og:url" content="https://replycast.vercel.app" />
         <meta property="og:type" content="website" />
 
         {/* Twitter Card Metadata */}
@@ -39,7 +36,7 @@ export default function Document() {
         />
         <meta
           name="twitter:image"
-          content="https://replycast-be-widget.vercel.app/api/og-image"
+          content="https://replycast.vercel.app/api/og-image"
         />
 
         {/* Additional Meta Tags */}
