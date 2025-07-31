@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef, useCallback, useMemo, memo } from "react";
 import Image from "next/image";
 import dynamic from "next/dynamic";
-import sdk from "@farcaster/miniapp-sdk";
+import { sdk } from "@farcaster/miniapp-sdk";
 import {
   Cursor,
   FarcasterRepliesResponse,
