@@ -377,9 +377,6 @@ const FarcasterApp = memo(() => {
   useEffect(() => {
     const initializeApp = async () => {
       try {
-        // Call ready() first to hide splash screen
-        await sdk.actions.ready();
-
         // Then get user context
         const ctx = await sdk.context;
         const farUser = ctx?.user ?? {
@@ -394,6 +391,10 @@ const FarcasterApp = memo(() => {
         console.error("Failed to initialize app:", err);
         setError("Failed to load user");
         setLoading(false);
+      } finally {
+        await sdk.actions.ready();
+        setLoading(false);
+        setError(null);
       }
     };
     initializeApp();
