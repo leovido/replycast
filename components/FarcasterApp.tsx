@@ -216,7 +216,15 @@ const FarcasterApp = memo(() => {
     "all" | "today" | "3days" | "7days"
   >("all");
   const [sortOption, setSortOption] = useState<
-    "newest" | "oldest" | "fid-asc" | "fid-desc" | "short" | "medium" | "long"
+    | "newest"
+    | "oldest"
+    | "fid-asc"
+    | "fid-desc"
+    | "short"
+    | "medium"
+    | "long"
+    | "openrank-asc"
+    | "openrank-desc"
   >("newest");
   const [openRankRanks, setOpenRankRanks] = useState<
     Record<number, number | null>
@@ -352,6 +360,20 @@ const FarcasterApp = memo(() => {
         case "fid-desc":
           arr.sort((a, b) => b.authorFid - a.authorFid);
           break;
+        case "openrank-asc":
+          arr.sort((a, b) => {
+            const rankA = openRankRanks[a.authorFid] || Infinity;
+            const rankB = openRankRanks[b.authorFid] || Infinity;
+            return rankA - rankB;
+          });
+          break;
+        case "openrank-desc":
+          arr.sort((a, b) => {
+            const rankA = openRankRanks[a.authorFid] || 0;
+            const rankB = openRankRanks[b.authorFid] || 0;
+            return rankB - rankA;
+          });
+          break;
         case "short":
           return arr.filter((d) => d.text.length < 20);
         case "medium":
@@ -363,7 +385,7 @@ const FarcasterApp = memo(() => {
       }
       return arr;
     },
-    [sortOption, getMinutesAgo]
+    [sortOption, getMinutesAgo, openRankRanks]
   );
 
   // Memoized processed data
@@ -391,6 +413,28 @@ const FarcasterApp = memo(() => {
   useEffect(() => {
     const initializeApp = async () => {
       try {
+        // In development, bypass mini app check and use default user
+        const isDevelopment = process.env.NODE_ENV === "development";
+        const bypassMiniApp =
+          isDevelopment ||
+          new URLSearchParams(window.location.search).get("bypass") ===
+            "true" ||
+          process.env.NEXT_PUBLIC_BYPASS_MINIAPP === "true";
+
+        if (bypassMiniApp) {
+          console.log("Development mode: bypassing mini app check");
+          setIsInMiniApp(false);
+          setUser({
+            fid: 203666,
+            username: "leovido",
+            displayName: "Leovido",
+            pfpUrl:
+              "https://wrpcd.net/cdn-cgi/imagedelivery/BXluQx4ige9GuW0Ia56BHw/252c844e-7be7-4dd5-6938-c1affcfd7e00/anim=false,fit=contain,f=auto,w=576",
+          });
+          setLoading(false);
+          return;
+        }
+
         // Check if we're in a Mini App environment
         const miniAppCheck = await sdk.isInMiniApp();
         setIsInMiniApp(miniAppCheck);
@@ -949,6 +993,18 @@ const FarcasterApp = memo(() => {
                     <option value="long" className="bg-gray-800 text-white">
                       Cast: Long (&gt;50 chars)
                     </option>
+                    <option
+                      value="openrank-asc"
+                      className="bg-gray-800 text-white"
+                    >
+                      OpenRank: Low → High
+                    </option>
+                    <option
+                      value="openrank-desc"
+                      className="bg-gray-800 text-white"
+                    >
+                      OpenRank: High → Low
+                    </option>
                   </select>
                 </div>
               </div>
@@ -965,6 +1021,7 @@ const FarcasterApp = memo(() => {
                 <ReplyCard
                   key={index}
                   detail={cast}
+                  openRank={openRankRanks[cast.authorFid] || null}
                   onClick={() => handleReply(cast)}
                   viewMode={viewMode}
                 />
@@ -976,6 +1033,7 @@ const FarcasterApp = memo(() => {
                 <ReplyCard
                   key={index}
                   detail={cast}
+                  openRank={openRankRanks[cast.authorFid] || null}
                   onClick={() => handleReply(cast)}
                   viewMode={viewMode}
                 />
