@@ -42,11 +42,10 @@ const nextConfig = {
             key: "X-DNS-Prefetch-Control",
             value: "on",
           },
-          // Removed X-Frame-Options to allow iframe embedding for Mini Apps
-          // {
-          //   key: "X-Frame-Options",
-          //   value: "SAMEORIGIN",
-          // },
+          {
+            key: "x-neynar-experimental",
+            value: "true",
+          },
           {
             key: "X-Content-Type-Options",
             value: "nosniff",
