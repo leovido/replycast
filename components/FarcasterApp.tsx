@@ -42,7 +42,7 @@ const FarcasterApp = memo(() => {
 
   // UI state
   const [viewMode, setViewMode] = useState<ViewMode>("list");
-  const [dayFilter, setDayFilter] = useState<DayFilter>("all");
+  const [dayFilter, setDayFilter] = useState<DayFilter>("today");
   const [sortOption, setSortOption] = useState<SortOption>("newest");
 
   // Farcaster data

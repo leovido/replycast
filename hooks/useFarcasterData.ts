@@ -17,7 +17,7 @@ export function useFarcasterData({
   user,
   fetchOpenRankRanks,
   clearOpenRankCache,
-  dayFilter = "all",
+  dayFilter = "today",
 }: UseFarcasterDataProps) {
   const [data, setData] = useState<FarcasterRepliesResponse | null>(null);
   const [loading, setLoading] = useState(true);

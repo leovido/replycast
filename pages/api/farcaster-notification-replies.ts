@@ -79,7 +79,7 @@ export default async function handler(
     limit = "25",
     cursor,
     type = "replies",
-    dayFilter = "all",
+    dayFilter = "today",
   } = req.query;
 
   if (!fid) {
