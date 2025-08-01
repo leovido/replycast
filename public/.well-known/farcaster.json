@@ -7,23 +7,16 @@
   "miniapp": {
     "version": "1",
     "name": "ReplyCast",
-    "iconUrl": "https://replycast-be-widget.vercel.app/api/og-image",
-    "homeUrl": "https://replycast-be-widget.vercel.app",
-    "imageUrl": "https://replycast-be-widget.vercel.app/api/og-image",
+    "iconUrl": "https://replycast.vercel.app/api/og-image",
+    "homeUrl": "https://replycast.vercel.app",
+    "imageUrl": "https://replycast.vercel.app/api/og-image",
     "buttonTitle": "📝 Reply",
-    "splashImageUrl": "https://replycast-be-widget.vercel.app/api/og-image",
+    "splashImageUrl": "https://replycast.vercel.app/api/og-image",
     "splashBackgroundColor": "#6C2BD7",
     "description": "Track and reply to your unreplied Farcaster conversations",
     "subtitle": "Never miss a reply again",
     "primaryCategory": "social",
-    "tags": [
-      "replies",
-      "farcaster",
-      "social",
-      "productivity"
-    ],
-    "requiredCapabilities": [
-      "actions.composeCast"
-    ]
+    "tags": ["replies", "farcaster", "social", "productivity"],
+    "requiredCapabilities": ["actions.composeCast"]
   }
-} 
+}

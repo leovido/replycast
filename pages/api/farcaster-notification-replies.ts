@@ -4,7 +4,12 @@ import type { FarcasterRepliesResponse, UnrepliedDetail } from "@/types/types";
 import { client } from "@/client";
 
 // Cache for user reply checks to avoid repeated API calls
-const replyCheckCache = new Map<string, boolean>();
+export const replyCheckCache = new Map<string, boolean>();
+
+// Add a function to clear cache for testing
+export function clearReplyCheckCache() {
+  replyCheckCache.clear();
+}
 
 // Helper function to check if user has replied to a conversation
 async function hasUserReplied(
@@ -87,12 +92,16 @@ export default async function handler(
     const nextCursor = request.next;
 
     // Filter out conversations where the user has already replied
+    // First, filter out notifications with null/undefined cast data
+    const validReplies = replies.filter((reply) => reply.cast?.hash);
+
     // Process in parallel for better performance
     const replyChecks = await Promise.all(
-      replies.map(async (reply) => {
-        if (!reply.cast?.hash) return { reply, hasReplied: false };
-
-        const userHasReplied = await hasUserReplied(userFid, reply.cast.hash);
+      validReplies.map(async (reply) => {
+        const userHasReplied = await hasUserReplied(
+          userFid,
+          reply.cast?.hash || ""
+        );
         return { reply, hasReplied: userHasReplied };
       })
     );
