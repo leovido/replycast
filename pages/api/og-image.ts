@@ -1,4 +1,4 @@
-import { NextApiRequest, NextApiResponse } from "next";
+import type { NextApiRequest, NextApiResponse } from "next";
 import satori from "satori";
 import { join } from "path";
 import { readFileSync } from "fs";

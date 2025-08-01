@@ -1,5 +1,5 @@
 import { client } from "@/client";
-import { NextApiRequest, NextApiResponse } from "next";
+import type { NextApiRequest, NextApiResponse } from "next";
 
 // === CONFIG ===
 const API_KEY = process.env.NEYNAR_API_KEY;

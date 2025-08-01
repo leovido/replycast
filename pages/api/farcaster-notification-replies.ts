@@ -1,6 +1,6 @@
-import { NextApiRequest, NextApiResponse } from "next";
+import type { NextApiRequest, NextApiResponse } from "next";
 import { FetchAllNotificationsTypeEnum } from "@neynar/nodejs-sdk/build/api/apis/notifications-api";
-import { FarcasterRepliesResponse, UnrepliedDetail } from "@/types/types";
+import type { FarcasterRepliesResponse, UnrepliedDetail } from "@/types/types";
 import { client } from "@/client";
 
 // Cache for user reply checks to avoid repeated API calls
