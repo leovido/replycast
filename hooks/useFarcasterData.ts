@@ -111,6 +111,14 @@ export function useFarcasterData({
 
       setCursor(responseData.nextCursor || null);
 
+      // Fetch OpenRank ranks for new FIDs in the response
+      if (responseData.unrepliedDetails?.length > 0) {
+        const fids = responseData.unrepliedDetails.map(
+          (detail: UnrepliedDetail) => detail.authorFid
+        );
+        await fetchOpenRankRanks(fids);
+      }
+
       // If no more data, stop loading more
       if (!responseData.nextCursor || !responseData.unrepliedDetails?.length) {
         setHasMore(false);
@@ -119,7 +127,15 @@ export function useFarcasterData({
       setHasMore(false); // Stop trying if error
     }
     setIsLoadingMore(false); // Always reset spinner
-  }, [hasMore, isLoadingMore, loading, user, cursor, dayFilter]);
+  }, [
+    hasMore,
+    isLoadingMore,
+    loading,
+    user,
+    cursor,
+    dayFilter,
+    fetchOpenRankRanks,
+  ]);
 
   const handleRefresh = useCallback(async () => {
     setIsRefreshing(true);
