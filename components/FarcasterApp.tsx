@@ -551,6 +551,14 @@ const FarcasterApp = memo(() => {
 
       setCursor(responseData.nextCursor || null);
 
+      // Fetch OpenRank ranks for new FIDs in the response
+      if (responseData.unrepliedDetails?.length > 0) {
+        const fids = responseData.unrepliedDetails.map(
+          (detail: UnrepliedDetail) => detail.authorFid
+        );
+        await fetchOpenRankRanks(fids);
+      }
+
       // If no more data, stop loading more
       if (!responseData.nextCursor || !responseData.unrepliedDetails?.length) {
         setHasMore(false);
@@ -559,7 +567,8 @@ const FarcasterApp = memo(() => {
       setHasMore(false); // Stop trying if error
     }
     setIsLoadingMore(false); // Always reset spinner
-  }, [hasMore, isLoadingMore, loading, user, cursor]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hasMore, isLoadingMore, loading, cursor, fetchOpenRankRanks]);
 
   useEffect(() => {
     const current = observerRef.current;
