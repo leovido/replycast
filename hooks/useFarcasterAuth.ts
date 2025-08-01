@@ -61,9 +61,11 @@ export function useFarcasterAuth() {
                 "https://wrpcd.net/cdn-cgi/imagedelivery/BXluQx4ige9GuW0Ia56BHw/252c844e-7be7-4dd5-6938-c1affcfd7e00/anim=false,fit=contain,f=auto,w=576",
             };
             setUser(farUser);
+            setLoading(false); // Add this line to stop loading
           } catch (err) {
             console.error("Failed to get Mini App context:", err);
             setError("Failed to load user");
+            setLoading(false); // Add this line to stop loading on error
           }
         } else {
           // Not in Mini App - user will need to sign in
