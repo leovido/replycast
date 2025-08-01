@@ -1,0 +1,104 @@
+import { useState, useCallback, useRef } from "react";
+
+// Constants
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes in milliseconds
+
+export function useOpenRank() {
+  const [openRankRanks, setOpenRankRanks] = useState<Record<number, number | null>>({});
+
+  // Cache for OpenRank data with TTL (5 minutes)
+  const openRankCache = useRef<{
+    data: Record<number, number | null>;
+    timestamp: number;
+  }>({ data: {}, timestamp: 0 });
+
+  const getCacheStatus = useCallback(() => {
+    const now = Date.now();
+    const isCacheValid = now - openRankCache.current.timestamp < CACHE_TTL;
+    const cacheAge = Math.round((now - openRankCache.current.timestamp) / 1000);
+    const cachedFids = Object.keys(openRankCache.current.data).length;
+
+    return {
+      isValid: isCacheValid,
+      age: cacheAge,
+      cachedFids,
+      ttl: Math.round(CACHE_TTL / 1000),
+    };
+  }, []);
+
+  // Helper to fetch OpenRank ranks with caching (optimized)
+  const fetchOpenRankRanks = useCallback(async (fids: number[]) => {
+    if (fids.length === 0) return;
+
+    const now = Date.now();
+    const uniqueFids = Array.from(new Set(fids)); // More efficient Set conversion
+
+    // Check if cache is still valid
+    const isCacheValid = now - openRankCache.current.timestamp < CACHE_TTL;
+
+    // Filter out FIDs that are already cached and valid
+    const fidsToFetch = uniqueFids.filter(
+      (fid) => !isCacheValid || !openRankCache.current.data.hasOwnProperty(fid)
+    );
+
+    // If we have cached data, use it immediately
+    if (isCacheValid) {
+      const cachedRanks: Record<number, number | null> = {};
+      uniqueFids.forEach((fid) => {
+        if (openRankCache.current.data.hasOwnProperty(fid)) {
+          cachedRanks[fid] = openRankCache.current.data[fid];
+        }
+      });
+
+      if (Object.keys(cachedRanks).length > 0) {
+        setOpenRankRanks((prev) => ({ ...prev, ...cachedRanks }));
+      }
+    }
+
+    // If no FIDs need fetching, we're done
+    if (fidsToFetch.length === 0) return;
+
+    try {
+      const response = await fetch(`/api/openRank?fids=${fidsToFetch.join(",")}`, {
+        signal: AbortSignal.timeout(10000), // 10 second timeout
+      });
+
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+      const data = await response.json();
+
+      if (data.ranks) {
+        // Convert string keys to numbers for consistency
+        const newRankMap: Record<number, number | null> = {};
+
+        Object.entries(data.ranks).forEach(([fid, rank]) => {
+          newRankMap[parseInt(fid)] = rank as number | null;
+        });
+
+        // Update cache with new data
+        openRankCache.current.data = {
+          ...openRankCache.current.data,
+          ...newRankMap,
+        };
+        openRankCache.current.timestamp = now;
+
+        // Update state with new data
+        setOpenRankRanks((prev) => ({ ...prev, ...newRankMap }));
+      }
+    } catch (error) {
+      console.error("Failed to fetch OpenRank ranks:", error);
+    }
+  }, []);
+
+  const clearCache = useCallback(() => {
+    openRankCache.current = { data: {}, timestamp: 0 };
+    setOpenRankRanks({});
+  }, []);
+
+  return {
+    openRankRanks,
+    fetchOpenRankRanks,
+    getCacheStatus,
+    clearCache,
+  };
+}

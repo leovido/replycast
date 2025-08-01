@@ -66,6 +66,15 @@ const nextConfig = {
           },
         ],
       },
+      {
+        source: "/api/farcaster-notification-replies",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "public, s-maxage=60, stale-while-revalidate=120",
+          },
+        ],
+      },
     ];
   },
 
