@@ -66,6 +66,23 @@ const nextConfig = {
           },
         ],
       },
+      {
+        source: "/api/farcaster-notification-replies",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "no-cache, no-store, must-revalidate, private",
+          },
+          {
+            key: "Pragma",
+            value: "no-cache",
+          },
+          {
+            key: "Expires",
+            value: "0",
+          },
+        ],
+      },
     ];
   },
 

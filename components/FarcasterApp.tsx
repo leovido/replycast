@@ -18,7 +18,12 @@ import { ConversationList } from "./ConversationList";
 import { sortDetails } from "@/utils/farcaster";
 
 // Types
-import type { ViewMode, DayFilter, SortOption, UnrepliedDetail } from "@/types/farcaster";
+import type {
+  ViewMode,
+  DayFilter,
+  SortOption,
+  UnrepliedDetail,
+} from "@/types/farcaster";
 
 const FarcasterApp = memo(() => {
   // Authentication
@@ -32,7 +37,13 @@ const FarcasterApp = memo(() => {
   } = useFarcasterAuth();
 
   // OpenRank data
-  const { openRankRanks, fetchOpenRankRanks, getCacheStatus, clearCache } = useOpenRank();
+  const { openRankRanks, fetchOpenRankRanks, getCacheStatus, clearCache } =
+    useOpenRank();
+
+  // UI state
+  const [viewMode, setViewMode] = useState<ViewMode>("list");
+  const [dayFilter, setDayFilter] = useState<DayFilter>("all");
+  const [sortOption, setSortOption] = useState<SortOption>("newest");
 
   // Farcaster data
   const {
@@ -50,12 +61,8 @@ const FarcasterApp = memo(() => {
     user,
     fetchOpenRankRanks,
     clearOpenRankCache: clearCache,
+    dayFilter,
   });
-
-  // UI state
-  const [viewMode, setViewMode] = useState<ViewMode>("list");
-  const [dayFilter, setDayFilter] = useState<DayFilter>("all");
-  const [sortOption, setSortOption] = useState<SortOption>("newest");
 
   // Infinite scroll
   const { observerRef } = useInfiniteScroll({
@@ -89,6 +96,8 @@ const FarcasterApp = memo(() => {
   // Memoized processed data
   const processedConversations = useMemo(() => {
     if (!allConversations.length) return [];
+
+    // Apply sorting only (filtering is now handled on the backend)
     return sortDetails(allConversations, sortOption, openRankRanks);
   }, [allConversations, sortOption, openRankRanks]);
 

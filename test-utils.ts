@@ -12,7 +12,9 @@ export function resetAllMocks() {
 /**
  * Utility function to create isolated mocks for each test
  */
-export function createIsolatedMock<T>(mockFn: jest.Mocked<T>): jest.Mocked<T> {
+export function createIsolatedMock<T extends object>(
+  mockFn: jest.Mocked<T>
+): jest.Mocked<T> {
   jest.clearAllMocks();
   return mockFn;
 }
@@ -27,13 +29,13 @@ export function flushPromises() {
 /**
  * Utility function to create a mock that returns different values based on parameters
  */
-export function createParameterizedMock<T>(
-  mockFn: jest.MockedFunction<T>,
+export function createParameterizedMock(
+  mockFn: jest.MockedFunction<any>,
   responses: Record<string, any>
-): jest.MockedFunction<T> {
+): jest.MockedFunction<any> {
   return mockFn.mockImplementation((params: any) => {
     const key =
       typeof params === "object" ? JSON.stringify(params) : String(params);
     return responses[key] || responses.default;
-  }) as jest.MockedFunction<T>;
+  });
 }

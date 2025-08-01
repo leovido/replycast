@@ -1,4 +1,5 @@
 // Component-specific types for FarcasterApp
+import type { UnrepliedDetail } from "@/types/types";
 
 export type ViewMode = "list" | "grid";
 

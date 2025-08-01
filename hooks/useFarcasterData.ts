@@ -1,13 +1,24 @@
 import { useState, useEffect, useCallback } from "react";
-import type { FarcasterRepliesResponse, UnrepliedDetail, User, Cursor } from "@/types/types";
+import type {
+  FarcasterRepliesResponse,
+  UnrepliedDetail,
+  User,
+  Cursor,
+} from "@/types/types";
 
 interface UseFarcasterDataProps {
   user: User | null;
   fetchOpenRankRanks: (fids: number[]) => Promise<void>;
   clearOpenRankCache: () => void;
+  dayFilter?: string;
 }
 
-export function useFarcasterData({ user, fetchOpenRankRanks, clearOpenRankCache }: UseFarcasterDataProps) {
+export function useFarcasterData({
+  user,
+  fetchOpenRankRanks,
+  clearOpenRankCache,
+  dayFilter = "all",
+}: UseFarcasterDataProps) {
   const [data, setData] = useState<FarcasterRepliesResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -17,19 +28,27 @@ export function useFarcasterData({ user, fetchOpenRankRanks, clearOpenRankCache 
   const [cursor, setCursor] = useState<Cursor>(null);
   const [hasMore, setHasMore] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
-  const [allConversations, setAllConversations] = useState<UnrepliedDetail[]>([]);
+  const [allConversations, setAllConversations] = useState<UnrepliedDetail[]>(
+    []
+  );
 
   // Fetch data when user is set
   useEffect(() => {
     if (!user) return;
-    
+
     const fetchData = async () => {
       setLoading(true);
       try {
         // Use the same API endpoint as infinite scroll for consistency
-        const url = new URL("/api/farcaster-notification-replies", window.location.origin);
+        const url = new URL(
+          "/api/farcaster-notification-replies",
+          window.location.origin
+        );
         url.searchParams.set("fid", user.fid.toString());
         url.searchParams.set("limit", "25");
+        if (dayFilter !== "all") {
+          url.searchParams.set("dayFilter", dayFilter);
+        }
 
         const res = await fetch(url.toString());
         const responseData = await res.json();
@@ -54,30 +73,41 @@ export function useFarcasterData({ user, fetchOpenRankRanks, clearOpenRankCache 
         }
       } catch (err) {
         setHasMore(false);
-        setError(err instanceof Error ? err.message : "Failed to load conversations");
+        setError(
+          err instanceof Error ? err.message : "Failed to load conversations"
+        );
         setLoading(false);
       }
     };
-    
+
     fetchData();
-  }, [user, fetchOpenRankRanks]);
+  }, [user, fetchOpenRankRanks, dayFilter]);
 
   const loadMoreConversations = useCallback(async () => {
     if (!hasMore || isLoadingMore || loading) return;
 
     setIsLoadingMore(true);
     try {
-      const url = new URL("/api/farcaster-notification-replies", window.location.origin);
+      const url = new URL(
+        "/api/farcaster-notification-replies",
+        window.location.origin
+      );
       url.searchParams.set("fid", user?.fid.toString() || "203666");
       if (cursor) {
         url.searchParams.set("cursor", cursor);
+      }
+      if (dayFilter !== "all") {
+        url.searchParams.set("dayFilter", dayFilter);
       }
 
       const res = await fetch(url.toString());
       const responseData = await res.json();
 
       // Append new conversations
-      setAllConversations((prev) => [...prev, ...(responseData.unrepliedDetails || [])]);
+      setAllConversations((prev) => [
+        ...prev,
+        ...(responseData.unrepliedDetails || []),
+      ]);
 
       setCursor(responseData.nextCursor || null);
 
@@ -89,7 +119,7 @@ export function useFarcasterData({ user, fetchOpenRankRanks, clearOpenRankCache 
       setHasMore(false); // Stop trying if error
     }
     setIsLoadingMore(false); // Always reset spinner
-  }, [hasMore, isLoadingMore, loading, user, cursor]);
+  }, [hasMore, isLoadingMore, loading, user, cursor, dayFilter]);
 
   const handleRefresh = useCallback(async () => {
     setIsRefreshing(true);
@@ -102,7 +132,7 @@ export function useFarcasterData({ user, fetchOpenRankRanks, clearOpenRankCache 
     const userFid = user?.fid || 203666;
     try {
       const res = await fetch(
-        `/api/farcaster-notification-replies?fid=${userFid}&cursor=${cursor}`,
+        `/api/farcaster-notification-replies?fid=${userFid}&cursor=${cursor}&dayFilter=${dayFilter}`,
         {
           cache: "no-store",
         }
@@ -127,7 +157,7 @@ export function useFarcasterData({ user, fetchOpenRankRanks, clearOpenRankCache 
       setError("Failed to load conversations");
     }
     setIsRefreshing(false);
-  }, [user?.fid, fetchOpenRankRanks, clearOpenRankCache, cursor]);
+  }, [user?.fid, fetchOpenRankRanks, clearOpenRankCache, cursor, dayFilter]);
 
   const resetPagination = useCallback(() => {
     setCursor(null);

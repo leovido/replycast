@@ -74,11 +74,19 @@ export default async function handler(
     return res.status(405).json({ error: "Method not allowed" });
   }
 
-  const { fid, limit = "25", cursor, type = "replies" } = req.query;
+  const {
+    fid,
+    limit = "25",
+    cursor,
+    type = "replies",
+    dayFilter = "all",
+  } = req.query;
 
   if (!fid) {
     return res.status(400).json({ error: "fid query parameter is required" });
   }
+
+  // Cache control is handled by Next.js config for this endpoint
 
   try {
     const userFid = parseInt(fid as string, 10);
@@ -110,7 +118,32 @@ export default async function handler(
       .filter(({ hasReplied }) => !hasReplied)
       .map(({ reply }) => reply);
 
-    const unrepliedDetails: UnrepliedDetail[] = unrepliedReplies.map(
+    // Apply day filtering if specified
+    let filteredReplies = unrepliedReplies;
+    if (dayFilter !== "all") {
+      const now = Date.now();
+      const oneDayMs = 24 * 60 * 60 * 1000;
+
+      filteredReplies = unrepliedReplies.filter((reply) => {
+        const replyTime = reply.cast?.timestamp
+          ? new Date(reply.cast.timestamp).getTime()
+          : 0;
+        const timeDiff = now - replyTime;
+
+        switch (dayFilter) {
+          case "today":
+            return timeDiff < oneDayMs;
+          case "3days":
+            return timeDiff < 3 * oneDayMs;
+          case "7days":
+            return timeDiff < 7 * oneDayMs;
+          default:
+            return true;
+        }
+      });
+    }
+
+    const unrepliedDetails: UnrepliedDetail[] = filteredReplies.map(
       (reply) => ({
         username: reply.cast?.author?.username || "",
         timeAgo: reply.cast?.timestamp ? timeAgo(reply.cast.timestamp) : "",
@@ -128,9 +161,19 @@ export default async function handler(
     );
 
     const response: FarcasterRepliesResponse = {
-      unrepliedCount: unrepliedReplies.length,
+      unrepliedCount: unrepliedDetails.length,
       unrepliedDetails: unrepliedDetails,
-      message: `You have ${unrepliedReplies.length} unreplied comments today.`,
+      message: `You have ${unrepliedDetails.length} unreplied comments${
+        dayFilter !== "all"
+          ? ` in the last ${
+              dayFilter === "today"
+                ? "day"
+                : dayFilter === "3days"
+                ? "3 days"
+                : "7 days"
+            }`
+          : ""
+      }.`,
       nextCursor: nextCursor ? nextCursor.cursor : null,
     };
 
