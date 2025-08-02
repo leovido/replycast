@@ -28,19 +28,23 @@ export function useFarcasterAuth() {
         const isDevelopment = process.env.NODE_ENV === "development";
         const bypassMiniApp =
           isDevelopment ||
-          new URLSearchParams(window.location.search).get("bypass") === "true" ||
+          new URLSearchParams(window.location.search).get("bypass") ===
+            "true" ||
           process.env.NEXT_PUBLIC_BYPASS_MINIAPP === "true";
 
         if (bypassMiniApp) {
           console.log("Development mode: bypassing mini app check");
           setIsInMiniApp(false);
-          setUser({
+          // In development, use a test user but log it clearly
+          const testUser = {
             fid: 203666,
             username: "leovido",
-            displayName: "Leovido",
+            displayName: "Leovido (DEV)",
             pfpUrl:
               "https://wrpcd.net/cdn-cgi/imagedelivery/BXluQx4ige9GuW0Ia56BHw/252c844e-7be7-4dd5-6938-c1affcfd7e00/anim=false,fit=contain,f=auto,w=576",
-          });
+          };
+          console.warn("Development mode: Using test user", testUser);
+          setUser(testUser);
           setLoading(false);
           return;
         }
@@ -53,13 +57,10 @@ export function useFarcasterAuth() {
           // If we're in a Mini App, try to get context
           try {
             const ctx = await sdk.context;
-            const farUser = ctx?.user ?? {
-              fid: 203666,
-              username: "leovido",
-              displayName: "Leovido",
-              pfpUrl:
-                "https://wrpcd.net/cdn-cgi/imagedelivery/BXluQx4ige9GuW0Ia56BHw/252c844e-7be7-4dd5-6938-c1affcfd7e00/anim=false,fit=contain,f=auto,w=576",
-            };
+            const farUser = ctx?.user;
+            if (!farUser) {
+              throw new Error("Failed to get user context from Mini App");
+            }
             setUser(farUser);
             setLoading(false); // Add this line to stop loading
           } catch (err) {

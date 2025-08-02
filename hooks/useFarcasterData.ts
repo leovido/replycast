@@ -92,7 +92,10 @@ export function useFarcasterData({
         "/api/farcaster-notification-replies",
         window.location.origin
       );
-      url.searchParams.set("fid", user?.fid.toString() || "203666");
+      if (!user?.fid) {
+        throw new Error("User FID is required to load conversations");
+      }
+      url.searchParams.set("fid", user.fid.toString());
       if (cursor) {
         url.searchParams.set("cursor", cursor);
       }
@@ -145,7 +148,10 @@ export function useFarcasterData({
     clearOpenRankCache();
 
     // Force refresh by bypassing cache
-    const userFid = user?.fid || 203666;
+    if (!user?.fid) {
+      throw new Error("User FID is required to refresh conversations");
+    }
+    const userFid = user.fid;
     try {
       const res = await fetch(
         `/api/farcaster-notification-replies?fid=${userFid}&cursor=${cursor}&dayFilter=${dayFilter}`,

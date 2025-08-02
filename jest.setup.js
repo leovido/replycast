@@ -45,9 +45,9 @@ jest.mock("@farcaster/miniapp-sdk", () => ({
     isInMiniApp: jest.fn(),
     context: {
       user: {
-        fid: 203666,
+        fid: 203666, // Test user FID
         username: "testuser",
-        displayName: "Test User",
+        displayName: "Test User (Jest)",
       },
     },
   },
