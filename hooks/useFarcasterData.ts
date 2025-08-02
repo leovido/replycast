@@ -23,6 +23,7 @@ export function useFarcasterData({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [userOpenRank, setUserOpenRank] = useState<number | null>(null);
 
   // Pagination state
   const [cursor, setCursor] = useState<Cursor>(null);
@@ -32,6 +33,26 @@ export function useFarcasterData({
     []
   );
 
+  // Fetch user's OpenRank score
+  const fetchUserOpenRank = useCallback(async (userFid: number) => {
+    try {
+      const response = await fetch(`/api/openRank?fids=${userFid}`, {
+        signal: AbortSignal.timeout(10000), // 10 second timeout
+      });
+
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+      const data = await response.json();
+
+      if (data.ranks && data.ranks[userFid]) {
+        setUserOpenRank(data.ranks[userFid] as number);
+      }
+    } catch (error) {
+      console.error("Failed to fetch user OpenRank:", error);
+      // Don't set error state for user OpenRank as it's not critical
+    }
+  }, []);
+
   // Fetch data when user is set
   useEffect(() => {
     if (!user) return;
@@ -39,6 +60,9 @@ export function useFarcasterData({
     const fetchData = async () => {
       setLoading(true);
       try {
+        // Fetch user's OpenRank score first
+        await fetchUserOpenRank(user.fid);
+
         // Use the same API endpoint as infinite scroll for consistency
         const url = new URL(
           "/api/farcaster-notification-replies",
@@ -81,7 +105,7 @@ export function useFarcasterData({
     };
 
     fetchData();
-  }, [user, fetchOpenRankRanks, dayFilter]);
+  }, [user, fetchOpenRankRanks, fetchUserOpenRank, dayFilter]);
 
   const loadMoreConversations = useCallback(async () => {
     if (!hasMore || isLoadingMore || loading) return;
@@ -153,6 +177,9 @@ export function useFarcasterData({
     }
     const userFid = user.fid;
     try {
+      // Refresh user's OpenRank score
+      await fetchUserOpenRank(userFid);
+
       const res = await fetch(
         `/api/farcaster-notification-replies?fid=${userFid}&cursor=${cursor}&dayFilter=${dayFilter}`,
         {
@@ -179,7 +206,14 @@ export function useFarcasterData({
       setError("Failed to load conversations");
     }
     setIsRefreshing(false);
-  }, [user?.fid, fetchOpenRankRanks, clearOpenRankCache, cursor, dayFilter]);
+  }, [
+    user?.fid,
+    fetchOpenRankRanks,
+    fetchUserOpenRank,
+    clearOpenRankCache,
+    cursor,
+    dayFilter,
+  ]);
 
   const resetPagination = useCallback(() => {
     setCursor(null);
@@ -197,6 +231,7 @@ export function useFarcasterData({
     hasMore,
     isLoadingMore,
     cursor,
+    userOpenRank,
     loadMoreConversations,
     handleRefresh,
     resetPagination,

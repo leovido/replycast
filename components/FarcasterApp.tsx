@@ -54,6 +54,7 @@ const FarcasterApp = memo(() => {
     allConversations,
     hasMore,
     isLoadingMore,
+    userOpenRank,
     loadMoreConversations,
     handleRefresh,
     resetPagination,
@@ -141,6 +142,7 @@ const FarcasterApp = memo(() => {
       <AppHeader
         user={user}
         conversationCount={allConversations.length}
+        userOpenRank={userOpenRank}
         error={error}
         isRefreshing={isRefreshing}
         getCacheStatus={getCacheStatus}

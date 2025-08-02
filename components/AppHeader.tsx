@@ -4,6 +4,7 @@ import type { User } from "@/types/types";
 interface AppHeaderProps {
   user: User | null;
   conversationCount: number;
+  userOpenRank: number | null;
   error: string | null;
   isRefreshing: boolean;
   getCacheStatus: () => {
@@ -18,6 +19,7 @@ interface AppHeaderProps {
 export function AppHeader({
   user,
   conversationCount,
+  userOpenRank,
   error,
   isRefreshing,
   getCacheStatus,
@@ -73,6 +75,11 @@ export function AppHeader({
                   {user.displayName} (@{user.username})
                 </div>
                 <div className="text-white/70 text-sm">FID: {user.fid}</div>
+                {userOpenRank !== null && (
+                  <div className="text-white/70 text-sm">
+                    OpenRank: {userOpenRank.toLocaleString()}
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -98,7 +105,9 @@ export function AppHeader({
               {/* Error Display */}
               {error && (
                 <div className="mt-6 bg-red-500/10 border border-red-400/30 rounded-xl p-4">
-                  <div className="text-red-700 text-sm font-medium">{error}</div>
+                  <div className="text-red-700 text-sm font-medium">
+                    {error}
+                  </div>
                 </div>
               )}
 
@@ -106,7 +115,8 @@ export function AppHeader({
               {process.env.NODE_ENV === "development" && (
                 <div className="text-xs text-white/60 bg-white/5 px-2 py-1 rounded-lg border border-white/10 mt-4">
                   <span className="font-mono">
-                    Cache: {getCacheStatus().cachedFids} FIDs ({getCacheStatus().age}s)
+                    Cache: {getCacheStatus().cachedFids} FIDs (
+                    {getCacheStatus().age}s)
                   </span>
                 </div>
               )}
