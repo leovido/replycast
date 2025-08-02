@@ -49,14 +49,14 @@ export const ReplyCard = memo<ReplyCardProps>(
           }
         }}
         className="
-  relative isolate flex flex-col gap-6
-  w-full max-w-lg mx-auto
-  rounded-2xl p-8 shadow-xl ring-1 ring-white/10
-  bg-zinc-900/75 backdrop-blur-lg overflow-hidden          /* ① overflow-hidden keeps glow inside */
-  transition hover:bg-zinc-900/80
-  focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400
-  group
-"
+          relative isolate flex flex-col gap-6
+          w-full
+          rounded-2xl p-8 shadow-xl ring-1 ring-white/10
+          bg-zinc-900/75 backdrop-blur-lg overflow-hidden
+          transition hover:bg-zinc-900/80
+          focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400
+          group
+        "
         style={{ fontFamily: "Instrument Sans, Nunito, Inter, sans-serif" }}
       >
         <span
@@ -166,7 +166,7 @@ export const ReplyCard = memo<ReplyCardProps>(
           )}
         </header>
 
-        <p className="z-10 text-white text-base leading-relaxed break-words">
+        <p className="z-10 text-white text-base leading-relaxed break-words whitespace-pre-wrap">
           {detail.text}
         </p>
 
