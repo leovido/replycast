@@ -1,4 +1,5 @@
 import Image from "next/image";
+import { sdk } from "@farcaster/miniapp-sdk";
 import type { User } from "@/types/types";
 
 interface AppHeaderProps {
@@ -25,6 +26,19 @@ export function AppHeader({
   getCacheStatus,
   onRefresh,
 }: AppHeaderProps) {
+  const handleProfileClick = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (!user?.fid) return;
+
+    try {
+      await sdk.actions.viewProfile({ fid: user.fid });
+    } catch (error) {
+      console.error("Failed to view profile:", error);
+    }
+  };
+
   return (
     <div className="relative overflow-hidden">
       <div className="absolute inset-0 bg-gradient-to-br from-purple-600/20 via-blue-600/20 to-cyan-500/20"></div>
@@ -71,15 +85,27 @@ export function AppHeader({
                 />
               )}
               <div className="text-left">
-                <div className="text-white font-semibold text-lg">
+                <button
+                  onClick={handleProfileClick}
+                  className="text-white font-semibold text-lg hover:text-blue-300 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 rounded"
+                  aria-label={`View @${user.username}'s profile`}
+                >
                   {user.displayName} (@{user.username})
+                </button>
+                <div className="flex flex-col items-start">
+                  <button
+                    onClick={handleProfileClick}
+                    className="text-white/70 text-sm hover:text-blue-300/70 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 rounded"
+                    aria-label={`View FID ${user.fid}'s profile`}
+                  >
+                    FID: {user.fid}
+                  </button>
+                  {userOpenRank !== null && (
+                    <div className="text-white/70 text-sm">
+                      OpenRank: {userOpenRank.toLocaleString()}
+                    </div>
+                  )}
                 </div>
-                <div className="text-white/70 text-sm">FID: {user.fid}</div>
-                {userOpenRank !== null && (
-                  <div className="text-white/70 text-sm">
-                    OpenRank: {userOpenRank.toLocaleString()}
-                  </div>
-                )}
               </div>
             </div>
           )}
