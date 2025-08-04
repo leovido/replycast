@@ -73,9 +73,21 @@ export const ReplyCard = memo<ReplyCardProps>(
       if (Math.abs(deltaX) > swipeThreshold) {
         if (deltaX > 0) {
           // Swipe right - open cast
+          try {
+            // Trigger haptic feedback
+            sdk.haptics?.impactOccurred?.("medium");
+          } catch (error) {
+            // Haptic not available, continue anyway
+          }
           onClick();
         } else {
           // Swipe left - mark as read
+          try {
+            // Trigger haptic feedback
+            sdk.haptics?.impactOccurred?.("light");
+          } catch (error) {
+            // Haptic not available, continue anyway
+          }
           if (onMarkAsRead) {
             onMarkAsRead(detail);
           }
@@ -105,14 +117,14 @@ export const ReplyCard = memo<ReplyCardProps>(
             relative isolate flex flex-col gap-6
             w-full
             rounded-2xl p-8 shadow-xl ring-1 ring-white/10
-            bg-zinc-900/75 backdrop-blur-lg overflow-hidden
+            bg-gradient-to-br from-white/15 to-white/10 backdrop-blur-lg overflow-hidden
             transition-all duration-300 ease-out
             focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400
             group
             ${
               hasUserInteraction
-                ? "bg-gradient-to-br from-zinc-900/90 to-zinc-800/90 ring-2 ring-blue-400/30 shadow-2xl hover:shadow-blue-500/20 hover:scale-[1.02] hover:-translate-y-1"
-                : "hover:bg-zinc-900/80 hover:scale-[1.01] hover:-translate-y-0.5"
+                ? "bg-gradient-to-br from-white/20 to-white/15 ring-2 ring-blue-400/40 shadow-2xl hover:shadow-blue-500/20 hover:scale-[1.02] hover:-translate-y-1"
+                : "hover:bg-gradient-to-br hover:from-white/18 hover:to-white/12 hover:scale-[1.01] hover:-translate-y-0.5"
             }
           `}
           style={{ transform }}
@@ -356,10 +368,10 @@ export const ReplyCard = memo<ReplyCardProps>(
         className={`relative w-full text-left p-6 rounded-2xl transition-all duration-300 hover:scale-[1.02] focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 ${
           hasUserInteraction
             ? isDarkTheme
-              ? "bg-gradient-to-br from-blue-500/10 to-purple-500/10 ring-2 ring-blue-400/30 shadow-xl shadow-blue-500/20"
+              ? "bg-gradient-to-br from-white/15 to-white/10 ring-2 ring-blue-400/40 shadow-xl shadow-blue-500/20 backdrop-blur-md border border-white/20"
               : "bg-gradient-to-br from-blue-50 to-purple-50 ring-2 ring-blue-400/30 shadow-xl shadow-blue-500/20"
             : isDarkTheme
-            ? "bg-white/10 backdrop-blur-sm border border-white/20 hover:bg-white/15"
+            ? "bg-gradient-to-br from-white/12 to-white/8 backdrop-blur-md border border-white/15 hover:bg-gradient-to-br hover:from-white/15 hover:to-white/10 hover:shadow-lg hover:shadow-white/5"
             : "bg-white/80 backdrop-blur-sm border border-gray-200 hover:bg-white/90"
         }`}
         style={{ transform }}
