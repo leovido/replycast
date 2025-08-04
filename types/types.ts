@@ -20,6 +20,13 @@ export interface UnrepliedDetail {
   originalCastHash: string;
   originalAuthorUsername: string;
   replyCount: number;
+  // User interaction data
+  userLiked?: boolean;
+  userRecasted?: boolean;
+  hasUserInteraction?: boolean;
+  // Reaction counts
+  likesCount?: number;
+  recastsCount?: number;
 }
 
 export interface FarcasterRepliesResponse {

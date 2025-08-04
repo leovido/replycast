@@ -1,4 +1,8 @@
-import type { Cursor, FarcasterRepliesResponse, UnrepliedDetail } from "@/types/types";
+import type {
+  Cursor,
+  FarcasterRepliesResponse,
+  UnrepliedDetail,
+} from "@/types/types";
 
 // Constants
 export const MAX_CHARACTERS = 320; // Farcaster cast limit
@@ -95,41 +99,67 @@ export function sortDetails(
   openRankRanks: Record<number, number | null>
 ): UnrepliedDetail[] {
   const arr = [...details]; // Create copy to avoid mutation
-  switch (sortOption) {
-    case "newest":
-      arr.sort((a, b) => getMinutesAgo(a.timeAgo) - getMinutesAgo(b.timeAgo));
-      break;
-    case "oldest":
-      arr.sort((a, b) => getMinutesAgo(b.timeAgo) - getMinutesAgo(a.timeAgo));
-      break;
-    case "fid-asc":
-      arr.sort((a, b) => a.authorFid - b.authorFid);
-      break;
-    case "fid-desc":
-      arr.sort((a, b) => b.authorFid - a.authorFid);
-      break;
-    case "openrank-asc":
-      arr.sort((a, b) => {
-        const rankA = openRankRanks[a.authorFid] || Infinity;
-        const rankB = openRankRanks[b.authorFid] || Infinity;
-        return rankA - rankB;
-      });
-      break;
-    case "openrank-desc":
-      arr.sort((a, b) => {
-        const rankA = openRankRanks[a.authorFid] || 0;
-        const rankB = openRankRanks[b.authorFid] || 0;
-        return rankB - rankA;
-      });
-      break;
-    case "short":
-      return arr.filter((d) => d.text.length < 20);
-    case "medium":
-      return arr.filter((d) => d.text.length >= 20 && d.text.length <= 50);
-    case "long":
-      return arr.filter((d) => d.text.length > 50);
-    default:
-      break;
-  }
-  return arr;
+
+  // First, sort by user interactions (likes/recasts) - these get priority
+  arr.sort((a, b) => {
+    const aHasInteraction = a.hasUserInteraction || false;
+    const bHasInteraction = b.hasUserInteraction || false;
+
+    if (aHasInteraction && !bHasInteraction) return -1;
+    if (!aHasInteraction && bHasInteraction) return 1;
+
+    // If both have interactions or both don't, continue with normal sorting
+    return 0;
+  });
+
+  // Apply secondary sorting within each group (interacted vs non-interacted)
+  const interactedCasts = arr.filter((d) => d.hasUserInteraction);
+  const nonInteractedCasts = arr.filter((d) => !d.hasUserInteraction);
+
+  // Sort each group separately
+  const sortGroup = (group: UnrepliedDetail[]) => {
+    switch (sortOption) {
+      case "newest":
+        return group.sort(
+          (a, b) => getMinutesAgo(a.timeAgo) - getMinutesAgo(b.timeAgo)
+        );
+      case "oldest":
+        return group.sort(
+          (a, b) => getMinutesAgo(b.timeAgo) - getMinutesAgo(a.timeAgo)
+        );
+      case "fid-asc":
+        return group.sort((a, b) => a.authorFid - b.authorFid);
+      case "fid-desc":
+        return group.sort((a, b) => b.authorFid - a.authorFid);
+      case "openrank-asc":
+        return group.sort((a, b) => {
+          const rankA = openRankRanks[a.authorFid] || Infinity;
+          const rankB = openRankRanks[b.authorFid] || Infinity;
+          return rankA - rankB;
+        });
+      case "openrank-desc":
+        return group.sort((a, b) => {
+          const rankA = openRankRanks[a.authorFid] || 0;
+          const rankB = openRankRanks[b.authorFid] || 0;
+          return rankB - rankA;
+        });
+      case "short":
+        return group.filter((d) => d.text.length < 20);
+      case "medium":
+        return group.filter((d) => d.text.length >= 20 && d.text.length <= 50);
+      case "long":
+        return group.filter((d) => d.text.length > 50);
+      default:
+        return group;
+    }
+  };
+
+  // Sort each group and combine them
+  const sortedInteracted = sortGroup(interactedCasts);
+  const sortedNonInteracted = sortGroup(nonInteractedCasts);
+
+  // Combine with interacted casts first
+  const finalResult = [...sortedInteracted, ...sortedNonInteracted];
+
+  return finalResult;
 }
