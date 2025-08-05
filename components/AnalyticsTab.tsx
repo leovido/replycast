@@ -1,0 +1,240 @@
+import React from "react";
+import type { UnrepliedDetail } from "@/types/types";
+
+interface AnalyticsTabProps {
+  allConversations: UnrepliedDetail[];
+  userOpenRank: number | null;
+  openRankRanks: Record<number, number | null>;
+  isDarkTheme: boolean;
+  themeMode: "dark" | "light" | "Farcaster";
+}
+
+export function AnalyticsTab({
+  allConversations,
+  userOpenRank,
+  openRankRanks,
+  isDarkTheme,
+  themeMode,
+}: AnalyticsTabProps) {
+  // Calculate analytics
+  const totalConversations = allConversations.length;
+  const uniqueAuthors = new Set(allConversations.map((c) => c.authorFid)).size;
+  const averageOpenRank =
+    allConversations.reduce((sum, conv) => {
+      const rank = openRankRanks[conv.authorFid];
+      return sum + (rank || 0);
+    }, 0) / totalConversations || 0;
+
+  const getCardClass = () => {
+    switch (themeMode) {
+      case "light":
+        return "bg-white/80 backdrop-blur-md border border-gray-200";
+      case "Farcaster":
+        return "bg-purple-900/20 backdrop-blur-md border border-purple-800/30";
+      default:
+        return "bg-white/10 backdrop-blur-md border border-white/20";
+    }
+  };
+
+  const getTextClass = () => {
+    return isDarkTheme ? "text-white" : "text-gray-900";
+  };
+
+  const getSubtextClass = () => {
+    return isDarkTheme ? "text-white/60" : "text-gray-600";
+  };
+
+  const getAccentClass = () => {
+    switch (themeMode) {
+      case "light":
+        return "text-blue-600";
+      case "Farcaster":
+        return "text-purple-300";
+      default:
+        return "text-blue-400";
+    }
+  };
+
+  return (
+    <div className="pb-20">
+      <div className="mb-6">
+        <h2 className={`text-lg font-semibold mb-2 ${getTextClass()}`}>
+          Analytics
+        </h2>
+        <p className={`text-sm ${getSubtextClass()}`}>
+          Insights about your unreplied conversations
+        </p>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+        {/* Total Conversations */}
+        <div className={`p-4 rounded-xl ${getCardClass()}`}>
+          <div className="flex items-center justify-between mb-2">
+            <h3 className={`font-semibold ${getTextClass()}`}>
+              Total Conversations
+            </h3>
+            <svg
+              width={20}
+              height={20}
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={2}
+              className={getAccentClass()}
+            >
+              <path d="M22 4H2v16h20V4zM2 8h20" />
+              <path d="M6 14h.01" />
+              <path d="M10 14h.01" />
+              <path d="M14 14h.01" />
+              <path d="M18 14h.01" />
+            </svg>
+          </div>
+          <div className={`text-2xl font-bold ${getAccentClass()}`}>
+            {totalConversations.toLocaleString()}
+          </div>
+          <p className={`text-sm ${getSubtextClass()}`}>
+            Unreplied conversations
+          </p>
+        </div>
+
+        {/* Unique Authors */}
+        <div className={`p-4 rounded-xl ${getCardClass()}`}>
+          <div className="flex items-center justify-between mb-2">
+            <h3 className={`font-semibold ${getTextClass()}`}>
+              Unique Authors
+            </h3>
+            <svg
+              width={20}
+              height={20}
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={2}
+              className={getAccentClass()}
+            >
+              <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+              <circle cx="9" cy="7" r="4" />
+              <path d="m22 21-2-2" />
+              <path d="M16 16l4 4" />
+            </svg>
+          </div>
+          <div className={`text-2xl font-bold ${getAccentClass()}`}>
+            {uniqueAuthors.toLocaleString()}
+          </div>
+          <p className={`text-sm ${getSubtextClass()}`}>
+            Different users to reply to
+          </p>
+        </div>
+
+        {/* Average OpenRank */}
+        <div className={`p-4 rounded-xl ${getCardClass()}`}>
+          <div className="flex items-center justify-between mb-2">
+            <h3 className={`font-semibold ${getTextClass()}`}>Avg OpenRank</h3>
+            <svg
+              width={20}
+              height={20}
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={2}
+              className={getAccentClass()}
+            >
+              <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26" />
+            </svg>
+          </div>
+          <div className={`text-2xl font-bold ${getAccentClass()}`}>
+            #{Math.round(averageOpenRank).toLocaleString()}
+          </div>
+          <p className={`text-sm ${getSubtextClass()}`}>
+            Average rank of authors
+          </p>
+        </div>
+      </div>
+
+      {/* Your OpenRank */}
+      {userOpenRank !== null && userOpenRank !== undefined && (
+        <div className={`p-6 rounded-xl ${getCardClass()} mb-8`}>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className={`text-lg font-semibold ${getTextClass()}`}>
+              Your OpenRank
+            </h3>
+            <svg
+              width={24}
+              height={24}
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={2}
+              className={getAccentClass()}
+            >
+              <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26" />
+            </svg>
+          </div>
+          <div className={`text-4xl font-bold mb-2 ${getAccentClass()}`}>
+            #{userOpenRank.toLocaleString()}
+          </div>
+          <p className={`text-sm ${getSubtextClass()}`}>
+            Your current OpenRank position
+          </p>
+        </div>
+      )}
+
+      {/* Top Authors by OpenRank */}
+      <div className={`p-6 rounded-xl ${getCardClass()}`}>
+        <h3 className={`text-lg font-semibold mb-4 ${getTextClass()}`}>
+          Top Authors by OpenRank
+        </h3>
+        <div className="space-y-3">
+          {allConversations
+            .sort((a, b) => {
+              const rankA = openRankRanks[a.authorFid] || 0;
+              const rankB = openRankRanks[b.authorFid] || 0;
+              return rankA - rankB;
+            })
+            .slice(0, 5)
+            .map((conversation, index) => {
+              const rank = openRankRanks[conversation.authorFid];
+              if (!rank) return null;
+
+              return (
+                <div
+                  key={`${conversation.authorFid}-${index}`}
+                  className="flex items-center justify-between p-3 rounded-lg bg-white/5"
+                >
+                  <div className="flex items-center gap-3">
+                    <div
+                      className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
+                        index < 3 ? getAccentClass() : getSubtextClass()
+                      }`}
+                    >
+                      #{index + 1}
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <div className="relative flex-shrink-0">
+                        <img
+                          src={`/api/image-proxy?url=${conversation.avatarUrl}`}
+                          alt={`${conversation.username}'s avatar`}
+                          className="w-10 h-10 rounded-full border-2 border-white/20"
+                        />
+                      </div>
+                      <div>
+                        <div className={`font-medium ${getTextClass()}`}>
+                          @{conversation.username}
+                        </div>
+                        <div className={`text-sm ${getSubtextClass()}`}>
+                          FID: {conversation.authorFid}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div className={`font-bold ${getAccentClass()}`}>
+                    #{rank.toLocaleString()}
+                  </div>
+                </div>
+              );
+            })}
+        </div>
+      </div>
+    </div>
+  );
+}
