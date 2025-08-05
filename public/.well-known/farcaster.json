@@ -16,14 +16,7 @@
     "description": "Track and reply to your unreplied Farcaster conversations. Stay engaged with your community and never miss important replies again.",
     "subtitle": "Never miss a reply again",
     "primaryCategory": "social",
-    "tags": [
-      "replies",
-      "farcaster",
-      "social",
-      "productivity",
-      "engagement",
-      "community"
-    ],
+    "tags": ["replies", "farcaster", "social", "productivity"],
     "requiredCapabilities": ["actions.composeCast"],
     "ogTitle": "ReplyCast - Never Miss a Reply",
     "ogDescription": "Track and reply to your unreplied Farcaster conversations. Stay engaged with your community!",
