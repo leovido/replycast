@@ -1,5 +1,6 @@
 import React from "react";
 import type { UnrepliedDetail } from "@/types/types";
+import Image from "next/image";
 
 interface AnalyticsTabProps {
   allConversations: UnrepliedDetail[];
@@ -211,7 +212,7 @@ export function AnalyticsTab({
                     </div>
                     <div className="flex items-center gap-3">
                       <div className="relative flex-shrink-0">
-                        <img
+                        <Image
                           src={`/api/image-proxy?url=${conversation.avatarUrl}`}
                           alt={`${conversation.username}'s avatar`}
                           className="w-10 h-10 rounded-full border-2 border-white/20"

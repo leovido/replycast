@@ -12,6 +12,7 @@ import { TabBar, type TabType } from "./TabBar";
 import { FocusTab } from "./FocusTab";
 import { AnalyticsTab } from "./AnalyticsTab";
 import { sortDetails } from "../utils/farcaster";
+import Image from "next/image";
 
 // Local storage keys
 const STORAGE_KEYS = {
@@ -302,7 +303,7 @@ export default function FarcasterApp() {
             <div className="flex items-center gap-4">
               <div className="flex-shrink-0">
                 {user.pfpUrl ? (
-                  <img
+                  <Image
                     src={`/api/image-proxy?url=${user.pfpUrl}`}
                     alt={`${user.displayName || user.username}'s avatar`}
                     className="w-12 h-12 rounded-full border-2 border-white/20"
