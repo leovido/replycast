@@ -58,7 +58,7 @@ export const ReplyCard = memo<ReplyCardProps>(
 
       // Only allow horizontal swipes (prevent vertical scrolling interference)
       if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 10) {
-        e.preventDefault();
+        // Don't call preventDefault() to avoid passive listener error
         setDragOffset(deltaX);
       }
     };
@@ -180,9 +180,9 @@ export const ReplyCard = memo<ReplyCardProps>(
 
               {/* User Info */}
               <div className="flex flex-col gap-1 min-w-0 flex-1">
-                <button
+                <div
                   onClick={handleProfileClick}
-                  className="text-white font-semibold leading-tight text-lg hover:text-blue-300 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 rounded flex items-center gap-1 truncate"
+                  className="text-white font-semibold leading-tight text-lg hover:text-blue-300 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 rounded flex items-center gap-1 truncate cursor-pointer"
                   aria-label={`View @${detail.username}'s profile`}
                 >
                   @{detail.username}
@@ -201,10 +201,10 @@ export const ReplyCard = memo<ReplyCardProps>(
                     <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
                     <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
                   </svg>
-                </button>
-                <button
+                </div>
+                <div
                   onClick={handleProfileClick}
-                  className="text-white/70 text-sm hover:text-blue-300/70 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 rounded flex items-center gap-1"
+                  className="text-white/70 text-sm hover:text-blue-300/70 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 rounded flex items-center gap-1 cursor-pointer"
                   aria-label={`View FID ${detail.authorFid}'s profile`}
                 >
                   FID: {detail.authorFid}
@@ -223,7 +223,7 @@ export const ReplyCard = memo<ReplyCardProps>(
                     <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
                     <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
                   </svg>
-                </button>
+                </div>
               </div>
             </div>
 
@@ -429,9 +429,9 @@ export const ReplyCard = memo<ReplyCardProps>(
 
             {/* User Info */}
             <div className="flex flex-col gap-1 min-w-0 flex-1">
-              <button
+              <div
                 onClick={handleProfileClick}
-                className={`font-semibold leading-tight text-lg hover:text-blue-300 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 rounded flex items-center gap-1 truncate ${
+                className={`font-semibold leading-tight text-lg hover:text-blue-300 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 rounded flex items-center gap-1 truncate cursor-pointer ${
                   isDarkTheme ? "text-white" : "text-gray-900"
                 }`}
                 aria-label={`View @${detail.username}'s profile`}
@@ -452,10 +452,10 @@ export const ReplyCard = memo<ReplyCardProps>(
                   <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
                   <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
                 </svg>
-              </button>
-              <button
+              </div>
+              <div
                 onClick={handleProfileClick}
-                className={`text-sm hover:text-blue-300/70 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 rounded flex items-center gap-1 ${
+                className={`text-sm hover:text-blue-300/70 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 rounded flex items-center gap-1 cursor-pointer ${
                   isDarkTheme ? "text-white/70" : "text-gray-600"
                 }`}
                 aria-label={`View FID ${detail.authorFid}'s profile`}
@@ -476,7 +476,7 @@ export const ReplyCard = memo<ReplyCardProps>(
                   <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
                   <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
                 </svg>
-              </button>
+              </div>
             </div>
           </div>
 
