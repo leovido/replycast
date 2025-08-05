@@ -7,6 +7,7 @@ import { useInfiniteScroll } from "../hooks/useInfiniteScroll";
 import { ConversationList } from "./ConversationList";
 import { LoadingScreen } from "./LoadingScreen";
 import { FarcasterSignIn } from "./FarcasterSignIn";
+import { SettingsMenu } from "./SettingsMenu";
 import { sortDetails } from "../utils/farcaster";
 
 // Local storage keys
@@ -37,216 +38,18 @@ const setStoredValue = <T,>(key: string, value: T): void => {
   }
 };
 
-// Settings Menu Component
-function SettingsMenu({
-  isOpen,
-  onClose,
-  themeMode,
-  onThemeChange,
-  viewMode,
-  onViewModeChange,
-  sortOption,
-  onSortChange,
-  dayFilter,
-  onDayFilterChange,
-  isDarkTheme,
-}: {
-  isOpen: boolean;
-  onClose: () => void;
-  themeMode: "dark" | "light" | "Farcaster";
-  onThemeChange: (theme: "dark" | "light" | "Farcaster") => void;
-  viewMode: "list" | "grid";
-  onViewModeChange: (mode: "list" | "grid") => void;
-  sortOption: string;
-  onSortChange: (option: string) => void;
-  dayFilter: string;
-  onDayFilterChange: (filter: string) => void;
-  isDarkTheme: boolean;
-}) {
-  if (!isOpen) return null;
-
-  return (
-    <div className="fixed inset-0 z-50 flex justify-center pt-4">
-      {/* Backdrop */}
-      <div
-        className="absolute inset-0 bg-black/50 backdrop-blur-sm"
-        onClick={onClose}
-      />
-
-      {/* Menu */}
-      <div
-        className={`relative w-full max-w-md rounded-2xl p-6 shadow-2xl ${
-          isDarkTheme
-            ? "bg-gradient-to-br from-gray-800/95 to-gray-900/95 border border-white/20"
-            : "bg-white/95 border border-gray-200"
-        } backdrop-blur-md transform transition-all duration-300 ease-out max-h-[90vh] overflow-y-auto`}
-      >
-        {/* Header */}
-        <div className="flex items-center justify-between mb-6">
-          <h2
-            className={`text-xl font-bold ${
-              isDarkTheme ? "text-white" : "text-gray-900"
-            }`}
-          >
-            Settings
-          </h2>
-          <button
-            onClick={onClose}
-            className={`p-2 rounded-full hover:bg-white/10 transition-colors ${
-              isDarkTheme ? "text-white/70" : "text-gray-600"
-            }`}
-          >
-            <svg
-              width={20}
-              height={20}
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth={2}
-            >
-              <path d="M18 6L6 18M6 6l12 12" />
-            </svg>
-          </button>
-        </div>
-
-        {/* Theme Section */}
-        <div className="mb-6">
-          <h3
-            className={`text-sm font-semibold mb-3 ${
-              isDarkTheme ? "text-white/80" : "text-gray-700"
-            }`}
-          >
-            Theme
-          </h3>
-          <div className="grid grid-cols-3 gap-2">
-            {(["dark", "light", "Farcaster"] as const).map((theme) => (
-              <button
-                key={theme}
-                onClick={() => onThemeChange(theme)}
-                className={`p-3 rounded-xl transition-all ${
-                  themeMode === theme
-                    ? "bg-blue-500 text-white shadow-lg"
-                    : isDarkTheme
-                    ? "bg-white/10 hover:bg-white/20 text-white/70"
-                    : "bg-gray-100 hover:bg-gray-200 text-gray-700"
-                }`}
-              >
-                <div className="text-center">
-                  <div className="text-lg mb-1">
-                    {theme === "dark" ? "🌙" : theme === "light" ? "☀️" : "💎"}
-                  </div>
-                  <span
-                    className={`text-xs font-medium ${
-                      themeMode === theme
-                        ? isDarkTheme
-                          ? "text-white"
-                          : "text-gray-900"
-                        : isDarkTheme
-                        ? "text-white/60"
-                        : "text-gray-600"
-                    }`}
-                  >
-                    {theme === "Farcaster" ? "Farcaster" : theme}
-                  </span>
-                </div>
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* View Mode Section */}
-        <div className="mb-6">
-          <h3
-            className={`text-sm font-semibold mb-3 ${
-              isDarkTheme ? "text-white/80" : "text-gray-700"
-            }`}
-          >
-            View Mode
-          </h3>
-          <div className="flex gap-2">
-            {(["list", "grid"] as const).map((mode) => (
-              <button
-                key={mode}
-                onClick={() => onViewModeChange(mode)}
-                className={`flex-1 p-3 rounded-xl transition-all ${
-                  viewMode === mode
-                    ? "bg-blue-500 text-white shadow-lg"
-                    : isDarkTheme
-                    ? "bg-white/10 hover:bg-white/20 text-white/70"
-                    : "bg-gray-100 hover:bg-gray-200 text-gray-700"
-                }`}
-              >
-                <div className="text-center">
-                  <div className="text-lg mb-1">
-                    {mode === "list" ? "📋" : "📊"}
-                  </div>
-                  <div className="text-xs capitalize">{mode}</div>
-                </div>
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Sort Options */}
-        <div className="mb-6">
-          <h3
-            className={`text-sm font-semibold mb-3 ${
-              isDarkTheme ? "text-white/80" : "text-gray-700"
-            }`}
-          >
-            Sort By
-          </h3>
-          <select
-            value={sortOption}
-            onChange={(e) => onSortChange(e.target.value)}
-            className={`w-full p-3 rounded-xl border transition-colors ${
-              isDarkTheme
-                ? "bg-white/10 border-white/20 text-white focus:border-blue-400"
-                : "bg-white border-gray-200 text-gray-900 focus:border-blue-400"
-            }`}
-          >
-            <option value="newest">Newest First</option>
-            <option value="oldest">Oldest First</option>
-            <option value="openrank-desc">Highest OpenRank</option>
-            <option value="openrank-asc">Lowest OpenRank</option>
-            <option value="fid-asc">FID (Low to High)</option>
-            <option value="fid-desc">FID (High to Low)</option>
-          </select>
-        </div>
-
-        {/* Day Filter */}
-        <div className="mb-6">
-          <h3
-            className={`text-sm font-semibold mb-3 ${
-              isDarkTheme ? "text-white/80" : "text-gray-700"
-            }`}
-          >
-            Time Filter
-          </h3>
-          <select
-            value={dayFilter}
-            onChange={(e) => onDayFilterChange(e.target.value)}
-            className={`w-full p-3 rounded-xl border transition-colors ${
-              isDarkTheme
-                ? "bg-white/10 border-white/20 text-white focus:border-blue-400"
-                : "bg-white border-gray-200 text-gray-900 focus:border-blue-400"
-            }`}
-          >
-            <option value="all">All Time</option>
-            <option value="today">Today</option>
-            <option value="3days">Last 3 Days</option>
-            <option value="7days">Last 7 Days</option>
-          </select>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 export default function FarcasterApp() {
   // Initialize state from local storage
   const [themeMode, setThemeMode] = useState<"dark" | "light" | "Farcaster">(
-    () => getStoredValue(STORAGE_KEYS.THEME_MODE, "Farcaster")
+    () => {
+      const storedValue = getStoredValue(STORAGE_KEYS.THEME_MODE, "Farcaster");
+      // Migration: Convert "glass" to "Farcaster"
+      if (storedValue === ("glass" as any)) {
+        setStoredValue(STORAGE_KEYS.THEME_MODE, "Farcaster");
+        return "Farcaster";
+      }
+      return storedValue;
+    }
   );
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [viewMode, setViewMode] = useState<"list" | "grid">(() =>
