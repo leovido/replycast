@@ -25,6 +25,7 @@ interface ConversationListProps {
   isDarkTheme: boolean;
   useOldDesign: boolean;
   onMarkAsRead?: (detail: UnrepliedDetail) => void;
+  dayFilter?: string;
 }
 
 export function ConversationList({
@@ -39,6 +40,7 @@ export function ConversationList({
   isDarkTheme,
   useOldDesign,
   onMarkAsRead,
+  dayFilter,
 }: ConversationListProps) {
   // Render old design
   if (useOldDesign) {
@@ -196,6 +198,27 @@ export function ConversationList({
           </div>
         )}
         {hasMore && <div ref={observerRef} className="h-4" />}
+
+        {/* Today filter message */}
+        {!hasMore && conversations.length > 0 && dayFilter === "today" && (
+          <div className="col-span-full flex justify-center py-6">
+            <div
+              className={`text-center max-w-md ${
+                isDarkTheme ? "text-white/60" : "text-gray-600"
+              }`}
+            >
+              <div className="text-sm">
+                <span className="font-medium">
+                  📅 Today&apos;s conversations loaded
+                </span>
+                <p className="mt-1 text-xs opacity-80">
+                  Want to see more? Try changing the time filter to &ldquo;Last
+                  3 Days&rdquo; or &ldquo;All Time&rdquo; in settings.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

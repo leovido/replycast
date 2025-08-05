@@ -175,37 +175,57 @@ export default function FarcasterApp() {
     <div
       className={`min-h-screen ${getBackgroundClass()} transition-all duration-300`}
     >
-      <div className="container mx-auto px-4 py-6 max-w-6xl">
+      <div className="container mx-auto px-4 pb-6 max-w-6xl">
         {/* Header */}
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h1 className="text-2xl font-bold text-white mb-2">ReplyCast</h1>
-            <div className="text-white/70">
-              <span className="font-semibold">{allConversations.length}</span>{" "}
-              conversation{allConversations.length !== 1 ? "s" : ""} to reply to
+        <div
+          className={`sticky top-0 z-40 backdrop-blur-md border-b mb-6 -mx-4 px-4 py-4 ${
+            themeMode === "Farcaster"
+              ? "bg-purple-900/95 border-white/10"
+              : themeMode === "light"
+              ? "bg-white/95 border-gray-200 text-gray-900"
+              : "bg-black/80 border-white/10"
+          }`}
+        >
+          <div className="flex items-center justify-between">
+            <div>
+              <h1
+                className={`text-2xl font-bold mb-2 ${
+                  themeMode === "light" ? "text-gray-900" : "text-white"
+                }`}
+              >
+                ReplyCast
+              </h1>
+              <div
+                className={`${
+                  themeMode === "light" ? "text-gray-600" : "text-white/70"
+                }`}
+              >
+                <span className="font-semibold">{allConversations.length}</span>{" "}
+                unreplied conversation{allConversations.length !== 1 ? "s" : ""}
+              </div>
             </div>
-          </div>
-          <button
-            onClick={() => setIsSettingsOpen(true)}
-            className={`p-3 rounded-xl transition-all duration-200 ${
-              isDarkTheme
-                ? "bg-white/10 hover:bg-white/20 text-white"
-                : "bg-gray-100 hover:bg-gray-200 text-gray-700"
-            }`}
-            aria-label="Settings"
-          >
-            <svg
-              width={20}
-              height={20}
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth={2}
+            <button
+              onClick={() => setIsSettingsOpen(true)}
+              className={`p-3 rounded-xl transition-all duration-200 ${
+                isDarkTheme
+                  ? "bg-white/10 hover:bg-white/20 text-white"
+                  : "bg-gray-100 hover:bg-gray-200 text-gray-700"
+              }`}
+              aria-label="Settings"
             >
-              <path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" />
-              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1Z" />
-            </svg>
-          </button>
+              <svg
+                width={20}
+                height={20}
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth={2}
+              >
+                <path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" />
+                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1Z" />
+              </svg>
+            </button>
+          </div>
         </div>
 
         {/* User Info Card */}
@@ -315,6 +335,7 @@ export default function FarcasterApp() {
           isLoadingMore={isLoadingMore}
           hasMore={hasMore}
           onReply={() => {}}
+          dayFilter={dayFilter}
         />
       </div>
 
