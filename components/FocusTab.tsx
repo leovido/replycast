@@ -97,7 +97,7 @@ export function FocusTab({
             isDarkTheme ? "text-white/60" : "text-gray-600"
           }`}
         >
-          Conversations you've marked as read for easy reference
+          Conversations you&apos;ve marked as read for easy reference
         </p>
       </div>
 
