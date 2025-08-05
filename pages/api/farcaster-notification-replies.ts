@@ -1,5 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { FetchAllNotificationsTypeEnum } from "@neynar/nodejs-sdk/build/api/apis/notifications-api";
+import { ReactionType } from "@neynar/nodejs-sdk/build/api";
 import type { FarcasterRepliesResponse, UnrepliedDetail } from "@/types/types";
 import { client } from "@/client";
 
@@ -49,6 +50,59 @@ async function hasUserReplied(
     console.error("Error checking if user replied:", error);
     replyCheckCache.set(cacheKey, false);
     return false; // Default to false if we can't check
+  }
+}
+
+// Helper function to check if user has interacted with a cast
+async function getUserInteractions(
+  userFid: number,
+  castHash: string
+): Promise<{
+  userLiked: boolean;
+  userRecasted: boolean;
+  likesCount: number;
+  recastsCount: number;
+}> {
+  try {
+    // Fetch cast reactions to check if user has liked or recasted
+    const reactions = await client.fetchCastReactions({
+      hash: castHash,
+      types: ["likes", "recasts"],
+      viewerFid: userFid,
+    });
+
+    const userLiked =
+      reactions.reactions?.some(
+        (reaction: any) =>
+          reaction.reaction_type === "like" && reaction.user.fid === userFid
+      ) || false;
+
+    const userRecasted =
+      reactions.reactions?.some(
+        (reaction: any) =>
+          reaction.reaction_type === "recast" && reaction.user.fid === userFid
+      ) || false;
+
+    // Count total likes and recasts
+    const likesCount =
+      reactions.reactions?.filter(
+        (reaction: any) => reaction.reaction_type === "like"
+      ).length || 0;
+
+    const recastsCount =
+      reactions.reactions?.filter(
+        (reaction: any) => reaction.reaction_type === "recast"
+      ).length || 0;
+
+    return { userLiked, userRecasted, likesCount, recastsCount };
+  } catch (error) {
+    console.error("Error checking user interactions:", error);
+    return {
+      userLiked: false,
+      userRecasted: false,
+      likesCount: 0,
+      recastsCount: 0,
+    };
   }
 }
 
@@ -143,8 +197,19 @@ export default async function handler(
       });
     }
 
-    const unrepliedDetails: UnrepliedDetail[] = filteredReplies.map(
-      (reply) => ({
+    // Get user interactions for each cast
+    const interactionChecks = await Promise.all(
+      filteredReplies.map(async (reply) => {
+        const interactions = await getUserInteractions(
+          userFid,
+          reply.cast?.hash || ""
+        );
+        return { reply, interactions };
+      })
+    );
+
+    const unrepliedDetails: UnrepliedDetail[] = interactionChecks.map(
+      ({ reply, interactions }) => ({
         username: reply.cast?.author?.username || "",
         timeAgo: reply.cast?.timestamp ? timeAgo(reply.cast.timestamp) : "",
         timestamp: reply.cast?.timestamp ? Number(reply.cast.timestamp) : 0,
@@ -157,6 +222,11 @@ export default async function handler(
         originalCastHash: reply.cast?.hash || "",
         originalAuthorUsername: reply.cast?.author?.username || "",
         replyCount: reply.cast?.replies?.count || 0,
+        userLiked: interactions.userLiked,
+        userRecasted: interactions.userRecasted,
+        hasUserInteraction: interactions.userLiked || interactions.userRecasted,
+        likesCount: interactions.likesCount,
+        recastsCount: interactions.recastsCount,
       })
     );
 
