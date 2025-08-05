@@ -11,6 +11,18 @@ const nextConfig = {
   poweredByHeader: false,
   generateEtags: true,
 
+  // Redirects for Farcaster hosted manifest
+  async redirects() {
+    return [
+      {
+        source: "/.well-known/farcaster.json",
+        destination:
+          "https://api.farcaster.xyz/miniapps/hosted-manifest/01987c29-0368-9ff0-6260-e4a6b91cb1ff",
+        permanent: false,
+      },
+    ];
+  },
+
   // Bundle optimization
   experimental: {
     optimizePackageImports: ["react-icons", "@farcaster/miniapp-sdk"],
