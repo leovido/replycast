@@ -203,7 +203,9 @@ export function ConversationList({
             className="h-8 w-full flex items-center justify-center"
             style={{ minHeight: "32px" }}
           >
-            <div className="text-xs opacity-50">Loading more...</div>
+            {isLoadingMore && (
+              <div className="text-xs opacity-50">Loading more...</div>
+            )}
           </div>
         )}
 

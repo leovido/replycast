@@ -171,6 +171,11 @@ export function useFarcasterData({
     // Clear OpenRank cache to force fresh data
     clearOpenRankCache();
 
+    // Reset pagination state for fresh start
+    setCursor(null);
+    setHasMore(true);
+    setIsLoadingMore(false);
+
     // Force refresh by bypassing cache
     if (!user?.fid) {
       throw new Error("User FID is required to refresh conversations");
@@ -180,17 +185,26 @@ export function useFarcasterData({
       // Refresh user's OpenRank score
       await fetchUserOpenRank(userFid);
 
-      const res = await fetch(
-        `/api/farcaster-notification-replies?fid=${userFid}&cursor=${cursor}&dayFilter=${dayFilter}`,
-        {
-          cache: "no-store",
-        }
+      const url = new URL(
+        "/api/farcaster-notification-replies",
+        window.location.origin
       );
+      url.searchParams.set("fid", userFid.toString());
+      url.searchParams.set("limit", "25");
+      if (dayFilter !== "all") {
+        url.searchParams.set("dayFilter", dayFilter);
+      }
+
+      const res = await fetch(url.toString(), {
+        cache: "no-store",
+      });
       const responseData = await res.json();
       if (responseData) {
-        console.log("nextCursor", responseData.nextCursor);
+        console.log("Refresh - nextCursor", responseData.nextCursor);
         setData(responseData);
-        setAllConversations(responseData.unrepliedDetails);
+        setAllConversations(responseData.unrepliedDetails || []);
+        setCursor(responseData.nextCursor || null);
+        setHasMore(!!responseData.nextCursor);
 
         // Fetch OpenRank ranks for all FIDs in the response
         if (responseData.unrepliedDetails?.length > 0) {
@@ -211,7 +225,6 @@ export function useFarcasterData({
     fetchOpenRankRanks,
     fetchUserOpenRank,
     clearOpenRankCache,
-    cursor,
     dayFilter,
   ]);
 

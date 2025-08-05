@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { sdk } from "@farcaster/miniapp-sdk";
 import { useFarcasterAuth } from "../hooks/useFarcasterAuth";
 import { useOpenRank } from "../hooks/useOpenRank";
@@ -176,6 +176,12 @@ export default function FarcasterApp() {
     }
   });
 
+  // Swipe to refresh state
+  const [isRefreshingPull, setIsRefreshingPull] = useState(false);
+  const [pullDistance, setPullDistance] = useState(0);
+  const touchStartY = useRef<number>(0);
+  const touchStartTime = useRef<number>(0);
+
   const handleMarkAsRead = (detail: any) => {
     console.log("Marking as read:", detail);
     setMarkedAsReadConversations((prev) => {
@@ -193,6 +199,49 @@ export default function FarcasterApp() {
       }
       return newList;
     });
+  };
+
+  // Swipe to refresh handlers
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartY.current = e.touches[0].clientY;
+    touchStartTime.current = Date.now();
+    setPullDistance(0);
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (!touchStartY.current) return;
+
+    const currentY = e.touches[0].clientY;
+    const deltaY = currentY - touchStartY.current;
+
+    // Only allow pull down when at the top
+    if (deltaY > 0 && window.scrollY === 0) {
+      const pullDistance = Math.min(deltaY * 0.5, 100); // Limit pull distance
+      setPullDistance(pullDistance);
+      e.preventDefault();
+    }
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (!touchStartY.current) return;
+
+    const currentY = e.changedTouches[0].clientY;
+    const deltaY = currentY - touchStartY.current;
+    const deltaTime = Date.now() - touchStartTime.current;
+
+    // Trigger refresh if pulled down enough and fast enough
+    if (deltaY > 80 && deltaTime < 1000 && window.scrollY === 0) {
+      setIsRefreshingPull(true);
+      handleRefresh().finally(() => {
+        setIsRefreshingPull(false);
+        setPullDistance(0);
+      });
+    } else {
+      setPullDistance(0);
+    }
+
+    touchStartY.current = 0;
+    touchStartTime.current = 0;
   };
 
   // Call ready when app is loaded
@@ -213,8 +262,36 @@ export default function FarcasterApp() {
   return (
     <div
       className={`min-h-screen ${getBackgroundClass()} transition-all duration-300`}
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
     >
       <div className="container mx-auto px-4 max-w-6xl">
+        {/* Pull to refresh indicator */}
+        {pullDistance > 0 && (
+          <div
+            className="fixed top-0 left-0 right-0 z-50 flex items-center justify-center py-4"
+            style={{ transform: `translateY(${pullDistance}px)` }}
+          >
+            <div
+              className={`px-4 py-2 rounded-full ${
+                isDarkTheme
+                  ? "bg-white/20 backdrop-blur-md text-white"
+                  : "bg-gray-800/20 backdrop-blur-md text-gray-800"
+              }`}
+            >
+              {isRefreshingPull ? (
+                <div className="flex items-center gap-2">
+                  <div className="animate-spin rounded-full h-4 w-4 border-2 border-current border-t-transparent"></div>
+                  <span className="text-sm">Refreshing...</span>
+                </div>
+              ) : (
+                <span className="text-sm">Pull to refresh</span>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* Header */}
         <div
           className={`sticky top-0 z-40 backdrop-blur-md border-b mb-6 -mx-4 px-4 py-4 ${
@@ -410,7 +487,6 @@ export default function FarcasterApp() {
               isLoadingMore={isLoadingMore}
               hasMore={hasMore}
               onReply={async (detail) => {
-                console.log("Opening cast:", detail);
                 try {
                   await sdk.actions.viewCast({ hash: detail.castHash });
                 } catch (error) {
