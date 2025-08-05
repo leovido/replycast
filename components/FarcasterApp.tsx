@@ -9,6 +9,7 @@ import { Filters } from "./Filters";
 import { ConversationList } from "./ConversationList";
 import { LoadingScreen } from "./LoadingScreen";
 import { FarcasterSignIn } from "./FarcasterSignIn";
+import { sortDetails } from "../utils/farcaster";
 
 // Feature flag to switch between old and new designs
 const USE_NEW_DESIGN = process.env.NEXT_PUBLIC_USE_NEW_DESIGN === "true";
@@ -335,6 +336,13 @@ export default function FarcasterApp() {
     loadMoreConversations,
   });
 
+  // Sort conversations with interaction prioritization
+  const sortedConversations = sortDetails(
+    allConversations,
+    sortOption,
+    openRankRanks
+  );
+
   const handleMarkAsRead = (detail: any) => {
     console.log("Marking as read:", detail);
     // TODO: Implement actual removal logic
@@ -491,7 +499,7 @@ export default function FarcasterApp() {
 
           {/* Conversation List */}
           <ConversationList
-            conversations={allConversations}
+            conversations={sortedConversations}
             viewMode={viewMode}
             loading={dataLoading}
             observerRef={observerRef}
@@ -553,7 +561,7 @@ export default function FarcasterApp() {
         />
 
         <ConversationList
-          conversations={allConversations}
+          conversations={sortedConversations}
           viewMode={viewMode}
           loading={dataLoading}
           observerRef={observerRef}
