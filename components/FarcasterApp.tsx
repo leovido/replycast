@@ -4,15 +4,10 @@ import { useFarcasterAuth } from "../hooks/useFarcasterAuth";
 import { useOpenRank } from "../hooks/useOpenRank";
 import { useFarcasterData } from "../hooks/useFarcasterData";
 import { useInfiniteScroll } from "../hooks/useInfiniteScroll";
-import { AppHeader } from "./AppHeader";
-import { Filters } from "./Filters";
 import { ConversationList } from "./ConversationList";
 import { LoadingScreen } from "./LoadingScreen";
 import { FarcasterSignIn } from "./FarcasterSignIn";
 import { sortDetails } from "../utils/farcaster";
-
-// Feature flag to switch between old and new designs
-const USE_NEW_DESIGN = process.env.NEXT_PUBLIC_USE_NEW_DESIGN === "true";
 
 // Local storage keys
 const STORAGE_KEYS = {
@@ -58,8 +53,8 @@ function SettingsMenu({
 }: {
   isOpen: boolean;
   onClose: () => void;
-  themeMode: "dark" | "light" | "glass";
-  onThemeChange: (theme: "dark" | "light" | "glass") => void;
+  themeMode: "dark" | "light" | "Farcaster";
+  onThemeChange: (theme: "dark" | "light" | "Farcaster") => void;
   viewMode: "list" | "grid";
   onViewModeChange: (mode: "list" | "grid") => void;
   sortOption: string;
@@ -124,7 +119,7 @@ function SettingsMenu({
             Theme
           </h3>
           <div className="grid grid-cols-3 gap-2">
-            {(["dark", "light", "glass"] as const).map((theme) => (
+            {(["dark", "light", "Farcaster"] as const).map((theme) => (
               <button
                 key={theme}
                 onClick={() => onThemeChange(theme)}
@@ -140,7 +135,19 @@ function SettingsMenu({
                   <div className="text-lg mb-1">
                     {theme === "dark" ? "🌙" : theme === "light" ? "☀️" : "💎"}
                   </div>
-                  <div className="text-xs capitalize">{theme}</div>
+                  <span
+                    className={`text-xs font-medium ${
+                      themeMode === theme
+                        ? isDarkTheme
+                          ? "text-white"
+                          : "text-gray-900"
+                        : isDarkTheme
+                        ? "text-white/60"
+                        : "text-gray-600"
+                    }`}
+                  >
+                    {theme === "Farcaster" ? "Farcaster" : theme}
+                  </span>
                 </div>
               </button>
             ))}
@@ -238,8 +245,8 @@ function SettingsMenu({
 
 export default function FarcasterApp() {
   // Initialize state from local storage
-  const [themeMode, setThemeMode] = useState<"dark" | "light" | "glass">(() =>
-    getStoredValue(STORAGE_KEYS.THEME_MODE, "dark")
+  const [themeMode, setThemeMode] = useState<"dark" | "light" | "Farcaster">(
+    () => getStoredValue(STORAGE_KEYS.THEME_MODE, "Farcaster")
   );
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [viewMode, setViewMode] = useState<"list" | "grid">(() =>
@@ -255,9 +262,7 @@ export default function FarcasterApp() {
   >(() => getStoredValue(STORAGE_KEYS.SORT_OPTION, "newest"));
   const [dayFilter, setDayFilter] = useState<
     "all" | "today" | "3days" | "7days"
-  >(() =>
-    getStoredValue(STORAGE_KEYS.DAY_FILTER, USE_NEW_DESIGN ? "today" : "all")
-  );
+  >(() => getStoredValue(STORAGE_KEYS.DAY_FILTER, "today"));
 
   // Update local storage when settings change
   useEffect(() => {
@@ -276,9 +281,9 @@ export default function FarcasterApp() {
     setStoredValue(STORAGE_KEYS.DAY_FILTER, dayFilter);
   }, [dayFilter]);
 
-  const isDarkTheme = themeMode === "dark" || themeMode === "glass";
+  const isDarkTheme = themeMode === "dark" || themeMode === "Farcaster";
 
-  const handleThemeChange = (newTheme: "dark" | "light" | "glass") => {
+  const handleThemeChange = (newTheme: "dark" | "light" | "Farcaster") => {
     setThemeMode(newTheme);
   };
 
@@ -288,7 +293,7 @@ export default function FarcasterApp() {
         return "bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900";
       case "light":
         return "bg-gradient-to-br from-gray-50 via-white to-gray-100";
-      case "glass":
+      case "Farcaster":
         return "bg-gradient-to-br from-blue-900/20 via-purple-900/20 to-indigo-900/20 backdrop-blur-sm";
       default:
         return "bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900";
@@ -363,210 +368,145 @@ export default function FarcasterApp() {
     return <FarcasterSignIn onSignIn={handleSignIn} onError={() => {}} />;
   }
 
-  if (USE_NEW_DESIGN) {
-    return (
-      <div
-        className={`min-h-screen ${getBackgroundClass()} transition-all duration-300`}
-      >
-        {/* New Design */}
-        <div className="container mx-auto px-4 py-6 max-w-6xl">
-          {/* Header */}
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <h1 className="text-2xl font-bold text-white mb-2">ReplyCast</h1>
-              <div className="text-white/70">
-                <span className="font-semibold">{allConversations.length}</span>{" "}
-                conversation{allConversations.length !== 1 ? "s" : ""} to reply
-                to
-              </div>
-            </div>
-            <button
-              onClick={() => setIsSettingsOpen(true)}
-              className={`p-3 rounded-xl transition-all duration-200 ${
-                isDarkTheme
-                  ? "bg-white/10 hover:bg-white/20 text-white"
-                  : "bg-gray-100 hover:bg-gray-200 text-gray-700"
-              }`}
-              aria-label="Settings"
-            >
-              <svg
-                width={20}
-                height={20}
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth={2}
-              >
-                <path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" />
-                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1Z" />
-              </svg>
-            </button>
-          </div>
-
-          {/* User Info Card */}
-          {user && (
-            <div
-              className={`mb-6 p-4 rounded-2xl ${
-                isDarkTheme
-                  ? "bg-white/10 backdrop-blur-md border border-white/20"
-                  : "bg-white/80 backdrop-blur-md border border-gray-200"
-              }`}
-            >
-              <div className="flex items-center gap-4">
-                <div className="flex-shrink-0">
-                  {user.pfpUrl ? (
-                    <img
-                      src={`/api/image-proxy?url=${user.pfpUrl}`}
-                      alt={`${user.displayName || user.username}'s avatar`}
-                      className="w-12 h-12 rounded-full border-2 border-white/20"
-                    />
-                  ) : (
-                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold text-lg">
-                      {user.displayName?.charAt(0) ||
-                        user.username?.charAt(0) ||
-                        "?"}
-                    </div>
-                  )}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-1">
-                    <span
-                      className={`font-semibold truncate ${
-                        isDarkTheme ? "text-white" : "text-gray-900"
-                      }`}
-                    >
-                      {user.displayName || user.username}
-                    </span>
-                    <span
-                      className={`text-sm ${
-                        isDarkTheme ? "text-white/60" : "text-gray-600"
-                      }`}
-                    >
-                      FID: {user.fid}
-                    </span>
-                  </div>
-                  {userOpenRank !== null && userOpenRank !== undefined && (
-                    <div className="flex items-center gap-1">
-                      <svg
-                        width={14}
-                        height={14}
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth={2}
-                        className="text-yellow-400"
-                      >
-                        <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26" />
-                      </svg>
-                      <span
-                        className={`font-bold ${
-                          isDarkTheme ? "text-yellow-400" : "text-purple-700"
-                        }`}
-                      >
-                        #{userOpenRank.toLocaleString()}
-                      </span>
-                    </div>
-                  )}
-                </div>
-                <button
-                  onClick={handleRefresh}
-                  disabled={dataLoading}
-                  className={`p-2 rounded-lg transition-all duration-200 ${
-                    dataLoading
-                      ? "opacity-50 cursor-not-allowed"
-                      : "hover:bg-white/20"
-                  } ${isDarkTheme ? "text-white" : "text-gray-700"}`}
-                  aria-label="Refresh data"
-                >
-                  <svg
-                    width={20}
-                    height={20}
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth={2}
-                    className={dataLoading ? "animate-spin" : ""}
-                  >
-                    <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8" />
-                    <path d="M21 3v5h-5" />
-                    <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16" />
-                    <path d="M3 21v-5h5" />
-                  </svg>
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* Conversation List */}
-          <ConversationList
-            conversations={sortedConversations}
-            viewMode={viewMode}
-            loading={dataLoading}
-            observerRef={observerRef}
-            isDarkTheme={isDarkTheme}
-            useOldDesign={false}
-            onMarkAsRead={handleMarkAsRead}
-            openRankRanks={openRankRanks}
-            isLoadingMore={isLoadingMore}
-            hasMore={hasMore}
-            onReply={() => {}}
-          />
-        </div>
-
-        {/* Settings Menu */}
-        <SettingsMenu
-          isOpen={isSettingsOpen}
-          onClose={() => setIsSettingsOpen(false)}
-          themeMode={themeMode}
-          onThemeChange={handleThemeChange}
-          viewMode={viewMode}
-          onViewModeChange={setViewMode}
-          sortOption={sortOption}
-          onSortChange={(option) => setSortOption(option as any)}
-          dayFilter={dayFilter}
-          onDayFilterChange={(filter) => setDayFilter(filter as any)}
-          isDarkTheme={isDarkTheme}
-        />
-      </div>
-    );
-  }
-
-  // Original Design
   return (
     <div
       className={`min-h-screen ${getBackgroundClass()} transition-all duration-300`}
     >
       <div className="container mx-auto px-4 py-6 max-w-6xl">
-        <AppHeader
-          user={user}
-          userOpenRank={userOpenRank}
-          conversationCount={allConversations.length}
-          onRefresh={handleRefresh}
-          error={error}
-          isRefreshing={isRefreshing}
-          getCacheStatus={getCacheStatus}
-          isDarkTheme={isDarkTheme}
-          useOldDesign={themeMode === "glass"}
-        />
+        {/* Header */}
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h1 className="text-2xl font-bold text-white mb-2">ReplyCast</h1>
+            <div className="text-white/70">
+              <span className="font-semibold">{allConversations.length}</span>{" "}
+              conversation{allConversations.length !== 1 ? "s" : ""} to reply to
+            </div>
+          </div>
+          <button
+            onClick={() => setIsSettingsOpen(true)}
+            className={`p-3 rounded-xl transition-all duration-200 ${
+              isDarkTheme
+                ? "bg-white/10 hover:bg-white/20 text-white"
+                : "bg-gray-100 hover:bg-gray-200 text-gray-700"
+            }`}
+            aria-label="Settings"
+          >
+            <svg
+              width={20}
+              height={20}
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={2}
+            >
+              <path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" />
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1Z" />
+            </svg>
+          </button>
+        </div>
 
-        <Filters
-          viewMode={viewMode}
-          onViewModeChange={setViewMode}
-          sortOption={sortOption}
-          onSortOptionChange={(option) => setSortOption(option as any)}
-          dayFilter={dayFilter}
-          onDayFilterChange={setDayFilter}
-          isDarkTheme={isDarkTheme}
-          useOldDesign={themeMode === "glass"}
-        />
+        {/* User Info Card */}
+        {user && (
+          <div
+            className={`mb-6 p-4 rounded-2xl ${
+              isDarkTheme
+                ? "bg-white/10 backdrop-blur-md border border-white/20"
+                : "bg-white/80 backdrop-blur-md border border-gray-200"
+            }`}
+          >
+            <div className="flex items-center gap-4">
+              <div className="flex-shrink-0">
+                {user.pfpUrl ? (
+                  <img
+                    src={`/api/image-proxy?url=${user.pfpUrl}`}
+                    alt={`${user.displayName || user.username}'s avatar`}
+                    className="w-12 h-12 rounded-full border-2 border-white/20"
+                  />
+                ) : (
+                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold text-lg">
+                    {user.displayName?.charAt(0) ||
+                      user.username?.charAt(0) ||
+                      "?"}
+                  </div>
+                )}
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-1">
+                  <span
+                    className={`font-semibold truncate ${
+                      isDarkTheme ? "text-white" : "text-gray-900"
+                    }`}
+                  >
+                    {user.displayName || user.username}
+                  </span>
+                  <span
+                    className={`text-sm ${
+                      isDarkTheme ? "text-white/60" : "text-gray-600"
+                    }`}
+                  >
+                    FID: {user.fid}
+                  </span>
+                </div>
+                {userOpenRank !== null && userOpenRank !== undefined && (
+                  <div className="flex items-center gap-1">
+                    <svg
+                      width={14}
+                      height={14}
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth={2}
+                      className="text-yellow-400"
+                    >
+                      <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26" />
+                    </svg>
+                    <span
+                      className={`font-bold ${
+                        isDarkTheme ? "text-yellow-400" : "text-purple-700"
+                      }`}
+                    >
+                      #{userOpenRank.toLocaleString()}
+                    </span>
+                  </div>
+                )}
+              </div>
+              <button
+                onClick={handleRefresh}
+                disabled={dataLoading}
+                className={`p-2 rounded-lg transition-all duration-200 ${
+                  dataLoading
+                    ? "opacity-50 cursor-not-allowed"
+                    : "hover:bg-white/20"
+                } ${isDarkTheme ? "text-white" : "text-gray-700"}`}
+                aria-label="Refresh data"
+              >
+                <svg
+                  width={20}
+                  height={20}
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                  className={dataLoading ? "animate-spin" : ""}
+                >
+                  <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8" />
+                  <path d="M21 3v5h-5" />
+                  <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16" />
+                  <path d="M3 21v-5h5" />
+                </svg>
+              </button>
+            </div>
+          </div>
+        )}
 
+        {/* Conversation List */}
         <ConversationList
           conversations={sortedConversations}
           viewMode={viewMode}
           loading={dataLoading}
           observerRef={observerRef}
           isDarkTheme={isDarkTheme}
-          useOldDesign={themeMode === "glass"}
+          useOldDesign={false}
           onMarkAsRead={handleMarkAsRead}
           openRankRanks={openRankRanks}
           isLoadingMore={isLoadingMore}

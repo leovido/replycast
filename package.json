@@ -10,10 +10,7 @@
     "test:coverage": "jest --coverage --coverageReporters=html",
     "test:quiet": "jest --silent",
     "perf:audit": "node scripts/performance-audit.js",
-    "bundle:analyze": "npx @next/bundle-analyzer",
-    "design:old": "node scripts/toggle-design.js old",
-    "design:new": "node scripts/toggle-design.js new",
-    "design:status": "node scripts/toggle-design.js"
+    "bundle:analyze": "npx @next/bundle-analyzer"
   },
   "dependencies": {
     "@farcaster/miniapp-sdk": "^0.1.7",
