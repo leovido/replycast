@@ -214,7 +214,7 @@ export default function FarcasterApp() {
     <div
       className={`min-h-screen ${getBackgroundClass()} transition-all duration-300`}
     >
-      <div className="container mx-auto px-4 pb-6 max-w-6xl">
+      <div className="container mx-auto px-4 max-w-6xl">
         {/* Header */}
         <div
           className={`sticky top-0 z-40 backdrop-blur-md border-b mb-6 -mx-4 px-4 py-4 ${
@@ -389,27 +389,37 @@ export default function FarcasterApp() {
 
         {/* Tab Content */}
         {activeTab === "inbox" && (
-          <ConversationList
-            conversations={sortedConversations}
-            viewMode={viewMode}
-            loading={dataLoading}
-            observerRef={observerRef}
-            isDarkTheme={isDarkTheme}
-            useOldDesign={false}
-            onMarkAsRead={handleMarkAsRead}
-            openRankRanks={openRankRanks}
-            isLoadingMore={isLoadingMore}
-            hasMore={hasMore}
-            onReply={async (detail) => {
-              console.log("Opening cast:", detail);
-              try {
-                await sdk.actions.viewCast({ hash: detail.castHash });
-              } catch (error) {
-                console.error("Failed to open cast:", error);
-              }
-            }}
-            dayFilter={dayFilter}
-          />
+          <>
+            {console.log(
+              "Inbox tab - hasMore:",
+              hasMore,
+              "isLoadingMore:",
+              isLoadingMore,
+              "conversations:",
+              sortedConversations.length
+            )}
+            <ConversationList
+              conversations={sortedConversations}
+              viewMode={viewMode}
+              loading={dataLoading}
+              observerRef={observerRef}
+              isDarkTheme={isDarkTheme}
+              useOldDesign={false}
+              onMarkAsRead={handleMarkAsRead}
+              openRankRanks={openRankRanks}
+              isLoadingMore={isLoadingMore}
+              hasMore={hasMore}
+              onReply={async (detail) => {
+                console.log("Opening cast:", detail);
+                try {
+                  await sdk.actions.viewCast({ hash: detail.castHash });
+                } catch (error) {
+                  console.error("Failed to open cast:", error);
+                }
+              }}
+              dayFilter={dayFilter}
+            />
+          </>
         )}
 
         {activeTab === "focus" && (
@@ -444,15 +454,15 @@ export default function FarcasterApp() {
             themeMode={themeMode}
           />
         )}
-
-        {/* Tab Bar */}
-        <TabBar
-          activeTab={activeTab}
-          onTabChange={setActiveTab}
-          isDarkTheme={isDarkTheme}
-          themeMode={themeMode}
-        />
       </div>
+
+      {/* Tab Bar */}
+      <TabBar
+        activeTab={activeTab}
+        onTabChange={setActiveTab}
+        isDarkTheme={isDarkTheme}
+        themeMode={themeMode}
+      />
 
       {/* Settings Menu */}
       <SettingsMenu

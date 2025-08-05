@@ -123,16 +123,16 @@ export function TabBar({
 
   return (
     <div
-      className={`sticky bottom-0 z-40 ${getBackgroundClass()} border-t ${getBorderColor()}`}
+      className={`sticky bottom-0 z-50 ${getBackgroundClass()} border-t ${getBorderColor()}`}
     >
-      <div className="flex items-center justify-around px-2 py-2">
+      <div className="flex items-center justify-around py-2">
         {tabs.map((tab) => {
           const isActive = activeTab === tab.id;
           return (
             <button
               key={tab.id}
               onClick={() => onTabChange(tab.id)}
-              className={`flex flex-col items-center justify-center w-full py-2 px-1 rounded-lg transition-all duration-200 ${
+              className={`flex flex-col items-center justify-center w-full py-2 rounded-lg transition-all duration-200 ${
                 isActive ? "scale-105" : "hover:scale-102 hover:bg-white/5"
               }`}
               aria-label={tab.label}

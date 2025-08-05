@@ -197,7 +197,15 @@ export function ConversationList({
             ></div>
           </div>
         )}
-        {hasMore && <div ref={observerRef} className="h-4" />}
+        {hasMore && (
+          <div
+            ref={observerRef}
+            className="h-8 w-full flex items-center justify-center"
+            style={{ minHeight: "32px" }}
+          >
+            <div className="text-xs opacity-50">Loading more...</div>
+          </div>
+        )}
 
         {/* Today filter message */}
         {!hasMore && conversations.length > 0 && dayFilter === "today" && (

@@ -57,7 +57,7 @@ export function AnalyticsTab({
   };
 
   return (
-    <div className="pb-20">
+    <div className="pb-6">
       <div className="mb-6">
         <h2 className={`text-lg font-semibold mb-2 ${getTextClass()}`}>
           Analytics
