@@ -7,16 +7,26 @@
   "miniapp": {
     "version": "1",
     "name": "ReplyCast",
-    "iconUrl": "https://replycast.vercel.app/api/og-image",
-    "homeUrl": "https://replycast.vercel.app",
-    "imageUrl": "https://replycast.vercel.app/api/og-image",
-    "buttonTitle": "📝 Reply",
-    "splashImageUrl": "https://replycast.vercel.app/api/og-image",
+    "iconUrl": "https://replycast.leovido.xyz/logo.png",
+    "homeUrl": "https://replycast.leovido.xyz",
+    "imageUrl": "https://replycast.leovido.xyz/logo.png",
+    "buttonTitle": "📝 Check Replies",
+    "splashImageUrl": "https://replycast.leovido.xyz/logo.png",
     "splashBackgroundColor": "#6C2BD7",
-    "description": "Track and reply to your unreplied Farcaster conversations",
+    "description": "Track and reply to your unreplied Farcaster conversations. Stay engaged with your community and never miss important replies again.",
     "subtitle": "Never miss a reply again",
     "primaryCategory": "social",
-    "tags": ["replies", "farcaster", "social", "productivity"],
-    "requiredCapabilities": ["actions.composeCast"]
+    "tags": [
+      "replies",
+      "farcaster",
+      "social",
+      "productivity",
+      "engagement",
+      "community"
+    ],
+    "requiredCapabilities": ["actions.composeCast"],
+    "ogTitle": "ReplyCast - Never Miss a Reply",
+    "ogDescription": "Track and reply to your unreplied Farcaster conversations. Stay engaged with your community!",
+    "ogImageUrl": "https://replycast.leovido.xyz/logo.png"
   }
 }

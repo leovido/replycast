@@ -7,11 +7,11 @@ export default function Document() {
         {/* Farcaster Mini App Embed */}
         <meta
           name="fc:miniapp"
-          content='{"version":"1","imageUrl":"https://replycast.vercel.app/logo.png","button":{"title":"📝 Check Replies","action":{"type":"launch_miniapp","name":"ReplyCast","url":"https://replycast.vercel.app","splashImageUrl":"https://replycast.vercel.app/logo.png","splashBackgroundColor":"#6C2BD7"}}}'
+          content='{"version":"1","imageUrl":"https://replycast.leovido.xyz/logo.png","button":{"title":"📝 Check Replies","action":{"type":"launch_miniapp","name":"ReplyCast","url":"https://replycast.leovido.xyz","splashImageUrl":"https://replycast.leovido.xyz/logo.png","splashBackgroundColor":"#6C2BD7"}}}'
         />
         <meta
           name="fc:frame"
-          content='{"version":"1","imageUrl":"https://replycast.vercel.app/logo.png","button":{"title":"📝 Check Replies","action":{"type":"launch_frame","name":"ReplyCast","url":"https://replycast.vercel.app","splashImageUrl":"https://replycast.vercel.app/logo.png","splashBackgroundColor":"#6C2BD7"}}}'
+          content='{"version":"1","imageUrl":"https://replycast.leovido.xyz/logo.png","button":{"title":"📝 Check Replies","action":{"type":"launch_frame","name":"ReplyCast","url":"https://replycast.leovido.xyz","splashImageUrl":"https://replycast.leovido.xyz/logo.png","splashBackgroundColor":"#6C2BD7"}}}'
         />
 
         {/* Open Graph Metadata for better social sharing */}
@@ -22,9 +22,9 @@ export default function Document() {
         />
         <meta
           property="og:image"
-          content="https://replycast.vercel.app/logo.png"
+          content="https://replycast.leovido.xyz/logo.png"
         />
-        <meta property="og:url" content="https://replycast.vercel.app" />
+        <meta property="og:url" content="https://replycast.leovido.xyz" />
         <meta property="og:type" content="website" />
 
         {/* Twitter Card Metadata */}
@@ -36,7 +36,7 @@ export default function Document() {
         />
         <meta
           name="twitter:image"
-          content="https://replycast.vercel.app/logo.png"
+          content="https://replycast.leovido.xyz/logo.png"
         />
 
         {/* Additional Meta Tags */}
