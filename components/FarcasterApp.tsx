@@ -254,7 +254,9 @@ export default function FarcasterApp() {
   >(() => getStoredValue(STORAGE_KEYS.SORT_OPTION, "newest"));
   const [dayFilter, setDayFilter] = useState<
     "all" | "today" | "3days" | "7days"
-  >(() => getStoredValue(STORAGE_KEYS.DAY_FILTER, "all"));
+  >(() =>
+    getStoredValue(STORAGE_KEYS.DAY_FILTER, USE_NEW_DESIGN ? "today" : "all")
+  );
 
   // Update local storage when settings change
   useEffect(() => {
@@ -299,7 +301,7 @@ export default function FarcasterApp() {
     isInMiniApp,
   } = useFarcasterAuth();
 
-  const { fetchOpenRankRanks, clearCache } = useOpenRank();
+  const { fetchOpenRankRanks, clearCache, openRankRanks } = useOpenRank();
 
   const {
     allConversations,
@@ -364,10 +366,11 @@ export default function FarcasterApp() {
           <div className="flex items-center justify-between mb-6">
             <div>
               <h1 className="text-2xl font-bold text-white mb-2">ReplyCast</h1>
-              <p className="text-white/70">
-                {allConversations.length} conversation
-                {allConversations.length !== 1 ? "s" : ""} to reply to
-              </p>
+              <div className="text-white/70">
+                <span className="font-semibold">{allConversations.length}</span>{" "}
+                conversation{allConversations.length !== 1 ? "s" : ""} to reply
+                to
+              </div>
             </div>
             <button
               onClick={() => setIsSettingsOpen(true)}
@@ -403,11 +406,19 @@ export default function FarcasterApp() {
             >
               <div className="flex items-center gap-4">
                 <div className="flex-shrink-0">
-                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold text-lg">
-                    {user.displayName?.charAt(0) ||
-                      user.username?.charAt(0) ||
-                      "?"}
-                  </div>
+                  {user.pfpUrl ? (
+                    <img
+                      src={`/api/image-proxy?url=${user.pfpUrl}`}
+                      alt={`${user.displayName || user.username}'s avatar`}
+                      className="w-12 h-12 rounded-full border-2 border-white/20"
+                    />
+                  ) : (
+                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold text-lg">
+                      {user.displayName?.charAt(0) ||
+                        user.username?.charAt(0) ||
+                        "?"}
+                    </div>
+                  )}
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1">
@@ -487,7 +498,7 @@ export default function FarcasterApp() {
             isDarkTheme={isDarkTheme}
             useOldDesign={false}
             onMarkAsRead={handleMarkAsRead}
-            openRankRanks={{}}
+            openRankRanks={openRankRanks}
             isLoadingMore={isLoadingMore}
             hasMore={hasMore}
             onReply={() => {}}
@@ -549,7 +560,7 @@ export default function FarcasterApp() {
           isDarkTheme={isDarkTheme}
           useOldDesign={themeMode === "glass"}
           onMarkAsRead={handleMarkAsRead}
-          openRankRanks={{}}
+          openRankRanks={openRankRanks}
           isLoadingMore={isLoadingMore}
           hasMore={hasMore}
           onReply={() => {}}
