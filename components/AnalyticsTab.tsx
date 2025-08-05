@@ -215,6 +215,8 @@ export function AnalyticsTab({
                         <Image
                           src={`/api/image-proxy?url=${conversation.avatarUrl}`}
                           alt={`${conversation.username}'s avatar`}
+                          width={48}
+                          height={48}
                           className="w-10 h-10 rounded-full border-2 border-white/20"
                         />
                       </div>
