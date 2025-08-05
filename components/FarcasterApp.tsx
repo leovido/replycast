@@ -345,7 +345,10 @@ export default function FarcasterApp() {
               </div>
             </div>
             <button
-              onClick={() => setIsSettingsOpen(true)}
+              onClick={() => {
+                sdk.haptics?.impactOccurred?.("light");
+                setIsSettingsOpen(true);
+              }}
               className={`p-3 rounded-xl transition-all duration-200 ${
                 isDarkTheme
                   ? "bg-white/10 hover:bg-white/20 text-white"

@@ -1,4 +1,5 @@
 import React from "react";
+import { sdk } from "@farcaster/miniapp-sdk";
 
 export type TabType = "inbox" | "focus" | "analytics";
 
@@ -131,7 +132,10 @@ export function TabBar({
           return (
             <button
               key={tab.id}
-              onClick={() => onTabChange(tab.id)}
+              onClick={() => {
+                sdk.haptics?.impactOccurred?.("light");
+                onTabChange(tab.id);
+              }}
               className={`flex flex-col items-center justify-center w-full py-2 rounded-lg transition-all duration-200 ${
                 isActive ? "scale-105" : "hover:scale-102 hover:bg-white/5"
               }`}

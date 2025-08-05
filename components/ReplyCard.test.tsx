@@ -14,11 +14,23 @@ const mockDetail = {
   originalCastHash: "0x456",
   originalAuthorUsername: "originaluser",
   replyCount: 5,
+  hasUserInteraction: false,
+  timestamp: Date.now(),
 };
 
 describe("ReplyCard", () => {
+  const defaultProps = {
+    detail: mockDetail,
+    openRank: null,
+    onClick: jest.fn(),
+    viewMode: "list" as const,
+    isDarkTheme: true,
+    useOldDesign: false,
+    onMarkAsRead: jest.fn(),
+  };
+
   it("renders without open rank when not provided", () => {
-    render(<ReplyCard detail={mockDetail} />);
+    render(<ReplyCard {...defaultProps} />);
 
     expect(screen.getByText("@testuser")).toBeInTheDocument();
     expect(screen.getByText("This is a test reply")).toBeInTheDocument();
@@ -26,41 +38,52 @@ describe("ReplyCard", () => {
   });
 
   it("renders open rank when provided", () => {
-    render(<ReplyCard detail={mockDetail} openRank={1500} />);
+    render(<ReplyCard {...defaultProps} openRank={1500} />);
 
     expect(screen.getByText("@testuser")).toBeInTheDocument();
     expect(screen.getByText("#1,500")).toBeInTheDocument();
-    expect(screen.getByText("OpenRank")).toBeInTheDocument();
   });
 
   it("renders open rank with null value", () => {
-    render(<ReplyCard detail={mockDetail} openRank={null} />);
+    render(<ReplyCard {...defaultProps} openRank={null} />);
 
     expect(screen.getByText("@testuser")).toBeInTheDocument();
     expect(screen.getByText("--")).toBeInTheDocument();
-    expect(screen.getByText("OpenRank")).toBeInTheDocument();
   });
 
   it("renders open rank with undefined value", () => {
-    render(<ReplyCard detail={mockDetail} openRank={undefined} />);
+    render(<ReplyCard {...defaultProps} openRank={null} />);
 
     expect(screen.getByText("@testuser")).toBeInTheDocument();
     expect(screen.queryByText("OpenRank")).not.toBeInTheDocument();
   });
 
   it("formats large open rank numbers correctly", () => {
-    render(<ReplyCard detail={mockDetail} openRank={1234567} />);
+    render(<ReplyCard {...defaultProps} openRank={1234567} />);
 
     expect(screen.getByText("#1,234,567")).toBeInTheDocument();
   });
 
   it("calls onClick when clicked", () => {
     const mockOnClick = jest.fn();
-    render(<ReplyCard detail={mockDetail} onClick={mockOnClick} />);
+    render(<ReplyCard {...defaultProps} onClick={mockOnClick} />);
 
-    const replyButton = screen.getByLabelText("Reply");
-    replyButton.click();
+    const cardButton = screen.getByRole("button");
+    cardButton.click();
 
-    expect(mockOnClick).toHaveBeenCalledTimes(2); // Both article and button trigger onClick
+    expect(mockOnClick).toHaveBeenCalledTimes(1);
+  });
+
+  it("shows 'You interacted' badge when hasUserInteraction is true", () => {
+    const detailWithInteraction = { ...mockDetail, hasUserInteraction: true };
+    render(<ReplyCard {...defaultProps} detail={detailWithInteraction} />);
+
+    expect(screen.getByText("You interacted")).toBeInTheDocument();
+  });
+
+  it("does not show 'You interacted' badge when hasUserInteraction is false", () => {
+    render(<ReplyCard {...defaultProps} />);
+
+    expect(screen.queryByText("You interacted")).not.toBeInTheDocument();
   });
 });

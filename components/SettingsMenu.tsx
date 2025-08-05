@@ -1,4 +1,5 @@
 import React from "react";
+import { sdk } from "@farcaster/miniapp-sdk";
 
 interface SettingsMenuProps {
   isOpen: boolean;
@@ -55,7 +56,10 @@ export function SettingsMenu({
             Settings
           </h2>
           <button
-            onClick={onClose}
+            onClick={() => {
+              sdk.haptics?.impactOccurred?.("light");
+              onClose();
+            }}
             className={`p-2 rounded-full hover:bg-white/10 transition-colors ${
               isDarkTheme ? "text-white/70" : "text-gray-600"
             }`}
@@ -86,7 +90,10 @@ export function SettingsMenu({
             {(["Farcaster", "dark", "light"] as const).map((theme) => (
               <button
                 key={theme}
-                onClick={() => onThemeChange(theme)}
+                onClick={() => {
+                  sdk.haptics?.impactOccurred?.("light");
+                  onThemeChange(theme);
+                }}
                 className={`p-3 rounded-xl transition-all duration-200 ${
                   themeMode === theme
                     ? isDarkTheme
@@ -120,8 +127,8 @@ export function SettingsMenu({
           </div>
         </div>
 
-        {/* View Mode Section */}
-        <div className="mb-6">
+        {/* View Mode Section - Hidden on Mobile */}
+        <div className="mb-6 hidden md:block">
           <h3
             className={`text-sm font-semibold mb-3 ${
               isDarkTheme ? "text-white/80" : "text-gray-700"
@@ -133,7 +140,10 @@ export function SettingsMenu({
             {(["list", "grid"] as const).map((mode) => (
               <button
                 key={mode}
-                onClick={() => onViewModeChange(mode)}
+                onClick={() => {
+                  sdk.haptics?.impactOccurred?.("light");
+                  onViewModeChange(mode);
+                }}
                 className={`flex-1 p-3 rounded-xl transition-all ${
                   viewMode === mode
                     ? isDarkTheme
@@ -176,7 +186,10 @@ export function SettingsMenu({
           </h3>
           <select
             value={sortOption}
-            onChange={(e) => onSortChange(e.target.value)}
+            onChange={(e) => {
+              sdk.haptics?.impactOccurred?.("light");
+              onSortChange(e.target.value);
+            }}
             className={`w-full p-3 rounded-xl border transition-all ${
               isDarkTheme
                 ? "bg-white/10 border-white/20 text-white focus:ring-white/40"
@@ -203,7 +216,10 @@ export function SettingsMenu({
           </h3>
           <select
             value={dayFilter}
-            onChange={(e) => onDayFilterChange(e.target.value)}
+            onChange={(e) => {
+              sdk.haptics?.impactOccurred?.("light");
+              onDayFilterChange(e.target.value);
+            }}
             className={`w-full p-3 rounded-xl border transition-all ${
               isDarkTheme
                 ? "bg-white/10 border-white/20 text-white focus:ring-white/40"

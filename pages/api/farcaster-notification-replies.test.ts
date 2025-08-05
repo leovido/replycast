@@ -9,6 +9,7 @@ jest.mock("@/client", () => ({
   client: {
     fetchAllNotifications: jest.fn(),
     lookupCastConversation: jest.fn(),
+    fetchCastReactions: jest.fn(),
   },
 }));
 
@@ -117,6 +118,10 @@ describe("/api/farcaster-notification-replies", () => {
             direct_replies: [],
           },
         },
+      } as any);
+
+      mockClient.fetchCastReactions.mockResolvedValue({
+        reactions: [],
       } as any);
 
       const { req, res } = createMocks({
