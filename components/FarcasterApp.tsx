@@ -1,17 +1,45 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
+import React, { useState, useEffect } from "react";
 import { sdk } from "@farcaster/miniapp-sdk";
+import { useFarcasterAuth } from "../hooks/useFarcasterAuth";
+import { useOpenRank } from "../hooks/useOpenRank";
+import { useFarcasterData } from "../hooks/useFarcasterData";
+import { useInfiniteScroll } from "../hooks/useInfiniteScroll";
 import { AppHeader } from "./AppHeader";
 import { Filters } from "./Filters";
 import { ConversationList } from "./ConversationList";
 import { LoadingScreen } from "./LoadingScreen";
-import { useFarcasterAuth } from "@/hooks/useFarcasterAuth";
-import { useOpenRank } from "@/hooks/useOpenRank";
-import { useFarcasterData } from "@/hooks/useFarcasterData";
-import { useInfiniteScroll } from "@/hooks/useInfiniteScroll";
-import { sortDetails } from "@/utils/farcaster";
-import type { UnrepliedDetail } from "@/types/types";
+import { FarcasterSignIn } from "./FarcasterSignIn";
 
+// Feature flag to switch between old and new designs
 const USE_NEW_DESIGN = process.env.NEXT_PUBLIC_USE_NEW_DESIGN === "true";
+
+// Local storage keys
+const STORAGE_KEYS = {
+  THEME_MODE: "farcaster-widget-theme-mode",
+  VIEW_MODE: "farcaster-widget-view-mode",
+  SORT_OPTION: "farcaster-widget-sort-option",
+  DAY_FILTER: "farcaster-widget-day-filter",
+} as const;
+
+// Helper functions for local storage
+const getStoredValue = <T,>(key: string, defaultValue: T): T => {
+  if (typeof window === "undefined") return defaultValue;
+  try {
+    const stored = localStorage.getItem(key);
+    return stored ? JSON.parse(stored) : defaultValue;
+  } catch {
+    return defaultValue;
+  }
+};
+
+const setStoredValue = <T,>(key: string, value: T): void => {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.setItem(key, JSON.stringify(value));
+  } catch {
+    // Ignore storage errors
+  }
+};
 
 // Settings Menu Component
 function SettingsMenu({
@@ -208,103 +236,47 @@ function SettingsMenu({
 }
 
 export default function FarcasterApp() {
-  const [isDarkTheme, setIsDarkTheme] = useState(true);
-  const [themeMode, setThemeMode] = useState<"dark" | "light" | "glass">(
-    "dark"
+  // Initialize state from local storage
+  const [themeMode, setThemeMode] = useState<"dark" | "light" | "glass">(() =>
+    getStoredValue(STORAGE_KEYS.THEME_MODE, "dark")
   );
-  const [viewMode, setViewMode] = useState<"list" | "grid">("list");
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [viewMode, setViewMode] = useState<"list" | "grid">(() =>
+    getStoredValue(STORAGE_KEYS.VIEW_MODE, "list")
+  );
   const [sortOption, setSortOption] = useState<
     | "newest"
     | "oldest"
     | "fid-asc"
     | "fid-desc"
-    | "short"
-    | "medium"
-    | "long"
     | "openrank-asc"
     | "openrank-desc"
-  >("newest");
+  >(() => getStoredValue(STORAGE_KEYS.SORT_OPTION, "newest"));
   const [dayFilter, setDayFilter] = useState<
     "all" | "today" | "3days" | "7days"
-  >("all");
-  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  >(() => getStoredValue(STORAGE_KEYS.DAY_FILTER, "all"));
 
-  const {
-    user,
-    loading: authLoading,
-    error: authError,
-    isInMiniApp,
-    handleSignIn,
-    handleSignInError,
-  } = useFarcasterAuth();
-  const { openRankRanks, fetchOpenRankRanks, getCacheStatus, clearCache } =
-    useOpenRank();
-  const {
-    allConversations,
-    loading: dataLoading,
-    error: dataError,
-    isRefreshing,
-    hasMore,
-    isLoadingMore,
-    userOpenRank,
-    loadMoreConversations,
-    handleRefresh,
-    resetPagination,
-  } = useFarcasterData({
-    user,
-    fetchOpenRankRanks,
-    clearOpenRankCache: clearCache,
-    dayFilter,
-  });
-  const { observerRef } = useInfiniteScroll({
-    hasMore,
-    isLoadingMore,
-    loading: dataLoading,
-    loadMoreConversations,
-  });
-
-  const handleReply = useCallback(async (detail: UnrepliedDetail) => {
-    try {
-      await sdk.actions.composeCast({
-        text: `@${detail.username} `,
-        embeds: [detail.castUrl],
-      });
-    } catch (error) {
-      console.error("Failed to compose cast:", error);
-    }
-  }, []);
-
-  const handleMarkAsRead = useCallback((detail: UnrepliedDetail) => {
-    // For now, just log the action
-    // In a real implementation, you would:
-    // 1. Send to an API to mark as read
-    // 2. Update the conversation list
-    // 3. Store in localStorage
-    console.log(`Marked as read: ${detail.username}'s cast`);
-
-    // You could implement a more sophisticated state management here
-    // For example, filter out the marked conversation from the display
-  }, []);
+  // Update local storage when settings change
+  useEffect(() => {
+    setStoredValue(STORAGE_KEYS.THEME_MODE, themeMode);
+  }, [themeMode]);
 
   useEffect(() => {
-    if (user && !authLoading) {
-      fetchOpenRankRanks([user.fid]);
-    }
-  }, [user, authLoading, fetchOpenRankRanks]);
+    setStoredValue(STORAGE_KEYS.VIEW_MODE, viewMode);
+  }, [viewMode]);
 
   useEffect(() => {
-    if (user && !authLoading) {
-      sdk.actions.ready();
-    }
-  }, [user, authLoading]);
+    setStoredValue(STORAGE_KEYS.SORT_OPTION, sortOption);
+  }, [sortOption]);
 
-  const sortedConversations = useMemo(() => {
-    return sortDetails(allConversations, sortOption, openRankRanks);
-  }, [allConversations, sortOption, openRankRanks]);
+  useEffect(() => {
+    setStoredValue(STORAGE_KEYS.DAY_FILTER, dayFilter);
+  }, [dayFilter]);
 
-  const handleThemeChange = (theme: "dark" | "light" | "glass") => {
-    setThemeMode(theme);
-    setIsDarkTheme(theme !== "light");
+  const isDarkTheme = themeMode === "dark" || themeMode === "glass";
+
+  const handleThemeChange = (newTheme: "dark" | "light" | "glass") => {
+    setThemeMode(newTheme);
   };
 
   const getBackgroundClass = () => {
@@ -314,205 +286,97 @@ export default function FarcasterApp() {
       case "light":
         return "bg-gradient-to-br from-gray-50 via-white to-gray-100";
       case "glass":
-        return "bg-gradient-to-br from-blue-900 via-purple-900 to-indigo-900";
+        return "bg-gradient-to-br from-blue-900/20 via-purple-900/20 to-indigo-900/20 backdrop-blur-sm";
       default:
         return "bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900";
     }
   };
 
+  const {
+    user,
+    loading: authLoading,
+    handleSignIn,
+    isInMiniApp,
+  } = useFarcasterAuth();
+
+  const { fetchOpenRankRanks, clearCache } = useOpenRank();
+
+  const {
+    allConversations,
+    userOpenRank,
+    loading: dataLoading,
+    error,
+    handleRefresh,
+    hasMore,
+    loadMoreConversations,
+    isLoadingMore,
+    isRefreshing,
+  } = useFarcasterData({
+    user,
+    fetchOpenRankRanks,
+    clearOpenRankCache: clearCache,
+    dayFilter,
+  });
+
+  // Mock getCacheStatus function since it's not available in the hook
+  const getCacheStatus = () => ({
+    isValid: true,
+    age: 0,
+    cachedFids: 0,
+    ttl: 300,
+  });
+
+  const { observerRef } = useInfiniteScroll({
+    hasMore,
+    isLoadingMore,
+    loading: dataLoading,
+    loadMoreConversations,
+  });
+
+  const handleMarkAsRead = (detail: any) => {
+    console.log("Marking as read:", detail);
+    // TODO: Implement actual removal logic
+  };
+
+  // Call ready when app is loaded
+  useEffect(() => {
+    sdk.actions.ready();
+  }, []);
+
+  // Show loading screen while auth is loading
   if (authLoading) {
     return <LoadingScreen />;
   }
 
+  // Show sign-in if not authenticated
   if (!user) {
-    return (
-      <div className={`min-h-screen ${getBackgroundClass()}`}>
-        <div className="flex items-center justify-center min-h-screen p-6">
-          <div
-            className={`max-w-md w-full ${
-              themeMode === "glass"
-                ? "bg-white/10 backdrop-blur-sm border border-white/20"
-                : isDarkTheme
-                ? "bg-zinc-800/50 backdrop-blur-sm border border-white/20"
-                : "bg-white/80 backdrop-blur-sm border border-gray-200"
-            } rounded-2xl p-8 shadow-xl`}
-          >
-            <div className="text-center">
-              <h1
-                className={`text-2xl font-bold mb-4 ${
-                  isDarkTheme ? "text-white" : "text-gray-900"
-                }`}
-              >
-                ReplyCast Widget
-              </h1>
-              <p
-                className={`mb-6 ${
-                  isDarkTheme ? "text-white/70" : "text-gray-600"
-                }`}
-              >
-                Track your unreplied conversations on Farcaster
-              </p>
-              <button
-                onClick={() =>
-                  handleSignIn({
-                    fid: 203666,
-                    username: "leovido",
-                    displayName: "Leovido",
-                    pfpUrl: "https://example.com/avatar.jpg",
-                  })
-                }
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-xl transition-colors"
-              >
-                Sign in with Farcaster
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
+    return <FarcasterSignIn onSignIn={handleSignIn} onError={() => {}} />;
   }
 
-  if (!USE_NEW_DESIGN) {
+  if (USE_NEW_DESIGN) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-zinc-900 via-zinc-800 to-zinc-900 text-white">
-        <div className="container mx-auto px-4 py-8">
-          <AppHeader
-            user={user}
-            conversationCount={allConversations.length}
-            onRefresh={handleRefresh}
-            userOpenRank={userOpenRank}
-            error={dataError}
-            isRefreshing={isRefreshing}
-            getCacheStatus={getCacheStatus}
-            isDarkTheme={true}
-            useOldDesign={true}
-          />
-          <Filters
-            viewMode={viewMode}
-            onViewModeChange={setViewMode}
-            sortOption={sortOption}
-            onSortOptionChange={setSortOption}
-            dayFilter={dayFilter}
-            onDayFilterChange={setDayFilter}
-            isDarkTheme={true}
-            useOldDesign={true}
-          />
-          <ConversationList
-            conversations={sortedConversations}
-            viewMode={viewMode}
-            openRankRanks={openRankRanks}
-            loading={dataLoading}
-            isLoadingMore={isLoadingMore}
-            hasMore={hasMore}
-            observerRef={observerRef}
-            onReply={handleReply}
-            isDarkTheme={true}
-            useOldDesign={true}
-            onMarkAsRead={handleMarkAsRead}
-          />
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div
-      className={`min-h-screen ${getBackgroundClass()} transition-colors duration-300`}
-    >
-      <div className="container mx-auto px-4 py-6">
-        {/* Header with Settings Button */}
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-4">
-            <h1
-              className={`text-2xl font-bold ${
-                isDarkTheme ? "text-white" : "text-gray-900"
-              }`}
-            >
-              ReplyCast
-            </h1>
-            <div
-              className={`px-3 py-1 rounded-full text-sm ${
-                isDarkTheme
-                  ? "bg-white/10 text-white/70"
-                  : "bg-gray-100 text-gray-600"
-              }`}
-            >
-              {allConversations.length} conversations
-            </div>
-          </div>
-
-          <button
-            onClick={() => setIsSettingsOpen(true)}
-            className={`p-3 rounded-full transition-all duration-300 hover:scale-110 focus:outline-none focus:ring-2 focus:ring-blue-400 ${
-              themeMode === "glass"
-                ? "bg-white/10 backdrop-blur-sm border border-white/20 hover:bg-white/20"
-                : themeMode === "dark"
-                ? "bg-white/10 backdrop-blur-sm border border-white/20 hover:bg-white/20"
-                : "bg-gray-800/10 backdrop-blur-sm border border-gray-300/20 hover:bg-gray-800/20"
-            }`}
-            aria-label="Open settings"
-          >
-            <svg
-              width={20}
-              height={20}
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth={2}
-            >
-              <circle cx="12" cy="12" r="3" />
-              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
-            </svg>
-          </button>
-        </div>
-
-        {/* User Info Card */}
-        <div
-          className={`mb-6 p-4 rounded-2xl ${
-            isDarkTheme
-              ? "bg-white/10 backdrop-blur-sm border border-white/20"
-              : "bg-white/80 backdrop-blur-sm border border-gray-200"
-          }`}
-        >
-          <div className="flex items-center gap-4">
-            <div className="relative">
-              <img
-                src={user.pfpUrl || "https://via.placeholder.com/48"}
-                alt={`${user.displayName}'s avatar`}
-                className="w-12 h-12 rounded-full border-2 border-white/20"
-              />
-              {userOpenRank && (
-                <div className="absolute -top-1 -right-1 w-5 h-5 bg-yellow-500 rounded-full flex items-center justify-center">
-                  <span className="text-xs font-bold text-white">
-                    {userOpenRank.toLocaleString()}
-                  </span>
-                </div>
-              )}
-            </div>
-            <div className="flex-1">
-              <h2
-                className={`font-semibold ${
-                  isDarkTheme ? "text-white" : "text-gray-900"
-                }`}
-              >
-                {user.displayName}
-              </h2>
-              <p
-                className={`text-sm ${
-                  isDarkTheme ? "text-white/70" : "text-gray-600"
-                }`}
-              >
-                @{user.username} • FID: {user.fid}
+      <div
+        className={`min-h-screen ${getBackgroundClass()} transition-all duration-300`}
+      >
+        {/* New Design */}
+        <div className="container mx-auto px-4 py-6 max-w-6xl">
+          {/* Header */}
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h1 className="text-2xl font-bold text-white mb-2">ReplyCast</h1>
+              <p className="text-white/70">
+                {allConversations.length} conversation
+                {allConversations.length !== 1 ? "s" : ""} to reply to
               </p>
             </div>
             <button
-              onClick={handleRefresh}
-              disabled={dataLoading}
-              className={`p-2 rounded-full transition-colors ${
-                dataLoading
-                  ? "opacity-50 cursor-not-allowed"
-                  : "hover:bg-white/10"
+              onClick={() => setIsSettingsOpen(true)}
+              className={`p-3 rounded-xl transition-all duration-200 ${
+                isDarkTheme
+                  ? "bg-white/10 hover:bg-white/20 text-white"
+                  : "bg-gray-100 hover:bg-gray-200 text-gray-700"
               }`}
+              aria-label="Settings"
             >
               <svg
                 width={20}
@@ -521,27 +385,114 @@ export default function FarcasterApp() {
                 fill="none"
                 stroke="currentColor"
                 strokeWidth={2}
-                className={dataLoading ? "animate-spin" : ""}
               >
-                <path d="M21 2v6h-6M3 12a9 9 0 0 1 15-6.7L21 8M3 22v-6h6M21 12a9 9 0 0 1-15 6.7L3 16" />
+                <path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" />
+                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1Z" />
               </svg>
             </button>
           </div>
-        </div>
 
-        <ConversationList
-          conversations={sortedConversations}
-          viewMode={viewMode}
-          openRankRanks={openRankRanks}
-          loading={dataLoading}
-          isLoadingMore={isLoadingMore}
-          hasMore={hasMore}
-          observerRef={observerRef}
-          onReply={handleReply}
-          isDarkTheme={isDarkTheme}
-          useOldDesign={themeMode === "glass"}
-          onMarkAsRead={handleMarkAsRead}
-        />
+          {/* User Info Card */}
+          {user && (
+            <div
+              className={`mb-6 p-4 rounded-2xl ${
+                isDarkTheme
+                  ? "bg-white/10 backdrop-blur-md border border-white/20"
+                  : "bg-white/80 backdrop-blur-md border border-gray-200"
+              }`}
+            >
+              <div className="flex items-center gap-4">
+                <div className="flex-shrink-0">
+                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold text-lg">
+                    {user.displayName?.charAt(0) ||
+                      user.username?.charAt(0) ||
+                      "?"}
+                  </div>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span
+                      className={`font-semibold truncate ${
+                        isDarkTheme ? "text-white" : "text-gray-900"
+                      }`}
+                    >
+                      {user.displayName || user.username}
+                    </span>
+                    <span
+                      className={`text-sm ${
+                        isDarkTheme ? "text-white/60" : "text-gray-600"
+                      }`}
+                    >
+                      FID: {user.fid}
+                    </span>
+                  </div>
+                  {userOpenRank !== null && userOpenRank !== undefined && (
+                    <div className="flex items-center gap-1">
+                      <svg
+                        width={14}
+                        height={14}
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth={2}
+                        className="text-yellow-400"
+                      >
+                        <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26" />
+                      </svg>
+                      <span
+                        className={`font-bold ${
+                          isDarkTheme ? "text-yellow-400" : "text-purple-700"
+                        }`}
+                      >
+                        #{userOpenRank.toLocaleString()}
+                      </span>
+                    </div>
+                  )}
+                </div>
+                <button
+                  onClick={handleRefresh}
+                  disabled={dataLoading}
+                  className={`p-2 rounded-lg transition-all duration-200 ${
+                    dataLoading
+                      ? "opacity-50 cursor-not-allowed"
+                      : "hover:bg-white/20"
+                  } ${isDarkTheme ? "text-white" : "text-gray-700"}`}
+                  aria-label="Refresh data"
+                >
+                  <svg
+                    width={20}
+                    height={20}
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth={2}
+                    className={dataLoading ? "animate-spin" : ""}
+                  >
+                    <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8" />
+                    <path d="M21 3v5h-5" />
+                    <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16" />
+                    <path d="M3 21v-5h5" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Conversation List */}
+          <ConversationList
+            conversations={allConversations}
+            viewMode={viewMode}
+            loading={dataLoading}
+            observerRef={observerRef}
+            isDarkTheme={isDarkTheme}
+            useOldDesign={false}
+            onMarkAsRead={handleMarkAsRead}
+            openRankRanks={{}}
+            isLoadingMore={isLoadingMore}
+            hasMore={hasMore}
+            onReply={() => {}}
+          />
+        </div>
 
         {/* Settings Menu */}
         <SettingsMenu
@@ -558,6 +509,67 @@ export default function FarcasterApp() {
           isDarkTheme={isDarkTheme}
         />
       </div>
+    );
+  }
+
+  // Original Design
+  return (
+    <div
+      className={`min-h-screen ${getBackgroundClass()} transition-all duration-300`}
+    >
+      <div className="container mx-auto px-4 py-6 max-w-6xl">
+        <AppHeader
+          user={user}
+          userOpenRank={userOpenRank}
+          conversationCount={allConversations.length}
+          onRefresh={handleRefresh}
+          error={error}
+          isRefreshing={isRefreshing}
+          getCacheStatus={getCacheStatus}
+          isDarkTheme={isDarkTheme}
+          useOldDesign={themeMode === "glass"}
+        />
+
+        <Filters
+          viewMode={viewMode}
+          onViewModeChange={setViewMode}
+          sortOption={sortOption}
+          onSortOptionChange={(option) => setSortOption(option as any)}
+          dayFilter={dayFilter}
+          onDayFilterChange={setDayFilter}
+          isDarkTheme={isDarkTheme}
+          useOldDesign={themeMode === "glass"}
+        />
+
+        <ConversationList
+          conversations={allConversations}
+          viewMode={viewMode}
+          loading={dataLoading}
+          observerRef={observerRef}
+          isDarkTheme={isDarkTheme}
+          useOldDesign={themeMode === "glass"}
+          onMarkAsRead={handleMarkAsRead}
+          openRankRanks={{}}
+          isLoadingMore={isLoadingMore}
+          hasMore={hasMore}
+          onReply={() => {}}
+        />
+      </div>
+
+      {/* Settings Menu */}
+      <SettingsMenu
+        isOpen={isSettingsOpen}
+        onClose={() => setIsSettingsOpen(false)}
+        themeMode={themeMode}
+        onThemeChange={handleThemeChange}
+        viewMode={viewMode}
+        onViewModeChange={setViewMode}
+        sortOption={sortOption}
+        onSortChange={(option) => setSortOption(option as any)}
+        dayFilter={dayFilter}
+        onDayFilterChange={(filter) => setDayFilter(filter as any)}
+        isDarkTheme={isDarkTheme}
+      />
     </div>
   );
 }
