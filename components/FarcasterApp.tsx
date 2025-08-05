@@ -8,7 +8,11 @@ import { ConversationList } from "./ConversationList";
 import { LoadingScreen } from "./LoadingScreen";
 import { FarcasterSignIn } from "./FarcasterSignIn";
 import { SettingsMenu } from "./SettingsMenu";
+import { TabBar, type TabType } from "./TabBar";
+import { FocusTab } from "./FocusTab";
+import { AnalyticsTab } from "./AnalyticsTab";
 import { sortDetails } from "../utils/farcaster";
+import Image from "next/image";
 
 // Local storage keys
 const STORAGE_KEYS = {
@@ -16,6 +20,7 @@ const STORAGE_KEYS = {
   VIEW_MODE: "farcaster-widget-view-mode",
   SORT_OPTION: "farcaster-widget-sort-option",
   DAY_FILTER: "farcaster-widget-day-filter",
+  ACTIVE_TAB: "farcaster-widget-active-tab",
 } as const;
 
 // Helper functions for local storage
@@ -51,6 +56,9 @@ export default function FarcasterApp() {
       return storedValue;
     }
   );
+  const [activeTab, setActiveTab] = useState<TabType>(() =>
+    getStoredValue(STORAGE_KEYS.ACTIVE_TAB, "inbox")
+  );
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [viewMode, setViewMode] = useState<"list" | "grid">(() =>
     getStoredValue(STORAGE_KEYS.VIEW_MODE, "list")
@@ -71,6 +79,10 @@ export default function FarcasterApp() {
   useEffect(() => {
     setStoredValue(STORAGE_KEYS.THEME_MODE, themeMode);
   }, [themeMode]);
+
+  useEffect(() => {
+    setStoredValue(STORAGE_KEYS.ACTIVE_TAB, activeTab);
+  }, [activeTab]);
 
   useEffect(() => {
     setStoredValue(STORAGE_KEYS.VIEW_MODE, viewMode);
@@ -151,9 +163,36 @@ export default function FarcasterApp() {
     openRankRanks
   );
 
+  // State for marked as read conversations
+  const [markedAsReadConversations, setMarkedAsReadConversations] = useState<
+    any[]
+  >(() => {
+    if (typeof window === "undefined") return [];
+    try {
+      const stored = localStorage.getItem("farcaster-widget-marked-as-read");
+      return stored ? JSON.parse(stored) : [];
+    } catch {
+      return [];
+    }
+  });
+
   const handleMarkAsRead = (detail: any) => {
     console.log("Marking as read:", detail);
-    // TODO: Implement actual removal logic
+    setMarkedAsReadConversations((prev) => {
+      const newList = [...prev, detail];
+      // Store in localStorage
+      if (typeof window !== "undefined") {
+        try {
+          localStorage.setItem(
+            "farcaster-widget-marked-as-read",
+            JSON.stringify(newList)
+          );
+        } catch {
+          // Ignore storage errors
+        }
+      }
+      return newList;
+    });
   };
 
   // Call ready when app is loaded
@@ -200,8 +239,32 @@ export default function FarcasterApp() {
                   themeMode === "light" ? "text-gray-600" : "text-white/70"
                 }`}
               >
-                <span className="font-semibold">{allConversations.length}</span>{" "}
-                unreplied conversation{allConversations.length !== 1 ? "s" : ""}
+                {activeTab === "inbox" && (
+                  <>
+                    <span className="font-semibold">
+                      {allConversations.length}
+                    </span>{" "}
+                    unreplied conversation
+                    {allConversations.length !== 1 ? "s" : ""}
+                  </>
+                )}
+                {activeTab === "focus" && (
+                  <>
+                    <span className="font-semibold">
+                      {markedAsReadConversations.length}
+                    </span>{" "}
+                    focus conversation
+                    {markedAsReadConversations.length !== 1 ? "s" : ""}
+                  </>
+                )}
+                {activeTab === "analytics" && (
+                  <>
+                    <span className="font-semibold">
+                      {allConversations.length}
+                    </span>{" "}
+                    total conversations analyzed
+                  </>
+                )}
               </div>
             </div>
             <button
@@ -240,7 +303,7 @@ export default function FarcasterApp() {
             <div className="flex items-center gap-4">
               <div className="flex-shrink-0">
                 {user.pfpUrl ? (
-                  <img
+                  <Image
                     src={`/api/image-proxy?url=${user.pfpUrl}`}
                     alt={`${user.displayName || user.username}'s avatar`}
                     className="w-12 h-12 rounded-full border-2 border-white/20"
@@ -322,27 +385,79 @@ export default function FarcasterApp() {
           </div>
         )}
 
-        {/* Conversation List */}
-        <ConversationList
-          conversations={sortedConversations}
-          viewMode={viewMode}
-          loading={dataLoading}
-          observerRef={observerRef}
+        {/* Tab Content */}
+        {activeTab === "inbox" && (
+          <ConversationList
+            conversations={sortedConversations}
+            viewMode={viewMode}
+            loading={dataLoading}
+            observerRef={observerRef}
+            isDarkTheme={isDarkTheme}
+            useOldDesign={false}
+            onMarkAsRead={handleMarkAsRead}
+            openRankRanks={openRankRanks}
+            isLoadingMore={isLoadingMore}
+            hasMore={hasMore}
+            onReply={async (detail) => {
+              console.log("Opening cast:", detail);
+              try {
+                await sdk.actions.viewCast({ hash: detail.castHash });
+              } catch (error) {
+                console.error("Failed to open cast:", error);
+              }
+            }}
+            dayFilter={dayFilter}
+          />
+        )}
+
+        {activeTab === "focus" && (
+          <FocusTab
+            markedAsReadConversations={markedAsReadConversations}
+            viewMode={viewMode}
+            openRankRanks={openRankRanks}
+            loading={dataLoading}
+            isLoadingMore={isLoadingMore}
+            hasMore={hasMore}
+            observerRef={observerRef}
+            onReply={async (detail) => {
+              console.log("Opening cast from focus:", detail);
+              try {
+                await sdk.actions.viewCast({ hash: detail.castHash });
+              } catch (error) {
+                console.error("Failed to open cast:", error);
+              }
+            }}
+            isDarkTheme={isDarkTheme}
+            onMarkAsRead={handleMarkAsRead}
+            dayFilter={dayFilter}
+          />
+        )}
+
+        {activeTab === "analytics" && (
+          <AnalyticsTab
+            allConversations={allConversations}
+            userOpenRank={userOpenRank}
+            openRankRanks={openRankRanks}
+            isDarkTheme={isDarkTheme}
+            themeMode={themeMode}
+          />
+        )}
+
+        {/* Tab Bar */}
+        <TabBar
+          activeTab={activeTab}
+          onTabChange={setActiveTab}
           isDarkTheme={isDarkTheme}
-          useOldDesign={false}
-          onMarkAsRead={handleMarkAsRead}
-          openRankRanks={openRankRanks}
-          isLoadingMore={isLoadingMore}
-          hasMore={hasMore}
-          onReply={() => {}}
-          dayFilter={dayFilter}
+          themeMode={themeMode}
         />
       </div>
 
       {/* Settings Menu */}
       <SettingsMenu
         isOpen={isSettingsOpen}
-        onClose={() => setIsSettingsOpen(false)}
+        onClose={() => {
+          setIsSettingsOpen(false);
+        }}
         themeMode={themeMode}
         onThemeChange={handleThemeChange}
         viewMode={viewMode}

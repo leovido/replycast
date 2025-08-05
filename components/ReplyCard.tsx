@@ -47,6 +47,7 @@ export const ReplyCard = memo<ReplyCardProps>(
       touchStartY.current = touch.clientY;
       setIsDragging(true);
       setDragOffset(0);
+      console.log("Touch start:", touch.clientX, touch.clientY);
     };
 
     const handleTouchMove = (e: React.TouchEvent) => {
@@ -58,8 +59,9 @@ export const ReplyCard = memo<ReplyCardProps>(
 
       // Only allow horizontal swipes (prevent vertical scrolling interference)
       if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 10) {
-        // Don't call preventDefault() to avoid passive listener error
+        e.preventDefault(); // Prevent scrolling during swipe
         setDragOffset(deltaX);
+        console.log("Touch move:", deltaX);
       }
     };
 
@@ -70,9 +72,12 @@ export const ReplyCard = memo<ReplyCardProps>(
       const deltaX = touch.clientX - touchStartX.current;
       const swipeThreshold = 80; // Minimum distance for swipe action
 
+      console.log("Touch end:", deltaX, "threshold:", swipeThreshold);
+
       if (Math.abs(deltaX) > swipeThreshold) {
         if (deltaX > 0) {
           // Swipe right - open cast
+          console.log("Swipe right - opening cast");
           try {
             // Trigger haptic feedback
             sdk.haptics?.impactOccurred?.("medium");
@@ -82,6 +87,7 @@ export const ReplyCard = memo<ReplyCardProps>(
           onClick();
         } else {
           // Swipe left - mark as read
+          console.log("Swipe left - marking as read");
           try {
             // Trigger haptic feedback
             sdk.haptics?.impactOccurred?.("light");
@@ -112,7 +118,13 @@ export const ReplyCard = memo<ReplyCardProps>(
           onTouchStart={handleTouchStart}
           onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}
-          onClick={onClick}
+          onClick={(e) => {
+            // Only trigger onClick if not dragging
+            if (!isDragging) {
+              console.log("Card clicked - opening cast");
+              onClick();
+            }
+          }}
           className={`
             relative isolate flex flex-col gap-6
             w-full
@@ -339,7 +351,13 @@ export const ReplyCard = memo<ReplyCardProps>(
             </div>
             <div className="flex items-center gap-2">
               {hasUserInteraction && (
-                <div className="flex items-center gap-1 px-2 py-1 bg-blue-500/20 rounded-full text-blue-300 text-xs">
+                <div
+                  className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs ${
+                    isDarkTheme
+                      ? "bg-blue-500/20 text-blue-300"
+                      : "bg-purple-100 text-purple-700"
+                  }`}
+                >
                   <svg
                     width={10}
                     height={10}
@@ -364,7 +382,13 @@ export const ReplyCard = memo<ReplyCardProps>(
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
-        onClick={onClick}
+        onClick={(e) => {
+          // Only trigger onClick if not dragging
+          if (!isDragging) {
+            console.log("Card clicked (new design) - opening cast");
+            onClick();
+          }
+        }}
         className={`relative w-full text-left p-6 rounded-2xl transition-all duration-300 hover:scale-[1.02] focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 ${
           hasUserInteraction
             ? isDarkTheme
@@ -618,7 +642,13 @@ export const ReplyCard = memo<ReplyCardProps>(
           </div>
           <div className="flex items-center gap-2">
             {hasUserInteraction && (
-              <div className="flex items-center gap-1 px-2 py-1 bg-blue-500/20 rounded-full text-blue-300 text-xs">
+              <div
+                className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs ${
+                  isDarkTheme
+                    ? "bg-blue-500/20 text-blue-300"
+                    : "bg-purple-100 text-purple-700"
+                }`}
+              >
                 <svg
                   width={10}
                   height={10}
