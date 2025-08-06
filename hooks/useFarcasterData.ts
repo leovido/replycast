@@ -81,7 +81,21 @@ export function useFarcasterData({
           setData(responseData);
           setLoading(false);
           setIsLoadingMore(false);
-          setAllConversations(responseData.unrepliedDetails || []);
+
+          // Deduplicate conversations using castHash
+          const uniqueConversations = (
+            responseData.unrepliedDetails || []
+          ).reduce((acc: UnrepliedDetail[], item: UnrepliedDetail) => {
+            const isDuplicate = acc.some(
+              (existing) => existing.castHash === item.castHash
+            );
+            if (!isDuplicate) {
+              acc.push(item);
+            }
+            return acc;
+          }, []);
+
+          setAllConversations(uniqueConversations);
           setCursor(responseData.nextCursor || null);
 
           // Set hasMore based on nextCursor availability
@@ -130,11 +144,15 @@ export function useFarcasterData({
       const res = await fetch(url.toString());
       const responseData = await res.json();
 
-      // Append new conversations
-      setAllConversations((prev) => [
-        ...prev,
-        ...(responseData.unrepliedDetails || []),
-      ]);
+      // Append new conversations with deduplication
+      setAllConversations((prev) => {
+        const existingHashes = new Set(prev.map((item) => item.castHash));
+        const newConversations = (responseData.unrepliedDetails || []).filter(
+          (item: UnrepliedDetail) => !existingHashes.has(item.castHash)
+        );
+
+        return [...prev, ...newConversations];
+      });
 
       setCursor(responseData.nextCursor || null);
 

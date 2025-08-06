@@ -11,6 +11,8 @@ import { SettingsMenu } from "./SettingsMenu";
 import { TabBar, type TabType } from "./TabBar";
 import { FocusTab } from "./FocusTab";
 import { AnalyticsTab } from "./AnalyticsTab";
+import { ToastNotification } from "./ToastNotification";
+import { EmptyState } from "./EmptyState";
 import { sortDetails } from "../utils/farcaster";
 import Image from "next/image";
 
@@ -170,11 +172,107 @@ export default function FarcasterApp() {
     if (typeof window === "undefined") return [];
     try {
       const stored = localStorage.getItem("farcaster-widget-marked-as-read");
-      return stored ? JSON.parse(stored) : [];
+      if (!stored) return [];
+
+      const parsed = JSON.parse(stored);
+
+      // Deduplicate using castHash as unique identifier
+      const uniqueConversations = parsed.reduce((acc: any[], item: any) => {
+        const isDuplicate = acc.some(
+          (existing) => existing.castHash === item.castHash
+        );
+        if (!isDuplicate) {
+          acc.push(item);
+        }
+        return acc;
+      }, []);
+
+      // Update localStorage with deduplicated data
+      if (uniqueConversations.length !== parsed.length) {
+        localStorage.setItem(
+          "farcaster-widget-marked-as-read",
+          JSON.stringify(uniqueConversations)
+        );
+      }
+
+      return uniqueConversations;
     } catch {
       return [];
     }
   });
+
+  // State for discarded conversations
+  const [discardedConversations, setDiscardedConversations] = useState<any[]>(
+    () => {
+      if (typeof window === "undefined") return [];
+      try {
+        const stored = localStorage.getItem("farcaster-widget-discarded");
+        if (!stored) return [];
+
+        const parsed = JSON.parse(stored);
+
+        // Deduplicate using castHash as unique identifier
+        const uniqueDiscarded = parsed.reduce((acc: any[], item: any) => {
+          const isDuplicate = acc.some(
+            (existing) => existing.castHash === item.castHash
+          );
+          if (!isDuplicate) {
+            acc.push(item);
+          }
+          return acc;
+        }, []);
+
+        // Update localStorage with deduplicated data
+        if (uniqueDiscarded.length !== parsed.length) {
+          localStorage.setItem(
+            "farcaster-widget-discarded",
+            JSON.stringify(uniqueDiscarded)
+          );
+        }
+
+        return uniqueDiscarded;
+      } catch {
+        return [];
+      }
+    }
+  );
+
+  // Toast notification state
+  const [toast, setToast] = useState<{
+    message: string;
+    type: "success" | "error" | "info";
+    isVisible: boolean;
+  }>({
+    message: "",
+    type: "success",
+    isVisible: false,
+  });
+
+  const showToast = (
+    message: string,
+    type: "success" | "error" | "info" = "success"
+  ) => {
+    setToast({
+      message,
+      type,
+      isVisible: true,
+    });
+  };
+
+  const hideToast = () => {
+    setToast((prev) => ({ ...prev, isVisible: false }));
+  };
+
+  // Filter out discarded and marked as read conversations from the main list
+  const filteredConversations = sortedConversations.filter(
+    (conversation) =>
+      !discardedConversations.some(
+        (discarded) => discarded.castHash === conversation.castHash
+      ) &&
+      !markedAsReadConversations.some(
+        (marked) => marked.castHash === conversation.castHash
+      )
+  );
 
   // Swipe to refresh state
   const [isRefreshingPull, setIsRefreshingPull] = useState(false);
@@ -185,6 +283,17 @@ export default function FarcasterApp() {
   const handleMarkAsRead = (detail: any) => {
     console.log("Marking as read:", detail);
     setMarkedAsReadConversations((prev) => {
+      // Check if this cast is already marked as read using castHash as unique identifier
+      const isDuplicate = prev.some(
+        (item) => item.castHash === detail.castHash
+      );
+
+      if (isDuplicate) {
+        console.log("Cast already marked as read:", detail.castHash);
+        showToast("Cast already marked as read", "info");
+        return prev; // Return existing list without adding duplicate
+      }
+
       const newList = [...prev, detail];
       // Store in localStorage
       if (typeof window !== "undefined") {
@@ -197,6 +306,44 @@ export default function FarcasterApp() {
           // Ignore storage errors
         }
       }
+
+      // Show success toast
+      showToast("Marked as read", "success");
+
+      return newList;
+    });
+  };
+
+  const handleDiscard = (detail: any) => {
+    console.log("Discarding cast:", detail);
+    setDiscardedConversations((prev) => {
+      // Check if this cast is already discarded using castHash as unique identifier
+      const isDuplicate = prev.some(
+        (item) => item.castHash === detail.castHash
+      );
+
+      if (isDuplicate) {
+        console.log("Cast already discarded:", detail.castHash);
+        showToast("Cast already discarded", "info");
+        return prev; // Return existing list without adding duplicate
+      }
+
+      const newList = [...prev, detail];
+      // Store in localStorage
+      if (typeof window !== "undefined") {
+        try {
+          localStorage.setItem(
+            "farcaster-widget-discarded",
+            JSON.stringify(newList)
+          );
+        } catch {
+          // Ignore storage errors
+        }
+      }
+
+      // Show success toast
+      showToast("Cast discarded", "success");
+
       return newList;
     });
   };
@@ -315,12 +462,12 @@ export default function FarcasterApp() {
 
   return (
     <div
-      className={`min-h-screen ${getBackgroundClass()} transition-all duration-300`}
+      className={`min-h-screen ${getBackgroundClass()} transition-all duration-300 flex flex-col`}
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
     >
-      <div className="container mx-auto px-4 max-w-6xl">
+      <div className="container mx-auto px-4 max-w-6xl flex-1 flex flex-col">
         {/* Pull to refresh indicator */}
         {pullDistance > 0 && (
           <div
@@ -522,71 +669,107 @@ export default function FarcasterApp() {
         )}
 
         {/* Tab Content */}
-        {activeTab === "inbox" && (
-          <>
-            {console.log(
-              "Inbox tab - hasMore:",
-              hasMore,
-              "isLoadingMore:",
-              isLoadingMore,
-              "conversations:",
-              sortedConversations.length
-            )}
-            <ConversationList
-              conversations={sortedConversations}
+        <div className="flex-1 overflow-y-auto">
+          {activeTab === "inbox" && (
+            <>
+              {console.log(
+                "Inbox tab - hasMore:",
+                hasMore,
+                "isLoadingMore:",
+                isLoadingMore,
+                "conversations:",
+                filteredConversations.length
+              )}
+              {filteredConversations.length === 0 && !dataLoading ? (
+                <EmptyState
+                  title="No Conversations"
+                  description="You're all caught up! No unreplied conversations found. Check back later or try adjusting your filters."
+                  themeMode={themeMode}
+                  icon={
+                    <svg
+                      width={32}
+                      height={32}
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth={2}
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      className={
+                        isDarkTheme ? "text-white/40" : "text-gray-400"
+                      }
+                    >
+                      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                      <path d="M9 10h.01" />
+                      <path d="M15 10h.01" />
+                    </svg>
+                  }
+                  action={{
+                    label: "Refresh",
+                    onClick: handleRefresh,
+                  }}
+                />
+              ) : (
+                <ConversationList
+                  conversations={filteredConversations}
+                  viewMode={viewMode}
+                  loading={dataLoading}
+                  observerRef={observerRef}
+                  isDarkTheme={isDarkTheme}
+                  useOldDesign={false}
+                  onMarkAsRead={handleMarkAsRead}
+                  onDiscard={handleDiscard}
+                  openRankRanks={openRankRanks}
+                  isLoadingMore={isLoadingMore}
+                  hasMore={hasMore}
+                  onReply={async (detail) => {
+                    try {
+                      await sdk.actions.viewCast({ hash: detail.castHash });
+                    } catch (error) {
+                      console.error("Failed to open cast:", error);
+                    }
+                  }}
+                  dayFilter={dayFilter}
+                />
+              )}
+            </>
+          )}
+
+          {activeTab === "focus" && (
+            <FocusTab
+              markedAsReadConversations={markedAsReadConversations}
               viewMode={viewMode}
-              loading={dataLoading}
-              observerRef={observerRef}
-              isDarkTheme={isDarkTheme}
-              useOldDesign={false}
-              onMarkAsRead={handleMarkAsRead}
               openRankRanks={openRankRanks}
+              loading={dataLoading}
               isLoadingMore={isLoadingMore}
               hasMore={hasMore}
+              observerRef={observerRef}
               onReply={async (detail) => {
+                console.log("Opening cast from focus:", detail);
                 try {
                   await sdk.actions.viewCast({ hash: detail.castHash });
                 } catch (error) {
                   console.error("Failed to open cast:", error);
                 }
               }}
+              isDarkTheme={isDarkTheme}
+              themeMode={themeMode}
+              onMarkAsRead={handleMarkAsRead}
+              onDiscard={handleDiscard}
               dayFilter={dayFilter}
             />
-          </>
-        )}
+          )}
 
-        {activeTab === "focus" && (
-          <FocusTab
-            markedAsReadConversations={markedAsReadConversations}
-            viewMode={viewMode}
-            openRankRanks={openRankRanks}
-            loading={dataLoading}
-            isLoadingMore={isLoadingMore}
-            hasMore={hasMore}
-            observerRef={observerRef}
-            onReply={async (detail) => {
-              console.log("Opening cast from focus:", detail);
-              try {
-                await sdk.actions.viewCast({ hash: detail.castHash });
-              } catch (error) {
-                console.error("Failed to open cast:", error);
-              }
-            }}
-            isDarkTheme={isDarkTheme}
-            onMarkAsRead={handleMarkAsRead}
-            dayFilter={dayFilter}
-          />
-        )}
-
-        {activeTab === "analytics" && (
-          <AnalyticsTab
-            allConversations={allConversations}
-            userOpenRank={userOpenRank}
-            openRankRanks={openRankRanks}
-            isDarkTheme={isDarkTheme}
-            themeMode={themeMode}
-          />
-        )}
+          {activeTab === "analytics" && (
+            <AnalyticsTab
+              allConversations={allConversations}
+              userOpenRank={userOpenRank}
+              openRankRanks={openRankRanks}
+              isDarkTheme={isDarkTheme}
+              themeMode={themeMode}
+            />
+          )}
+        </div>
       </div>
 
       {/* Tab Bar */}
@@ -612,6 +795,14 @@ export default function FarcasterApp() {
         dayFilter={dayFilter}
         onDayFilterChange={(filter) => setDayFilter(filter as any)}
         isDarkTheme={isDarkTheme}
+      />
+      {/* Toast Notification */}
+      <ToastNotification
+        message={toast.message}
+        type={toast.type}
+        isVisible={toast.isVisible}
+        onHide={hideToast}
+        themeMode={themeMode}
       />
     </div>
   );
