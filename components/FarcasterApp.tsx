@@ -399,6 +399,47 @@ export default function FarcasterApp() {
     }
   }, [user, dataLoading, authLoading]);
 
+  // Fix for iframe/WebView touch events in production
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      // Detect if we're in an iframe or WebView environment
+      const isInIframe =
+        window !== window.parent || window.frameElement !== null;
+      const isWebView = /WebView|wv/.test(navigator.userAgent);
+
+      if (isInIframe || isWebView) {
+        console.log("🔧 Iframe/WebView detected - applying touch event fixes");
+
+        // Create a more aggressive touch event handler for iframe environments
+        const enhanceTouchEvents = () => {
+          const swipeElements = document.querySelectorAll(".swipe-enabled");
+          swipeElements.forEach((element) => {
+            // Force hardware acceleration for better touch performance
+            (element as HTMLElement).style.willChange = "transform";
+            (element as HTMLElement).style.webkitTransform = "translateZ(0)";
+          });
+        };
+
+        // Apply enhancements immediately and on DOM changes
+        enhanceTouchEvents();
+
+        // Set up a MutationObserver to enhance new swipe elements
+        const observer = new MutationObserver(() => {
+          enhanceTouchEvents();
+        });
+
+        observer.observe(document.body, {
+          childList: true,
+          subtree: true,
+        });
+
+        return () => {
+          observer.disconnect();
+        };
+      }
+    }
+  }, []);
+
   // Show loading screen while auth is loading
   if (authLoading) {
     return <LoadingScreen themeMode={themeMode} />;

@@ -48,6 +48,9 @@ export const ReplyCard = memo<ReplyCardProps>(
         const touch = e.touches[0];
         if (!touch) return;
 
+        // Essential for iframe/WebView environments
+        e.stopPropagation();
+
         touchStartX.current = touch.clientX;
         touchStartY.current = touch.clientY;
         setIsDragging(true);
@@ -74,6 +77,9 @@ export const ReplyCard = memo<ReplyCardProps>(
 
           // Only allow horizontal swipes (prevent vertical scrolling interference)
           if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 10) {
+            // Essential for iframe/WebView environments - stop event propagation
+            e.stopPropagation();
+
             // Use passive: false to allow preventDefault
             if (e.cancelable) {
               e.preventDefault();
@@ -98,6 +104,9 @@ export const ReplyCard = memo<ReplyCardProps>(
 
           const touch = e.changedTouches[0];
           if (!touch) return;
+
+          // Essential for iframe/WebView environments
+          e.stopPropagation();
 
           const deltaX = touch.clientX - touchStartX.current;
           const swipeThreshold = 40; // Minimum distance for swipe action

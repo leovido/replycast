@@ -28,9 +28,18 @@
 
   function updateDebugInfo(info) {
     if (!touchDebugOverlay) createDebugOverlay();
+
+    // Detect iframe/WebView environment
+    const isInIframe = window !== window.parent || window.frameElement !== null;
+    const isWebView = /WebView|wv/.test(navigator.userAgent);
+    const isFarcaster = /Farcaster/i.test(navigator.userAgent);
+
     touchDebugOverlay.innerHTML = `
       <div><strong>Touch Debug</strong></div>
       <div>Env: ${process?.env?.NODE_ENV || "production"}</div>
+      <div>Iframe: ${isInIframe ? "✅" : "❌"}</div>
+      <div>WebView: ${isWebView ? "✅" : "❌"}</div>
+      <div>Farcaster: ${isFarcaster ? "✅" : "❌"}</div>
       <div>Time: ${new Date().toLocaleTimeString()}</div>
       <div>${info}</div>
     `;

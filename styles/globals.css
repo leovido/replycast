@@ -42,6 +42,17 @@
 .swipe-enabled {
   touch-action: pan-x;
   -webkit-touch-callout: none;
+  /* Additional properties for iframe/WebView environments */
+  -webkit-user-drag: none;
+  -khtml-user-drag: none;
+  -moz-user-drag: none;
+  -o-user-drag: none;
+  user-drag: none;
+  /* Ensure proper event handling in production */
+  pointer-events: auto;
+  /* Fix for iOS WebView touch issues */
+  -webkit-transform: translateZ(0);
+  transform: translateZ(0);
 }
 
 body {

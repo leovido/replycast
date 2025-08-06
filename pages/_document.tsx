@@ -49,6 +49,18 @@ export default function Document() {
           content="farcaster, replies, social media, engagement, mini app"
         />
         <meta name="author" content="leovido.eth" />
+
+        {/* Viewport for responsive design */}
+        <meta
+          name="viewport"
+          content="width=device-width, initial-scale=1, user-scalable=no"
+        />
+
+        {/* Touch Event Meta Tags for iframe/WebView environments */}
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+        <meta name="apple-touch-fullscreen" content="yes" />
+        <meta name="mobile-web-app-capable" content="yes" />
       </Head>
       <body>
         <Main />
