@@ -38,7 +38,7 @@ export const ReplyCard = memo<ReplyCardProps>(
     const mouseStartY = useRef<number>(0);
     const isMouseDragging = useRef<boolean>(false);
 
-    // Timer ref for long press activation (1500ms)
+    // Timer ref for long press activation (500ms)
     const longPressTimer = useRef<NodeJS.Timeout | null>(null);
     const hasMovedDuringPress = useRef<boolean>(false);
 
@@ -62,7 +62,7 @@ export const ReplyCard = memo<ReplyCardProps>(
 
       hasMovedDuringPress.current = false;
 
-      // Start long press timer for 1500ms
+      // Start long press timer for 500ms (iOS-style)
       longPressTimer.current = setTimeout(() => {
         // Only activate swipe mode if user hasn't moved (not scrolling)
         if (!hasMovedDuringPress.current) {
@@ -77,10 +77,10 @@ export const ReplyCard = memo<ReplyCardProps>(
           }
 
           if (process.env.NODE_ENV === "development") {
-            console.log("🔓 Swipe mode activated after long press");
+            console.log("🔓 Swipe mode activated after 500ms long press");
           }
         }
-      }, 1500);
+      }, 500);
     }, []);
 
     const clearLongPress = useCallback(() => {
