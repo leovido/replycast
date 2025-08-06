@@ -62,6 +62,25 @@
     { passive: true }
   );
 
+  // Listen for mouse events on swipe-enabled elements (for desktop)
+  document.addEventListener(
+    "mousedown",
+    function (e) {
+      const target = e.target.closest(".swipe-enabled");
+      if (target) {
+        updateDebugInfo(`🖱️ Mouse Down on swipe card (desktop)`);
+        console.log(
+          "🔍 Mouse Down:",
+          e.clientX,
+          e.clientY,
+          "Button:",
+          e.button
+        );
+      }
+    },
+    { passive: true }
+  );
+
   document.addEventListener(
     "touchmove",
     function (e) {
@@ -75,12 +94,37 @@
   );
 
   document.addEventListener(
+    "mousemove",
+    function (e) {
+      const target = e.target.closest(".swipe-enabled");
+      if (target && e.buttons === 1) {
+        // Only when left mouse button is held
+        updateDebugInfo(`🖱️ Mouse Move detected (desktop)`);
+        console.log("🔍 Mouse Move:", e.clientX);
+      }
+    },
+    { passive: true }
+  );
+
+  document.addEventListener(
     "touchend",
     function (e) {
       const target = e.target.closest(".swipe-enabled");
       if (target) {
         updateDebugInfo(`✋ Touch End detected`);
         console.log("🔍 Touch End");
+      }
+    },
+    { passive: true }
+  );
+
+  document.addEventListener(
+    "mouseup",
+    function (e) {
+      const target = e.target.closest(".swipe-enabled");
+      if (target) {
+        updateDebugInfo(`🖱️ Mouse Up detected (desktop)`);
+        console.log("🔍 Mouse Up");
       }
     },
     { passive: true }

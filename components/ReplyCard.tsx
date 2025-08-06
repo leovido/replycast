@@ -32,6 +32,11 @@ export const ReplyCard = memo<ReplyCardProps>(
     const touchStartX = useRef<number>(0);
     const touchStartY = useRef<number>(0);
 
+    // Add mouse position refs for desktop support
+    const mouseStartX = useRef<number>(0);
+    const mouseStartY = useRef<number>(0);
+    const isMouseDragging = useRef<boolean>(false);
+
     const handleProfileClick = async (e: React.MouseEvent) => {
       e.preventDefault();
       e.stopPropagation();
@@ -154,6 +159,133 @@ export const ReplyCard = memo<ReplyCardProps>(
       [isDragging, onMarkAsRead, onDiscard, detail]
     );
 
+    // Mouse event handlers for desktop support
+    const handleMouseDown = useCallback((e: React.MouseEvent) => {
+      // Only handle left mouse button
+      if (e.button !== 0) return;
+
+      try {
+        e.stopPropagation();
+        e.preventDefault();
+
+        mouseStartX.current = e.clientX;
+        mouseStartY.current = e.clientY;
+        isMouseDragging.current = true;
+        setIsDragging(true);
+        setDragOffset(0);
+
+        if (process.env.NODE_ENV === "development") {
+          console.log("Mouse down (desktop):", e.clientX, e.clientY);
+        }
+      } catch (error) {
+        console.error("Mouse down error:", error);
+      }
+    }, []);
+
+    const handleMouseMove = useCallback(
+      (e: React.MouseEvent) => {
+        try {
+          if (!isDragging || !isMouseDragging.current) return;
+
+          const deltaX = e.clientX - mouseStartX.current;
+          const deltaY = Math.abs(e.clientY - mouseStartY.current);
+
+          // Only allow horizontal swipes (prevent vertical scrolling interference)
+          if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 10) {
+            e.stopPropagation();
+            e.preventDefault();
+
+            setDragOffset(deltaX);
+
+            if (process.env.NODE_ENV === "development") {
+              console.log("Mouse move (desktop):", deltaX);
+            }
+          }
+        } catch (error) {
+          console.error("Mouse move error:", error);
+        }
+      },
+      [isDragging]
+    );
+
+    const handleMouseUp = useCallback(
+      (e: React.MouseEvent) => {
+        try {
+          if (!isDragging || !isMouseDragging.current) return;
+
+          e.stopPropagation();
+
+          const deltaX = e.clientX - mouseStartX.current;
+          const swipeThreshold = 40; // Same threshold as touch events
+
+          if (process.env.NODE_ENV === "development") {
+            console.log(
+              "Mouse up (desktop):",
+              deltaX,
+              "threshold:",
+              swipeThreshold
+            );
+          }
+
+          if (Math.abs(deltaX) > swipeThreshold) {
+            if (deltaX > 0 && onMarkAsRead) {
+              // Swipe right - mark as read (only if onMarkAsRead is provided)
+              if (process.env.NODE_ENV === "development") {
+                console.log("Mouse swipe right - marking as read");
+              }
+              try {
+                // Trigger haptic feedback (will be ignored on desktop but works on mobile)
+                sdk.haptics?.impactOccurred?.("light");
+              } catch (error) {
+                // Haptic not available, continue anyway
+              }
+              onMarkAsRead(detail);
+            } else if (deltaX < 0 && onDiscard) {
+              // Swipe left - discard (not interested)
+              if (process.env.NODE_ENV === "development") {
+                console.log("Mouse swipe left - discarding cast");
+              }
+              try {
+                // Trigger haptic feedback (will be ignored on desktop but works on mobile)
+                sdk.haptics?.impactOccurred?.("medium");
+              } catch (error) {
+                // Haptic not available, continue anyway
+              }
+              onDiscard(detail);
+            }
+          }
+
+          setIsDragging(false);
+          setDragOffset(0);
+          isMouseDragging.current = false;
+        } catch (error) {
+          console.error("Mouse up error:", error);
+          setIsDragging(false);
+          setDragOffset(0);
+          isMouseDragging.current = false;
+        }
+      },
+      [isDragging, onMarkAsRead, onDiscard, detail]
+    );
+
+    // Global mouse up handler to catch mouse release outside the component
+    useEffect(() => {
+      const handleGlobalMouseUp = () => {
+        if (isMouseDragging.current) {
+          setIsDragging(false);
+          setDragOffset(0);
+          isMouseDragging.current = false;
+        }
+      };
+
+      if (isDragging && isMouseDragging.current) {
+        document.addEventListener("mouseup", handleGlobalMouseUp);
+        return () => {
+          document.removeEventListener("mouseup", handleGlobalMouseUp);
+        };
+      }
+    }, [isDragging]);
+
     const hasUserInteraction =
       detail.hasUserInteraction || detail.userLiked || detail.userRecasted;
 
@@ -168,6 +300,9 @@ export const ReplyCard = memo<ReplyCardProps>(
           onTouchStart={handleTouchStart}
           onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}
+          onMouseDown={handleMouseDown}
+          onMouseMove={handleMouseMove}
+          onMouseUp={handleMouseUp}
           onClick={(e) => {
             // Only trigger onClick if not dragging
             if (!isDragging) {
@@ -433,6 +568,9 @@ export const ReplyCard = memo<ReplyCardProps>(
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
+        onMouseDown={handleMouseDown}
+        onMouseMove={handleMouseMove}
+        onMouseUp={handleMouseUp}
         onClick={(e) => {
           // Only trigger onClick if not dragging
           if (!isDragging) {

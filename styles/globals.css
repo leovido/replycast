@@ -53,6 +53,21 @@
   /* Fix for iOS WebView touch issues */
   -webkit-transform: translateZ(0);
   transform: translateZ(0);
+  /* Desktop mouse drag cursor */
+  cursor: grab;
+}
+
+/* Active dragging state */
+.swipe-enabled:active {
+  cursor: grabbing;
+}
+
+/* Disable text selection during drag on desktop */
+.swipe-enabled:not(:focus) {
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
 }
 
 body {
