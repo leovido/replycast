@@ -54,20 +54,53 @@ export function useFarcasterAuth() {
         setIsInMiniApp(miniAppCheck);
 
         if (miniAppCheck) {
-          // If we're in a Mini App, try to get context
-          try {
-            const ctx = await sdk.context;
-            const farUser = ctx?.user;
-            if (!farUser) {
-              throw new Error("Failed to get user context from Mini App");
+          // If we're in a Mini App, try to get context with retries
+          let retries = 0;
+          const maxRetries = 5;
+
+          const tryGetContext = async () => {
+            try {
+              const ctx = await sdk.context;
+              const farUser = ctx?.user;
+
+              if (farUser) {
+                console.log("Successfully got user context:", farUser);
+                setUser(farUser);
+                setLoading(false);
+                return true;
+              } else {
+                console.log(
+                  "User context not available yet, retry:",
+                  retries + 1
+                );
+                return false;
+              }
+            } catch (err) {
+              console.error("Failed to get Mini App context:", err);
+              return false;
             }
-            setUser(farUser);
-            setLoading(false); // Add this line to stop loading
-          } catch (err) {
-            console.error("Failed to get Mini App context:", err);
-            setError("Failed to load user");
-            setLoading(false); // Add this line to stop loading on error
-          }
+          };
+
+          // Try to get context with retries
+          const attemptContext = async () => {
+            while (retries < maxRetries) {
+              const success = await tryGetContext();
+              if (success) return;
+
+              retries++;
+              if (retries < maxRetries) {
+                // Wait 500ms before retrying
+                await new Promise((resolve) => setTimeout(resolve, 500));
+              }
+            }
+
+            // If we've exhausted retries, only then show error
+            console.error("Failed to get user context after retries");
+            setError("Failed to load user context");
+            setLoading(false);
+          };
+
+          attemptContext();
         } else {
           // Not in Mini App - user will need to sign in
           setLoading(false);

@@ -23,15 +23,47 @@ export function FarcasterSignIn({ onSignIn, onError }: FarcasterSignInProps) {
         setIsInMiniApp(miniAppCheck);
 
         if (miniAppCheck) {
-          // If we're in a Mini App, try to get context
-          try {
-            const ctx = await sdk.context;
-            if (ctx?.user) {
-              onSignIn(ctx.user);
+          // If we're in a Mini App, try to get context with retries
+          let retries = 0;
+          const maxRetries = 5;
+
+          const tryGetContext = async () => {
+            try {
+              const ctx = await sdk.context;
+              if (ctx?.user) {
+                console.log("SignIn: Got user context:", ctx.user);
+                onSignIn(ctx.user);
+                return true;
+              } else {
+                console.log(
+                  "SignIn: User context not available yet, retry:",
+                  retries + 1
+                );
+                return false;
+              }
+            } catch (err) {
+              console.log("SignIn: Mini App context not available yet");
+              return false;
             }
-          } catch (err) {
-            console.log("Mini App context not available yet");
-          }
+          };
+
+          // Try to get context with retries
+          const attemptContext = async () => {
+            while (retries < maxRetries) {
+              const success = await tryGetContext();
+              if (success) return;
+
+              retries++;
+              if (retries < maxRetries) {
+                // Wait 500ms before retrying
+                await new Promise((resolve) => setTimeout(resolve, 500));
+              }
+            }
+
+            console.log("SignIn: Failed to get user context after retries");
+          };
+
+          attemptContext();
         }
       } catch (err) {
         console.error("Error checking Mini App environment:", err);
