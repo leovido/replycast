@@ -38,16 +38,15 @@
   user-select: none;
 }
 
-/* Swipe-enabled elements need pan-x for horizontal gestures */
+/* Swipe-enabled elements allow all touch actions until swipe mode is active */
 .swipe-enabled {
-  touch-action: pan-x;
+  touch-action: auto;
   -webkit-touch-callout: none;
   /* Additional properties for iframe/WebView environments */
   -webkit-user-drag: none;
   -khtml-user-drag: none;
   -moz-user-drag: none;
   -o-user-drag: none;
-  user-drag: none;
   /* Ensure proper event handling in production */
   pointer-events: auto;
   /* Fix for iOS WebView touch issues */
@@ -55,6 +54,11 @@
   transform: translateZ(0);
   /* Desktop mouse drag cursor */
   cursor: grab;
+}
+
+/* When swipe mode is active, restrict to horizontal panning only */
+.swipe-enabled.swipe-mode-active {
+  touch-action: pan-x;
 }
 
 /* Active dragging state */

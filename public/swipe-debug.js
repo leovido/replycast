@@ -34,6 +34,11 @@
     const isWebView = /WebView|wv/.test(navigator.userAgent);
     const isFarcaster = /Farcaster/i.test(navigator.userAgent);
 
+    // Check if any swipe elements are in active mode
+    const swipeModeActive = document.querySelector(".swipe-mode-active")
+      ? "✅"
+      : "❌";
+
     touchDebugOverlay.innerHTML = `
       <div><strong>Swipe Debug (iOS-style)</strong></div>
       <div>Env: ${process?.env?.NODE_ENV || "production"}</div>
@@ -41,6 +46,7 @@
       <div>WebView: ${isWebView ? "✅" : "❌"}</div>
       <div>Farcaster: ${isFarcaster ? "✅" : "❌"}</div>
       <div>Long Press: 500ms to activate</div>
+      <div>Swipe Mode: ${swipeModeActive}</div>
       <div>Time: ${new Date().toLocaleTimeString()}</div>
       <div>${info}</div>
     `;

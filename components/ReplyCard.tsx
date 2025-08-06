@@ -434,6 +434,7 @@ export const ReplyCard = memo<ReplyCardProps>(
             focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400
             group
             swipe-enabled
+            ${isSwipeModeActive ? "swipe-mode-active" : ""}
             ${
               isSwipeModeActive
                 ? "ring-2 ring-yellow-400/60 shadow-2xl shadow-yellow-500/20 scale-[1.02]"
@@ -700,6 +701,8 @@ export const ReplyCard = memo<ReplyCardProps>(
           }
         }}
         className={`relative w-full text-left p-6 rounded-2xl transition-all duration-300 hover:scale-[1.02] focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 swipe-enabled ${
+          isSwipeModeActive ? "swipe-mode-active" : ""
+        } ${
           isSwipeModeActive
             ? "ring-2 ring-yellow-400/60 shadow-2xl shadow-yellow-500/20 scale-[1.02]"
             : hasUserInteraction
