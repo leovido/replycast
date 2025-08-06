@@ -77,8 +77,8 @@ export const ReplyCard = memo<ReplyCardProps>(
       console.log("Touch end:", deltaX, "threshold:", swipeThreshold);
 
       if (Math.abs(deltaX) > swipeThreshold) {
-        if (deltaX > 0) {
-          // Swipe right - mark as read
+        if (deltaX > 0 && onMarkAsRead) {
+          // Swipe right - mark as read (only if onMarkAsRead is provided)
           console.log("Swipe right - marking as read");
           try {
             // Trigger haptic feedback
@@ -86,10 +86,8 @@ export const ReplyCard = memo<ReplyCardProps>(
           } catch (error) {
             // Haptic not available, continue anyway
           }
-          if (onMarkAsRead) {
-            onMarkAsRead(detail);
-          }
-        } else {
+          onMarkAsRead(detail);
+        } else if (deltaX < 0 && onDiscard) {
           // Swipe left - discard (not interested)
           console.log("Swipe left - discarding cast");
           try {
@@ -98,9 +96,7 @@ export const ReplyCard = memo<ReplyCardProps>(
           } catch (error) {
             // Haptic not available, continue anyway
           }
-          if (onDiscard) {
-            onDiscard(detail);
-          }
+          onDiscard(detail);
         }
       }
 
@@ -407,14 +403,18 @@ export const ReplyCard = memo<ReplyCardProps>(
         {/* Swipe Action Indicators */}
         {isDragging && (
           <>
-            <div className="absolute left-0 top-0 bottom-0 w-20 bg-red-500/20 flex items-center justify-center rounded-l-2xl">
-              <div className="text-red-400 text-sm font-medium">Discard</div>
-            </div>
-            <div className="absolute right-0 top-0 bottom-0 w-20 bg-green-500/20 flex items-center justify-center rounded-r-2xl">
-              <div className="text-green-400 text-sm font-medium">
-                Mark Read
+            {onDiscard && (
+              <div className="absolute left-0 top-0 bottom-0 w-20 bg-red-500/20 flex items-center justify-center rounded-l-2xl">
+                <div className="text-red-400 text-sm font-medium">Discard</div>
               </div>
-            </div>
+            )}
+            {onMarkAsRead && (
+              <div className="absolute right-0 top-0 bottom-0 w-20 bg-green-500/20 flex items-center justify-center rounded-r-2xl">
+                <div className="text-green-400 text-sm font-medium">
+                  Mark Read
+                </div>
+              </div>
+            )}
           </>
         )}
 

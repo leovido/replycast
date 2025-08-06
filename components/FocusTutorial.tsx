@@ -70,33 +70,38 @@ export function FocusTutorial({
     switch (themeMode) {
       case "dark":
         return {
-          background:
-            "bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900",
-          card: "bg-gradient-to-br from-white/15 to-white/10 backdrop-blur-lg",
+          mainCard:
+            "bg-gradient-to-br from-white/15 to-white/10 backdrop-blur-lg shadow-xl ring-1 ring-white/10",
+          exampleCard:
+            "bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-lg",
           text: "text-white",
           textMuted: "text-white/60",
           border: "border-white/20",
           button: "bg-white/20 hover:bg-white/30 text-white",
+          iconBg: "bg-white/10",
         };
       case "light":
         return {
-          background: "bg-gradient-to-br from-gray-50 via-white to-gray-100",
-          card: "bg-white shadow-lg",
+          mainCard: "bg-white shadow-xl ring-1 ring-gray-200",
+          exampleCard: "bg-gray-50 shadow-lg",
           text: "text-gray-900",
           textMuted: "text-gray-600",
           border: "border-gray-200",
           button: "bg-gray-800/20 hover:bg-gray-800/30 text-gray-900",
+          iconBg: "bg-gray-100",
         };
       case "Farcaster":
       default:
         return {
-          background:
-            "bg-gradient-to-br from-purple-600 via-blue-600 to-cyan-500",
-          card: "bg-gradient-to-br from-white/15 to-white/10 backdrop-blur-lg",
+          mainCard:
+            "bg-gradient-to-br from-white/15 to-white/10 backdrop-blur-lg shadow-xl ring-1 ring-white/10",
+          exampleCard:
+            "bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-lg",
           text: "text-white",
           textMuted: "text-white/80",
           border: "border-white/20",
           button: "bg-white/20 hover:bg-white/30 text-white",
+          iconBg: "bg-white/10",
         };
     }
   };
@@ -104,16 +109,12 @@ export function FocusTutorial({
   const styles = getThemeStyles();
 
   return (
-    <div
-      className={`min-h-[calc(100vh-200px)] flex flex-col items-center justify-center p-6 ${styles.background}`}
-    >
-      <div className="max-w-md w-full">
+    <div className="min-h-[calc(100vh-200px)] flex flex-col items-center justify-center p-6">
+      <div className={`max-w-md w-full rounded-2xl p-8 ${styles.mainCard}`}>
         {/* Tutorial Header */}
         <div className="text-center mb-8">
           <div
-            className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 ${
-              themeMode === "light" ? "bg-gray-100" : "bg-white/10"
-            }`}
+            className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 ${styles.iconBg}`}
           >
             <svg
               width={24}
@@ -141,7 +142,7 @@ export function FocusTutorial({
         {/* Animated Example Card */}
         <div className="relative mb-8">
           <div
-            className={`relative rounded-2xl p-6 ${styles.card} border ${
+            className={`relative rounded-2xl p-6 ${styles.exampleCard} border ${
               styles.border
             } transition-all duration-1000 ${
               isAnimating ? "transform translate-x-20" : ""
@@ -149,11 +150,7 @@ export function FocusTutorial({
           >
             {/* Mock conversation content */}
             <div className="flex items-center gap-3 mb-3">
-              <div
-                className={`w-10 h-10 rounded-full ${
-                  themeMode === "light" ? "bg-gray-200" : "bg-white/20"
-                }`}
-              ></div>
+              <div className={`w-10 h-10 rounded-full ${styles.iconBg}`}></div>
               <div>
                 <div className={`font-semibold ${styles.text}`}>
                   @example_user
@@ -165,48 +162,6 @@ export function FocusTutorial({
               &ldquo;This is an example conversation that you can mark as read
               by swiping right...&rdquo;
             </p>
-          </div>
-
-          {/* Swipe indicator */}
-          <div
-            className={`absolute left-4 top-1/2 transform -translate-y-1/2 transition-all duration-1000 ${
-              isAnimating ? "opacity-0" : "opacity-100"
-            }`}
-          >
-            <div className="flex items-center gap-2 text-sm text-green-500">
-              <svg
-                width={16}
-                height={16}
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth={2}
-              >
-                <path d="M7 17l9.2-9.2M17 17V7H7" />
-              </svg>
-              <span>Swipe right to mark as read</span>
-            </div>
-          </div>
-
-          {/* Success indicator */}
-          <div
-            className={`absolute right-4 top-1/2 transform -translate-y-1/2 transition-all duration-500 ${
-              isAnimating ? "opacity-100" : "opacity-0"
-            }`}
-          >
-            <div className="flex items-center gap-2 text-sm text-green-500">
-              <svg
-                width={16}
-                height={16}
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth={2}
-              >
-                <path d="M20 6L9 17l-5-5" />
-              </svg>
-              <span>Marked as read!</span>
-            </div>
           </div>
         </div>
 
