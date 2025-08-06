@@ -244,19 +244,73 @@ export default function FarcasterApp() {
     touchStartTime.current = 0;
   };
 
-  // Call ready when app is loaded
+  // Call ready when app is loaded and data is ready
   useEffect(() => {
-    sdk.actions.ready();
-  }, []);
+    // Only call ready when we have user and data is not loading
+    if (user && !dataLoading && !authLoading) {
+      sdk.actions.ready();
+    }
+  }, [user, dataLoading, authLoading]);
 
   // Show loading screen while auth is loading
   if (authLoading) {
-    return <LoadingScreen />;
+    return <LoadingScreen themeMode={themeMode} />;
   }
 
   // Show sign-in if not authenticated
   if (!user) {
     return <FarcasterSignIn onSignIn={handleSignIn} onError={() => {}} />;
+  }
+
+  // Show loading screen while data is loading (first load)
+  if (dataLoading && allConversations.length === 0) {
+    return <LoadingScreen themeMode={themeMode} />;
+  }
+
+  // Show error state if data loading failed
+  if (error && allConversations.length === 0) {
+    const getErrorBackgroundClass = () => {
+      switch (themeMode) {
+        case "dark":
+          return "bg-gradient-to-br from-red-900 via-red-800 to-red-900";
+        case "light":
+          return "bg-gradient-to-br from-red-50 via-red-100 to-red-200";
+        case "Farcaster":
+          return "bg-gradient-to-br from-red-600 via-red-500 to-red-400";
+        default:
+          return "bg-gradient-to-br from-red-600 via-red-500 to-red-400";
+      }
+    };
+
+    const getErrorTextClass = () => {
+      switch (themeMode) {
+        case "light":
+          return "text-gray-900";
+        default:
+          return "text-white";
+      }
+    };
+
+    return (
+      <div
+        className={`min-h-screen ${getErrorBackgroundClass()} flex items-center justify-center`}
+      >
+        <div className={`text-center ${getErrorTextClass()}`}>
+          <h1 className="text-2xl font-bold mb-4">Failed to load data</h1>
+          <p className="mb-4">{error}</p>
+          <button
+            onClick={handleRefresh}
+            className={`px-4 py-2 rounded-lg backdrop-blur-sm transition-colors ${
+              themeMode === "light"
+                ? "bg-gray-800/20 hover:bg-gray-800/30 text-gray-900"
+                : "bg-white/20 hover:bg-white/30 text-white"
+            }`}
+          >
+            Try Again
+          </button>
+        </div>
+      </div>
+    );
   }
 
   return (

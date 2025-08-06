@@ -8,18 +8,6 @@ export function useFarcasterAuth() {
   const [error, setError] = useState<string | null>(null);
   const [isInMiniApp, setIsInMiniApp] = useState<boolean | null>(null);
 
-  // Call ready() immediately to hide splash screen
-  useEffect(() => {
-    async function hideSplash() {
-      try {
-        await sdk.actions.ready();
-      } catch (error) {
-        console.error("Failed to call ready():", error);
-      }
-    }
-    hideSplash();
-  }, []);
-
   // Check environment and initialize app
   useEffect(() => {
     const initializeApp = async () => {

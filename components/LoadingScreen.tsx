@@ -1,59 +1,108 @@
 import { memo } from "react";
 
+interface LoadingScreenProps {
+  themeMode?: "dark" | "light" | "Farcaster";
+}
+
+// Helper function to get theme-aware styling
+const getThemeStyles = (
+  themeMode: "dark" | "light" | "Farcaster" = "Farcaster"
+) => {
+  switch (themeMode) {
+    case "dark":
+      return {
+        background: "bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900",
+        text: "text-white",
+        textMuted: "text-white/80",
+        iconBg: "bg-white/20",
+        iconBorder: "border-white/30",
+        dots: "bg-white/60",
+      };
+    case "light":
+      return {
+        background: "bg-gradient-to-br from-gray-50 via-white to-gray-100",
+        text: "text-gray-900",
+        textMuted: "text-gray-600",
+        iconBg: "bg-gray-800/20",
+        iconBorder: "border-gray-800/30",
+        dots: "bg-gray-600/60",
+      };
+    case "Farcaster":
+    default:
+      return {
+        background:
+          "bg-gradient-to-br from-purple-600 via-blue-600 to-cyan-500",
+        text: "text-white",
+        textMuted: "text-white/80",
+        iconBg: "bg-white/20",
+        iconBorder: "border-white/30",
+        dots: "bg-white/60",
+      };
+  }
+};
+
 // Memoized Loading Screen Component
-export const LoadingScreen = memo(() => {
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-600 via-blue-600 to-cyan-500 flex items-center justify-center">
-      <div className="text-center">
-        {/* Logo/Icon */}
-        <div className="mb-8">
-          <div className="w-16 h-16 mx-auto bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-sm border border-white/30">
-            <svg
-              width={32}
-              height={32}
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth={2}
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="text-center"
-              aria-hidden="true"
+export const LoadingScreen = memo<LoadingScreenProps>(
+  ({ themeMode = "Farcaster" }) => {
+    const styles = getThemeStyles(themeMode);
+
+    return (
+      <div
+        className={`min-h-screen ${styles.background} flex items-center justify-center`}
+      >
+        <div className="text-center">
+          {/* Logo/Icon */}
+          <div className="mb-8">
+            <div
+              className={`w-16 h-16 mx-auto ${styles.iconBg} rounded-2xl flex items-center justify-center backdrop-blur-sm border ${styles.iconBorder}`}
             >
-              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-            </svg>
+              <svg
+                width={32}
+                height={32}
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth={2}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="text-center"
+                aria-hidden="true"
+              >
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+              </svg>
+            </div>
+          </div>
+
+          {/* App Title */}
+          <h1
+            className={`text-3xl font-black ${styles.text} mb-2 tracking-tight`}
+            style={{ fontFamily: "Instrument Sans, Nunito, Inter, sans-serif" }}
+          >
+            ReplyCast
+          </h1>
+          <p className={`${styles.textMuted} text-lg font-medium mb-8`}>
+            Loading your conversations...
+          </p>
+
+          {/* Loading Animation */}
+          <div className="flex justify-center space-x-2">
+            <div
+              className={`w-3 h-3 ${styles.dots} rounded-full animate-bounce`}
+              style={{ animationDelay: "0ms" }}
+            ></div>
+            <div
+              className={`w-3 h-3 ${styles.dots} rounded-full animate-bounce`}
+              style={{ animationDelay: "150ms" }}
+            ></div>
+            <div
+              className={`w-3 h-3 ${styles.dots} rounded-full animate-bounce`}
+              style={{ animationDelay: "300ms" }}
+            ></div>
           </div>
         </div>
-
-        {/* App Title */}
-        <h1
-          className="text-3xl font-black text-white mb-2 tracking-tight"
-          style={{ fontFamily: "Instrument Sans, Nunito, Inter, sans-serif" }}
-        >
-          ReplyCast
-        </h1>
-        <p className="text-white/80 text-lg font-medium mb-8">
-          Loading your conversations...
-        </p>
-
-        {/* Loading Animation */}
-        <div className="flex justify-center space-x-2">
-          <div
-            className="w-3 h-3 bg-white/60 rounded-full animate-bounce"
-            style={{ animationDelay: "0ms" }}
-          ></div>
-          <div
-            className="w-3 h-3 bg-white/60 rounded-full animate-bounce"
-            style={{ animationDelay: "150ms" }}
-          ></div>
-          <div
-            className="w-3 h-3 bg-white/60 rounded-full animate-bounce"
-            style={{ animationDelay: "300ms" }}
-          ></div>
-        </div>
       </div>
-    </div>
-  );
-});
+    );
+  }
+);
 
 LoadingScreen.displayName = "LoadingScreen";
