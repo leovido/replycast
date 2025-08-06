@@ -1,6 +1,7 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import type { UnrepliedDetail } from "@/types/types";
 import { ConversationList } from "./ConversationList";
+import { FocusTutorial } from "./FocusTutorial";
 import type { RefObject } from "react";
 
 interface FocusTabProps {
@@ -13,7 +14,9 @@ interface FocusTabProps {
   observerRef: RefObject<HTMLDivElement>;
   onReply: (detail: UnrepliedDetail) => void;
   isDarkTheme: boolean;
+  themeMode?: "dark" | "light" | "Farcaster";
   onMarkAsRead?: (detail: UnrepliedDetail) => void;
+  onDiscard?: (detail: UnrepliedDetail) => void;
   dayFilter?: string;
 }
 
@@ -27,9 +30,45 @@ export function FocusTab({
   observerRef,
   onReply,
   isDarkTheme,
+  themeMode = "Farcaster",
   onMarkAsRead,
+  onDiscard,
   dayFilter,
 }: FocusTabProps) {
+  const [showTutorial, setShowTutorial] = useState(false);
+
+  // Check if tutorial has been completed
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const tutorialCompleted = localStorage.getItem(
+          "farcaster-widget-focus-tutorial-completed"
+        );
+        if (!tutorialCompleted) {
+          setShowTutorial(true);
+        }
+      } catch {
+        // If localStorage fails, show tutorial
+        setShowTutorial(true);
+      }
+    }
+  }, []);
+
+  const handleTutorialComplete = () => {
+    setShowTutorial(false);
+  };
+
+  // Show tutorial if it hasn't been completed
+  if (showTutorial) {
+    return (
+      <FocusTutorial
+        isDarkTheme={isDarkTheme}
+        onComplete={handleTutorialComplete}
+        themeMode={themeMode}
+      />
+    );
+  }
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -85,13 +124,28 @@ export function FocusTab({
   return (
     <div className="min-h-[calc(100vh-200px)] flex flex-col">
       <div className="mb-4">
-        <h2
-          className={`text-lg font-semibold ${
-            isDarkTheme ? "text-white" : "text-gray-900"
-          }`}
-        >
-          Focus ({markedAsReadConversations.length})
-        </h2>
+        <div className="flex items-center gap-3 mb-2">
+          <h2
+            className={`text-lg font-semibold ${
+              isDarkTheme ? "text-white" : "text-gray-900"
+            }`}
+          >
+            Focus ({markedAsReadConversations.length})
+          </h2>
+          <div
+            className={`px-2 py-1 rounded-full text-xs font-medium ${
+              isDarkTheme
+                ? "bg-blue-500/20 text-blue-300 border border-blue-500/30"
+                : "bg-blue-100 text-blue-700 border border-blue-200"
+            }`}
+          >
+            {markedAsReadConversations.reduce(
+              (total, conversation) => total + (conversation.replyCount || 0),
+              0
+            )}{" "}
+            replies
+          </div>
+        </div>
         <p
           className={`text-sm ${
             isDarkTheme ? "text-white/60" : "text-gray-600"
@@ -114,6 +168,7 @@ export function FocusTab({
           isLoadingMore={isLoadingMore}
           hasMore={hasMore}
           onReply={onReply}
+          onDiscard={onDiscard}
           dayFilter={dayFilter}
         />
       </div>

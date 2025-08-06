@@ -170,11 +170,78 @@ export default function FarcasterApp() {
     if (typeof window === "undefined") return [];
     try {
       const stored = localStorage.getItem("farcaster-widget-marked-as-read");
-      return stored ? JSON.parse(stored) : [];
+      if (!stored) return [];
+
+      const parsed = JSON.parse(stored);
+
+      // Deduplicate using castHash as unique identifier
+      const uniqueConversations = parsed.reduce((acc: any[], item: any) => {
+        const isDuplicate = acc.some(
+          (existing) => existing.castHash === item.castHash
+        );
+        if (!isDuplicate) {
+          acc.push(item);
+        }
+        return acc;
+      }, []);
+
+      // Update localStorage with deduplicated data
+      if (uniqueConversations.length !== parsed.length) {
+        localStorage.setItem(
+          "farcaster-widget-marked-as-read",
+          JSON.stringify(uniqueConversations)
+        );
+      }
+
+      return uniqueConversations;
     } catch {
       return [];
     }
   });
+
+  // State for discarded conversations
+  const [discardedConversations, setDiscardedConversations] = useState<any[]>(
+    () => {
+      if (typeof window === "undefined") return [];
+      try {
+        const stored = localStorage.getItem("farcaster-widget-discarded");
+        if (!stored) return [];
+
+        const parsed = JSON.parse(stored);
+
+        // Deduplicate using castHash as unique identifier
+        const uniqueDiscarded = parsed.reduce((acc: any[], item: any) => {
+          const isDuplicate = acc.some(
+            (existing) => existing.castHash === item.castHash
+          );
+          if (!isDuplicate) {
+            acc.push(item);
+          }
+          return acc;
+        }, []);
+
+        // Update localStorage with deduplicated data
+        if (uniqueDiscarded.length !== parsed.length) {
+          localStorage.setItem(
+            "farcaster-widget-discarded",
+            JSON.stringify(uniqueDiscarded)
+          );
+        }
+
+        return uniqueDiscarded;
+      } catch {
+        return [];
+      }
+    }
+  );
+
+  // Filter out discarded conversations from the main list
+  const filteredConversations = sortedConversations.filter(
+    (conversation) =>
+      !discardedConversations.some(
+        (discarded) => discarded.castHash === conversation.castHash
+      )
+  );
 
   // Swipe to refresh state
   const [isRefreshingPull, setIsRefreshingPull] = useState(false);
@@ -185,12 +252,51 @@ export default function FarcasterApp() {
   const handleMarkAsRead = (detail: any) => {
     console.log("Marking as read:", detail);
     setMarkedAsReadConversations((prev) => {
+      // Check if this cast is already marked as read using castHash as unique identifier
+      const isDuplicate = prev.some(
+        (item) => item.castHash === detail.castHash
+      );
+
+      if (isDuplicate) {
+        console.log("Cast already marked as read:", detail.castHash);
+        return prev; // Return existing list without adding duplicate
+      }
+
       const newList = [...prev, detail];
       // Store in localStorage
       if (typeof window !== "undefined") {
         try {
           localStorage.setItem(
             "farcaster-widget-marked-as-read",
+            JSON.stringify(newList)
+          );
+        } catch {
+          // Ignore storage errors
+        }
+      }
+      return newList;
+    });
+  };
+
+  const handleDiscard = (detail: any) => {
+    console.log("Discarding cast:", detail);
+    setDiscardedConversations((prev) => {
+      // Check if this cast is already discarded using castHash as unique identifier
+      const isDuplicate = prev.some(
+        (item) => item.castHash === detail.castHash
+      );
+
+      if (isDuplicate) {
+        console.log("Cast already discarded:", detail.castHash);
+        return prev; // Return existing list without adding duplicate
+      }
+
+      const newList = [...prev, detail];
+      // Store in localStorage
+      if (typeof window !== "undefined") {
+        try {
+          localStorage.setItem(
+            "farcaster-widget-discarded",
             JSON.stringify(newList)
           );
         } catch {
@@ -530,16 +636,17 @@ export default function FarcasterApp() {
               "isLoadingMore:",
               isLoadingMore,
               "conversations:",
-              sortedConversations.length
+              filteredConversations.length
             )}
             <ConversationList
-              conversations={sortedConversations}
+              conversations={filteredConversations}
               viewMode={viewMode}
               loading={dataLoading}
               observerRef={observerRef}
               isDarkTheme={isDarkTheme}
               useOldDesign={false}
               onMarkAsRead={handleMarkAsRead}
+              onDiscard={handleDiscard}
               openRankRanks={openRankRanks}
               isLoadingMore={isLoadingMore}
               hasMore={hasMore}
@@ -573,7 +680,9 @@ export default function FarcasterApp() {
               }
             }}
             isDarkTheme={isDarkTheme}
+            themeMode={themeMode}
             onMarkAsRead={handleMarkAsRead}
+            onDiscard={handleDiscard}
             dayFilter={dayFilter}
           />
         )}

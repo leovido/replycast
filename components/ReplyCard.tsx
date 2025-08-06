@@ -11,6 +11,7 @@ export interface ReplyCardProps {
   isDarkTheme: boolean;
   useOldDesign: boolean;
   onMarkAsRead?: (detail: UnrepliedDetail) => void;
+  onDiscard?: (detail: UnrepliedDetail) => void;
 }
 
 export const ReplyCard = memo<ReplyCardProps>(
@@ -22,6 +23,7 @@ export const ReplyCard = memo<ReplyCardProps>(
     isDarkTheme,
     useOldDesign,
     onMarkAsRead,
+    onDiscard,
   }) => {
     const [isDragging, setIsDragging] = useState(false);
     const [dragOffset, setDragOffset] = useState(0);
@@ -76,18 +78,8 @@ export const ReplyCard = memo<ReplyCardProps>(
 
       if (Math.abs(deltaX) > swipeThreshold) {
         if (deltaX > 0) {
-          // Swipe right - open cast
-          console.log("Swipe right - opening cast");
-          try {
-            // Trigger haptic feedback
-            sdk.haptics?.impactOccurred?.("medium");
-          } catch (error) {
-            // Haptic not available, continue anyway
-          }
-          onClick();
-        } else {
-          // Swipe left - mark as read
-          console.log("Swipe left - marking as read");
+          // Swipe right - mark as read
+          console.log("Swipe right - marking as read");
           try {
             // Trigger haptic feedback
             sdk.haptics?.impactOccurred?.("light");
@@ -96,6 +88,18 @@ export const ReplyCard = memo<ReplyCardProps>(
           }
           if (onMarkAsRead) {
             onMarkAsRead(detail);
+          }
+        } else {
+          // Swipe left - discard (not interested)
+          console.log("Swipe left - discarding cast");
+          try {
+            // Trigger haptic feedback
+            sdk.haptics?.impactOccurred?.("medium");
+          } catch (error) {
+            // Haptic not available, continue anyway
+          }
+          if (onDiscard) {
+            onDiscard(detail);
           }
         }
       }
@@ -404,10 +408,12 @@ export const ReplyCard = memo<ReplyCardProps>(
         {isDragging && (
           <>
             <div className="absolute left-0 top-0 bottom-0 w-20 bg-red-500/20 flex items-center justify-center rounded-l-2xl">
-              <div className="text-red-400 text-sm font-medium">Mark Read</div>
+              <div className="text-red-400 text-sm font-medium">Discard</div>
             </div>
-            <div className="absolute right-0 top-0 bottom-0 w-20 bg-blue-500/20 flex items-center justify-center rounded-r-2xl">
-              <div className="text-blue-400 text-sm font-medium">Open Cast</div>
+            <div className="absolute right-0 top-0 bottom-0 w-20 bg-green-500/20 flex items-center justify-center rounded-r-2xl">
+              <div className="text-green-400 text-sm font-medium">
+                Mark Read
+              </div>
             </div>
           </>
         )}

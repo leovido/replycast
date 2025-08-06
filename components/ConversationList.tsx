@@ -25,6 +25,7 @@ interface ConversationListProps {
   isDarkTheme: boolean;
   useOldDesign: boolean;
   onMarkAsRead?: (detail: UnrepliedDetail) => void;
+  onDiscard?: (detail: UnrepliedDetail) => void;
   dayFilter?: string;
 }
 
@@ -40,6 +41,7 @@ export function ConversationList({
   isDarkTheme,
   useOldDesign,
   onMarkAsRead,
+  onDiscard,
   dayFilter,
 }: ConversationListProps) {
   // Render old design
@@ -59,6 +61,7 @@ export function ConversationList({
                   isDarkTheme={true}
                   useOldDesign={true}
                   onMarkAsRead={onMarkAsRead}
+                  onDiscard={onDiscard}
                 />
               ))}
             </div>
@@ -77,6 +80,7 @@ export function ConversationList({
                     isDarkTheme={true}
                     useOldDesign={true}
                     onMarkAsRead={onMarkAsRead}
+                    onDiscard={onDiscard}
                   />
                 </div>
               ))}
@@ -176,6 +180,7 @@ export function ConversationList({
               isDarkTheme={isDarkTheme}
               useOldDesign={false}
               onMarkAsRead={onMarkAsRead}
+              onDiscard={onDiscard}
             />
           </div>
         ))}
