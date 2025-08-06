@@ -1,4 +1,5 @@
 import React from "react";
+import { Button } from "./Button";
 
 interface EmptyStateProps {
   title: string;
@@ -27,7 +28,6 @@ export function EmptyState({
           textMuted: "text-white/60",
           border: "border-white/10",
           iconBg: "bg-white/5",
-          button: "bg-white/10 hover:bg-white/20 text-white border-white/20",
         };
       case "light":
         return {
@@ -36,7 +36,6 @@ export function EmptyState({
           textMuted: "text-gray-600",
           border: "border-gray-200",
           iconBg: "bg-gray-100",
-          button: "bg-gray-900 hover:bg-gray-800 text-white border-gray-300",
         };
       case "Farcaster":
       default:
@@ -46,8 +45,6 @@ export function EmptyState({
           textMuted: "text-white/70",
           border: "border-white/10",
           iconBg: "bg-white/5",
-          button:
-            "bg-purple-600 hover:bg-purple-700 text-white border-purple-500",
         };
     }
   };
@@ -74,12 +71,13 @@ export function EmptyState({
         </p>
 
         {action && (
-          <button
+          <Button
             onClick={action.onClick}
-            className={`px-6 py-3 rounded-lg font-medium transition-all duration-200 border ${styles.button}`}
+            themeMode={themeMode}
+            hapticFeedback="medium"
           >
             {action.label}
-          </button>
+          </Button>
         )}
       </div>
     </div>

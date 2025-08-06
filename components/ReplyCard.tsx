@@ -1,4 +1,4 @@
-import { memo, useState, useRef, useEffect } from "react";
+import React, { memo, useState, useRef, useEffect, useCallback } from "react";
 import Image from "next/image";
 import { sdk } from "@farcaster/miniapp-sdk";
 import type { UnrepliedDetail } from "@/types/types";
@@ -43,66 +43,107 @@ export const ReplyCard = memo<ReplyCardProps>(
       }
     };
 
-    const handleTouchStart = (e: React.TouchEvent) => {
-      const touch = e.touches[0];
-      touchStartX.current = touch.clientX;
-      touchStartY.current = touch.clientY;
-      setIsDragging(true);
-      setDragOffset(0);
-      console.log("Touch start:", touch.clientX, touch.clientY);
-    };
+    const handleTouchStart = useCallback((e: React.TouchEvent) => {
+      try {
+        const touch = e.touches[0];
+        if (!touch) return;
 
-    const handleTouchMove = (e: React.TouchEvent) => {
-      if (!isDragging) return;
+        touchStartX.current = touch.clientX;
+        touchStartY.current = touch.clientY;
+        setIsDragging(true);
+        setDragOffset(0);
 
-      const touch = e.touches[0];
-      const deltaX = touch.clientX - touchStartX.current;
-      const deltaY = Math.abs(touch.clientY - touchStartY.current);
-
-      // Only allow horizontal swipes (prevent vertical scrolling interference)
-      if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 10) {
-        e.preventDefault(); // Prevent scrolling during swipe
-        setDragOffset(deltaX);
-        console.log("Touch move:", deltaX);
-      }
-    };
-
-    const handleTouchEnd = (e: React.TouchEvent) => {
-      if (!isDragging) return;
-
-      const touch = e.changedTouches[0];
-      const deltaX = touch.clientX - touchStartX.current;
-      const swipeThreshold = 80; // Minimum distance for swipe action
-
-      console.log("Touch end:", deltaX, "threshold:", swipeThreshold);
-
-      if (Math.abs(deltaX) > swipeThreshold) {
-        if (deltaX > 0 && onMarkAsRead) {
-          // Swipe right - mark as read (only if onMarkAsRead is provided)
-          console.log("Swipe right - marking as read");
-          try {
-            // Trigger haptic feedback
-            sdk.haptics?.impactOccurred?.("light");
-          } catch (error) {
-            // Haptic not available, continue anyway
-          }
-          onMarkAsRead(detail);
-        } else if (deltaX < 0 && onDiscard) {
-          // Swipe left - discard (not interested)
-          console.log("Swipe left - discarding cast");
-          try {
-            // Trigger haptic feedback
-            sdk.haptics?.impactOccurred?.("medium");
-          } catch (error) {
-            // Haptic not available, continue anyway
-          }
-          onDiscard(detail);
+        if (process.env.NODE_ENV === "development") {
+          console.log("Touch start:", touch.clientX, touch.clientY);
         }
+      } catch (error) {
+        console.error("Touch start error:", error);
       }
+    }, []);
 
-      setIsDragging(false);
-      setDragOffset(0);
-    };
+    const handleTouchMove = useCallback(
+      (e: React.TouchEvent) => {
+        try {
+          if (!isDragging) return;
+
+          const touch = e.touches[0];
+          if (!touch) return;
+
+          const deltaX = touch.clientX - touchStartX.current;
+          const deltaY = Math.abs(touch.clientY - touchStartY.current);
+
+          // Only allow horizontal swipes (prevent vertical scrolling interference)
+          if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 10) {
+            // Use passive: false to allow preventDefault
+            if (e.cancelable) {
+              e.preventDefault();
+            }
+            setDragOffset(deltaX);
+
+            if (process.env.NODE_ENV === "development") {
+              console.log("Touch move:", deltaX);
+            }
+          }
+        } catch (error) {
+          console.error("Touch move error:", error);
+        }
+      },
+      [isDragging]
+    );
+
+    const handleTouchEnd = useCallback(
+      (e: React.TouchEvent) => {
+        try {
+          if (!isDragging) return;
+
+          const touch = e.changedTouches[0];
+          if (!touch) return;
+
+          const deltaX = touch.clientX - touchStartX.current;
+          const swipeThreshold = 40; // Minimum distance for swipe action
+
+          if (process.env.NODE_ENV === "development") {
+            console.log("Touch end:", deltaX, "threshold:", swipeThreshold);
+          }
+
+          if (Math.abs(deltaX) > swipeThreshold) {
+            if (deltaX > 0 && onMarkAsRead) {
+              // Swipe right - mark as read (only if onMarkAsRead is provided)
+              if (process.env.NODE_ENV === "development") {
+                console.log("Swipe right - marking as read");
+              }
+              try {
+                // Trigger haptic feedback
+                sdk.haptics?.impactOccurred?.("light");
+              } catch (error) {
+                // Haptic not available, continue anyway
+              }
+              onMarkAsRead(detail);
+            } else if (deltaX < 0 && onDiscard) {
+              // Swipe left - discard (not interested)
+              if (process.env.NODE_ENV === "development") {
+                console.log("Swipe left - discarding cast");
+              }
+              try {
+                // Trigger haptic feedback
+                sdk.haptics?.impactOccurred?.("medium");
+              } catch (error) {
+                // Haptic not available, continue anyway
+              }
+              onDiscard(detail);
+            }
+          }
+
+          setIsDragging(false);
+          setDragOffset(0);
+        } catch (error) {
+          console.error("Touch end error:", error);
+          setIsDragging(false);
+          setDragOffset(0);
+        }
+      },
+      [isDragging, onMarkAsRead, onDiscard, detail]
+    );
 
     const hasUserInteraction =
       detail.hasUserInteraction || detail.userLiked || detail.userRecasted;
@@ -133,6 +174,7 @@ export const ReplyCard = memo<ReplyCardProps>(
             transition-all duration-300 ease-out
             focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400
             group
+            swipe-enabled
             ${
               hasUserInteraction
                 ? "bg-gradient-to-br from-white/20 to-white/15 ring-2 ring-blue-400/40 shadow-2xl hover:shadow-blue-500/20 hover:scale-[1.02] hover:-translate-y-1"
@@ -389,7 +431,7 @@ export const ReplyCard = memo<ReplyCardProps>(
             onClick();
           }
         }}
-        className={`relative w-full text-left p-6 rounded-2xl transition-all duration-300 hover:scale-[1.02] focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 ${
+        className={`relative w-full text-left p-6 rounded-2xl transition-all duration-300 hover:scale-[1.02] focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 swipe-enabled ${
           hasUserInteraction
             ? isDarkTheme
               ? "bg-gradient-to-br from-white/15 to-white/10 ring-2 ring-blue-400/40 shadow-xl shadow-blue-500/20 backdrop-blur-md border border-white/20"

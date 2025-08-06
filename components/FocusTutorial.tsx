@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { sdk } from "@farcaster/miniapp-sdk";
+import { Button } from "./Button";
 
 interface FocusTutorialProps {
   isDarkTheme: boolean;
@@ -41,11 +41,6 @@ export function FocusTutorial({
   }, []);
 
   const handleConfirm = () => {
-    try {
-      sdk.haptics?.impactOccurred?.("light");
-    } catch (error) {
-      // Haptic not available, continue anyway
-    }
     setShowConfirmation(true);
 
     // Store that user has seen the tutorial
@@ -77,7 +72,6 @@ export function FocusTutorial({
           text: "text-white",
           textMuted: "text-white/60",
           border: "border-white/20",
-          button: "bg-white/20 hover:bg-white/30 text-white",
           iconBg: "bg-white/10",
         };
       case "light":
@@ -87,7 +81,6 @@ export function FocusTutorial({
           text: "text-gray-900",
           textMuted: "text-gray-600",
           border: "border-gray-200",
-          button: "bg-gray-800/20 hover:bg-gray-800/30 text-gray-900",
           iconBg: "bg-gray-100",
         };
       case "Farcaster":
@@ -100,7 +93,6 @@ export function FocusTutorial({
           text: "text-white",
           textMuted: "text-white/80",
           border: "border-white/20",
-          button: "bg-white/20 hover:bg-white/30 text-white",
           iconBg: "bg-white/10",
         };
     }
@@ -178,15 +170,14 @@ export function FocusTutorial({
 
         {/* Confirmation Button */}
         <div className="text-center">
-          <button
+          <Button
             onClick={handleConfirm}
             disabled={showConfirmation}
-            className={`px-6 py-3 rounded-lg font-medium transition-all duration-200 ${
-              showConfirmation ? "opacity-50 cursor-not-allowed" : styles.button
-            }`}
+            themeMode={themeMode}
+            hapticFeedback="light"
           >
             {showConfirmation ? "Got it!" : "I understand"}
-          </button>
+          </Button>
         </div>
       </div>
     </div>

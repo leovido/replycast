@@ -122,6 +122,15 @@ const nextConfig = {
       };
     }
 
+    // Ensure touch events work properly in production
+    config.resolve = {
+      ...config.resolve,
+      fallback: {
+        ...config.resolve?.fallback,
+        "touch-action": false,
+      },
+    };
+
     return config;
   },
 };

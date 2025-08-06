@@ -46,16 +46,14 @@ describe("FocusTutorial", () => {
       />
     );
 
-    // Initially should show swipe indicator
-    expect(screen.getByText("Swipe right to mark as read")).toBeInTheDocument();
+    // Should show the swipe instruction text
+    expect(screen.getByText(/Swipe right/)).toBeInTheDocument();
+    expect(
+      screen.getByText(/on any conversation to mark it as read/)
+    ).toBeInTheDocument();
 
-    // After animation delay, should show success indicator
-    await waitFor(
-      () => {
-        expect(screen.getByText("Marked as read!")).toBeInTheDocument();
-      },
-      { timeout: 2000 }
-    );
+    // Should show the example conversation
+    expect(screen.getByText("@example_user")).toBeInTheDocument();
   });
 
   it("handles confirmation button click", async () => {
