@@ -35,11 +35,12 @@
     const isFarcaster = /Farcaster/i.test(navigator.userAgent);
 
     touchDebugOverlay.innerHTML = `
-      <div><strong>Touch Debug</strong></div>
+      <div><strong>Swipe Debug (iOS-style)</strong></div>
       <div>Env: ${process?.env?.NODE_ENV || "production"}</div>
       <div>Iframe: ${isInIframe ? "✅" : "❌"}</div>
       <div>WebView: ${isWebView ? "✅" : "❌"}</div>
       <div>Farcaster: ${isFarcaster ? "✅" : "❌"}</div>
+      <div>Long Press: 1500ms to activate</div>
       <div>Time: ${new Date().toLocaleTimeString()}</div>
       <div>${info}</div>
     `;
@@ -51,9 +52,9 @@
     function (e) {
       const target = e.target.closest(".swipe-enabled");
       if (target) {
-        updateDebugInfo(`👆 Touch Start on swipe card`);
+        updateDebugInfo(`👆 Long Press Started (1500ms timer)`);
         console.log(
-          "🔍 Touch Start:",
+          "🔍 Touch Start - Long Press Timer:",
           e.touches[0].clientX,
           e.touches[0].clientY
         );
@@ -68,9 +69,9 @@
     function (e) {
       const target = e.target.closest(".swipe-enabled");
       if (target) {
-        updateDebugInfo(`🖱️ Mouse Down on swipe card (desktop)`);
+        updateDebugInfo(`🖱️ Long Press Started (desktop 1500ms timer)`);
         console.log(
-          "🔍 Mouse Down:",
+          "🔍 Mouse Down - Long Press Timer:",
           e.clientX,
           e.clientY,
           "Button:",
@@ -86,7 +87,7 @@
     function (e) {
       const target = e.target.closest(".swipe-enabled");
       if (target) {
-        updateDebugInfo(`👉 Touch Move detected`);
+        updateDebugInfo(`👉 Touch Move (may cancel long press)`);
         console.log("🔍 Touch Move:", e.touches[0].clientX);
       }
     },

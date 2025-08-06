@@ -27,6 +27,7 @@ export const ReplyCard = memo<ReplyCardProps>(
   }) => {
     const [isDragging, setIsDragging] = useState(false);
     const [dragOffset, setDragOffset] = useState(0);
+    const [isSwipeModeActive, setIsSwipeModeActive] = useState(false);
     const [showSwipeActions, setShowSwipeActions] = useState(false);
     const cardRef = useRef<HTMLButtonElement>(null);
     const touchStartX = useRef<number>(0);
@@ -37,8 +38,9 @@ export const ReplyCard = memo<ReplyCardProps>(
     const mouseStartY = useRef<number>(0);
     const isMouseDragging = useRef<boolean>(false);
 
-    // Timer ref for delayed swipe action indicators
-    const swipeActionTimer = useRef<NodeJS.Timeout | null>(null);
+    // Timer ref for long press activation (1500ms)
+    const longPressTimer = useRef<NodeJS.Timeout | null>(null);
+    const hasMovedDuringPress = useRef<boolean>(false);
 
     const handleProfileClick = async (e: React.MouseEvent) => {
       e.preventDefault();
@@ -51,25 +53,46 @@ export const ReplyCard = memo<ReplyCardProps>(
       }
     };
 
-    // Helper functions for delayed swipe action indicators
-    const startSwipeActionTimer = useCallback(() => {
+    // Helper functions for long press activation (iOS-style)
+    const startLongPress = useCallback(() => {
       // Clear any existing timer
-      if (swipeActionTimer.current) {
-        clearTimeout(swipeActionTimer.current);
+      if (longPressTimer.current) {
+        clearTimeout(longPressTimer.current);
       }
 
-      // Start new timer for 1500ms delay
-      swipeActionTimer.current = setTimeout(() => {
-        setShowSwipeActions(true);
+      hasMovedDuringPress.current = false;
+
+      // Start long press timer for 1500ms
+      longPressTimer.current = setTimeout(() => {
+        // Only activate swipe mode if user hasn't moved (not scrolling)
+        if (!hasMovedDuringPress.current) {
+          setIsSwipeModeActive(true);
+          setShowSwipeActions(true);
+
+          // Trigger haptic feedback to indicate swipe mode activation
+          try {
+            sdk.haptics?.impactOccurred?.("medium");
+          } catch (error) {
+            // Haptic not available, continue anyway
+          }
+
+          if (process.env.NODE_ENV === "development") {
+            console.log("🔓 Swipe mode activated after long press");
+          }
+        }
       }, 1500);
     }, []);
 
-    const clearSwipeActionTimer = useCallback(() => {
-      if (swipeActionTimer.current) {
-        clearTimeout(swipeActionTimer.current);
-        swipeActionTimer.current = null;
+    const clearLongPress = useCallback(() => {
+      if (longPressTimer.current) {
+        clearTimeout(longPressTimer.current);
+        longPressTimer.current = null;
       }
+      setIsSwipeModeActive(false);
       setShowSwipeActions(false);
+      setIsDragging(false);
+      setDragOffset(0);
+      hasMovedDuringPress.current = false;
     }, []);
 
     const handleTouchStart = useCallback(
@@ -78,117 +101,141 @@ export const ReplyCard = memo<ReplyCardProps>(
           const touch = e.touches[0];
           if (!touch) return;
 
-          // Essential for iframe/WebView environments
-          e.stopPropagation();
-
           touchStartX.current = touch.clientX;
           touchStartY.current = touch.clientY;
-          setIsDragging(true);
-          setDragOffset(0);
 
-          // Start timer for delayed swipe action indicators
-          startSwipeActionTimer();
+          // Start long press timer to potentially activate swipe mode
+          startLongPress();
 
           if (process.env.NODE_ENV === "development") {
-            console.log("Touch start:", touch.clientX, touch.clientY);
+            console.log(
+              "Touch start - long press timer started:",
+              touch.clientX,
+              touch.clientY
+            );
           }
         } catch (error) {
           console.error("Touch start error:", error);
         }
       },
-      [startSwipeActionTimer]
+      [startLongPress]
     );
 
     const handleTouchMove = useCallback(
       (e: React.TouchEvent) => {
         try {
-          if (!isDragging) return;
-
           const touch = e.touches[0];
           if (!touch) return;
 
           const deltaX = touch.clientX - touchStartX.current;
-          const deltaY = Math.abs(touch.clientY - touchStartY.current);
+          const deltaY = touch.clientY - touchStartY.current;
+          const totalMovement = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
 
-          // Only allow horizontal swipes (prevent vertical scrolling interference)
-          if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 10) {
+          // If user moves during long press, mark as moved (prevents swipe mode activation)
+          if (totalMovement > 10) {
+            hasMovedDuringPress.current = true;
+
+            // If not in swipe mode yet, allow normal scrolling
+            if (!isSwipeModeActive) {
+              // Clear the long press timer since user is scrolling
+              clearLongPress();
+              return; // Allow normal scrolling behavior
+            }
+          }
+
+          // Only process swipe gestures if swipe mode is active
+          if (isSwipeModeActive) {
             // Essential for iframe/WebView environments - stop event propagation
             e.stopPropagation();
 
-            // Use passive: false to allow preventDefault
-            if (e.cancelable) {
-              e.preventDefault();
-            }
-            setDragOffset(deltaX);
+            // Only allow horizontal swipes in swipe mode
+            if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 10) {
+              // Use passive: false to allow preventDefault
+              if (e.cancelable) {
+                e.preventDefault();
+              }
 
-            if (process.env.NODE_ENV === "development") {
-              console.log("Touch move:", deltaX);
+              setIsDragging(true);
+              setDragOffset(deltaX);
+
+              if (process.env.NODE_ENV === "development") {
+                console.log("Swipe mode - Touch move:", deltaX);
+              }
             }
           }
         } catch (error) {
           console.error("Touch move error:", error);
         }
       },
-      [isDragging]
+      [isSwipeModeActive, clearLongPress]
     );
 
     const handleTouchEnd = useCallback(
       (e: React.TouchEvent) => {
         try {
-          if (!isDragging) return;
-
           const touch = e.changedTouches[0];
           if (!touch) return;
 
-          // Essential for iframe/WebView environments
-          e.stopPropagation();
+          // If we're in swipe mode and dragging, process the swipe action
+          if (isSwipeModeActive && isDragging) {
+            e.stopPropagation();
 
-          const deltaX = touch.clientX - touchStartX.current;
-          const swipeThreshold = 40; // Minimum distance for swipe action
+            const deltaX = touch.clientX - touchStartX.current;
+            const swipeThreshold = 40; // Minimum distance for swipe action
 
-          if (process.env.NODE_ENV === "development") {
-            console.log("Touch end:", deltaX, "threshold:", swipeThreshold);
-          }
+            if (process.env.NODE_ENV === "development") {
+              console.log(
+                "Touch end in swipe mode:",
+                deltaX,
+                "threshold:",
+                swipeThreshold
+              );
+            }
 
-          if (Math.abs(deltaX) > swipeThreshold) {
-            if (deltaX > 0 && onMarkAsRead) {
-              // Swipe right - mark as read (only if onMarkAsRead is provided)
-              if (process.env.NODE_ENV === "development") {
-                console.log("Swipe right - marking as read");
+            if (Math.abs(deltaX) > swipeThreshold) {
+              if (deltaX > 0 && onMarkAsRead) {
+                // Swipe right - mark as read (only if onMarkAsRead is provided)
+                if (process.env.NODE_ENV === "development") {
+                  console.log("Swipe right - marking as read");
+                }
+                try {
+                  // Trigger haptic feedback
+                  sdk.haptics?.impactOccurred?.("light");
+                } catch (error) {
+                  // Haptic not available, continue anyway
+                }
+                onMarkAsRead(detail);
+              } else if (deltaX < 0 && onDiscard) {
+                // Swipe left - discard (not interested)
+                if (process.env.NODE_ENV === "development") {
+                  console.log("Swipe left - discarding cast");
+                }
+                try {
+                  // Trigger haptic feedback
+                  sdk.haptics?.impactOccurred?.("medium");
+                } catch (error) {
+                  // Haptic not available, continue anyway
+                }
+                onDiscard(detail);
               }
-              try {
-                // Trigger haptic feedback
-                sdk.haptics?.impactOccurred?.("light");
-              } catch (error) {
-                // Haptic not available, continue anyway
-              }
-              onMarkAsRead(detail);
-            } else if (deltaX < 0 && onDiscard) {
-              // Swipe left - discard (not interested)
-              if (process.env.NODE_ENV === "development") {
-                console.log("Swipe left - discarding cast");
-              }
-              try {
-                // Trigger haptic feedback
-                sdk.haptics?.impactOccurred?.("medium");
-              } catch (error) {
-                // Haptic not available, continue anyway
-              }
-              onDiscard(detail);
             }
           }
 
-          setIsDragging(false);
-          setDragOffset(0);
-          clearSwipeActionTimer(); // Clear timer and hide indicators
+          // Always clear everything on touch end
+          clearLongPress();
         } catch (error) {
           console.error("Touch end error:", error);
-          setIsDragging(false);
-          setDragOffset(0);
-          clearSwipeActionTimer(); // Clear timer and hide indicators
+          clearLongPress();
         }
       },
-      [isDragging, onMarkAsRead, onDiscard, detail, clearSwipeActionTimer]
+      [
+        isSwipeModeActive,
+        isDragging,
+        onMarkAsRead,
+        onDiscard,
+        detail,
+        clearLongPress,
+      ]
     );
 
     // Mouse event handlers for desktop support
@@ -198,140 +245,158 @@ export const ReplyCard = memo<ReplyCardProps>(
         if (e.button !== 0) return;
 
         try {
-          e.stopPropagation();
-          e.preventDefault();
-
           mouseStartX.current = e.clientX;
           mouseStartY.current = e.clientY;
           isMouseDragging.current = true;
-          setIsDragging(true);
-          setDragOffset(0);
 
-          // Start timer for delayed swipe action indicators
-          startSwipeActionTimer();
+          // Start long press timer for desktop
+          startLongPress();
 
           if (process.env.NODE_ENV === "development") {
-            console.log("Mouse down (desktop):", e.clientX, e.clientY);
+            console.log(
+              "Mouse down - long press timer started (desktop):",
+              e.clientX,
+              e.clientY
+            );
           }
         } catch (error) {
           console.error("Mouse down error:", error);
         }
       },
-      [startSwipeActionTimer]
+      [startLongPress]
     );
 
     const handleMouseMove = useCallback(
       (e: React.MouseEvent) => {
         try {
-          if (!isDragging || !isMouseDragging.current) return;
+          if (!isMouseDragging.current) return;
 
           const deltaX = e.clientX - mouseStartX.current;
-          const deltaY = Math.abs(e.clientY - mouseStartY.current);
+          const deltaY = e.clientY - mouseStartY.current;
+          const totalMovement = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
 
-          // Only allow horizontal swipes (prevent vertical scrolling interference)
-          if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 10) {
+          // If user moves during long press, mark as moved (prevents swipe mode activation)
+          if (totalMovement > 10) {
+            hasMovedDuringPress.current = true;
+
+            // If not in swipe mode yet, clear long press
+            if (!isSwipeModeActive) {
+              clearLongPress();
+              return; // Allow normal mouse interactions
+            }
+          }
+
+          // Only process swipe gestures if swipe mode is active
+          if (isSwipeModeActive) {
             e.stopPropagation();
             e.preventDefault();
 
-            setDragOffset(deltaX);
+            // Only allow horizontal swipes in swipe mode
+            if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 10) {
+              setIsDragging(true);
+              setDragOffset(deltaX);
 
-            if (process.env.NODE_ENV === "development") {
-              console.log("Mouse move (desktop):", deltaX);
+              if (process.env.NODE_ENV === "development") {
+                console.log("Swipe mode - Mouse move (desktop):", deltaX);
+              }
             }
           }
         } catch (error) {
           console.error("Mouse move error:", error);
         }
       },
-      [isDragging]
+      [isSwipeModeActive, clearLongPress]
     );
 
     const handleMouseUp = useCallback(
       (e: React.MouseEvent) => {
         try {
-          if (!isDragging || !isMouseDragging.current) return;
+          // If we're in swipe mode and dragging, process the swipe action
+          if (isSwipeModeActive && isDragging && isMouseDragging.current) {
+            e.stopPropagation();
 
-          e.stopPropagation();
+            const deltaX = e.clientX - mouseStartX.current;
+            const swipeThreshold = 40; // Same threshold as touch events
 
-          const deltaX = e.clientX - mouseStartX.current;
-          const swipeThreshold = 40; // Same threshold as touch events
+            if (process.env.NODE_ENV === "development") {
+              console.log(
+                "Mouse up in swipe mode (desktop):",
+                deltaX,
+                "threshold:",
+                swipeThreshold
+              );
+            }
 
-          if (process.env.NODE_ENV === "development") {
-            console.log(
-              "Mouse up (desktop):",
-              deltaX,
-              "threshold:",
-              swipeThreshold
-            );
-          }
-
-          if (Math.abs(deltaX) > swipeThreshold) {
-            if (deltaX > 0 && onMarkAsRead) {
-              // Swipe right - mark as read (only if onMarkAsRead is provided)
-              if (process.env.NODE_ENV === "development") {
-                console.log("Mouse swipe right - marking as read");
+            if (Math.abs(deltaX) > swipeThreshold) {
+              if (deltaX > 0 && onMarkAsRead) {
+                // Swipe right - mark as read (only if onMarkAsRead is provided)
+                if (process.env.NODE_ENV === "development") {
+                  console.log("Mouse swipe right - marking as read");
+                }
+                try {
+                  // Trigger haptic feedback (will be ignored on desktop but works on mobile)
+                  sdk.haptics?.impactOccurred?.("light");
+                } catch (error) {
+                  // Haptic not available, continue anyway
+                }
+                onMarkAsRead(detail);
+              } else if (deltaX < 0 && onDiscard) {
+                // Swipe left - discard (not interested)
+                if (process.env.NODE_ENV === "development") {
+                  console.log("Mouse swipe left - discarding cast");
+                }
+                try {
+                  // Trigger haptic feedback (will be ignored on desktop but works on mobile)
+                  sdk.haptics?.impactOccurred?.("medium");
+                } catch (error) {
+                  // Haptic not available, continue anyway
+                }
+                onDiscard(detail);
               }
-              try {
-                // Trigger haptic feedback (will be ignored on desktop but works on mobile)
-                sdk.haptics?.impactOccurred?.("light");
-              } catch (error) {
-                // Haptic not available, continue anyway
-              }
-              onMarkAsRead(detail);
-            } else if (deltaX < 0 && onDiscard) {
-              // Swipe left - discard (not interested)
-              if (process.env.NODE_ENV === "development") {
-                console.log("Mouse swipe left - discarding cast");
-              }
-              try {
-                // Trigger haptic feedback (will be ignored on desktop but works on mobile)
-                sdk.haptics?.impactOccurred?.("medium");
-              } catch (error) {
-                // Haptic not available, continue anyway
-              }
-              onDiscard(detail);
             }
           }
 
-          setIsDragging(false);
-          setDragOffset(0);
+          // Always clear everything and reset mouse state
           isMouseDragging.current = false;
-          clearSwipeActionTimer(); // Clear timer and hide indicators
+          clearLongPress();
         } catch (error) {
           console.error("Mouse up error:", error);
-          setIsDragging(false);
-          setDragOffset(0);
           isMouseDragging.current = false;
-          clearSwipeActionTimer(); // Clear timer and hide indicators
+          clearLongPress();
         }
       },
-      [isDragging, onMarkAsRead, onDiscard, detail, clearSwipeActionTimer]
+      [
+        isSwipeModeActive,
+        isDragging,
+        onMarkAsRead,
+        onDiscard,
+        detail,
+        clearLongPress,
+      ]
     );
 
     // Global mouse up handler to catch mouse release outside the component
     useEffect(() => {
       const handleGlobalMouseUp = () => {
         if (isMouseDragging.current) {
-          setIsDragging(false);
-          setDragOffset(0);
           isMouseDragging.current = false;
-          clearSwipeActionTimer(); // Clear timer and hide indicators
+          clearLongPress();
         }
       };
 
-      if (isDragging && isMouseDragging.current) {
+      if (isMouseDragging.current) {
         document.addEventListener("mouseup", handleGlobalMouseUp);
         return () => {
           document.removeEventListener("mouseup", handleGlobalMouseUp);
         };
       }
-    }, [isDragging, clearSwipeActionTimer]);
+    }, [clearLongPress]);
 
     // Cleanup timer on unmount
     useEffect(() => {
       return () => {
-        if (swipeActionTimer.current) {
-          clearTimeout(swipeActionTimer.current);
+        if (longPressTimer.current) {
+          clearTimeout(longPressTimer.current);
         }
       };
     }, []);
@@ -370,7 +435,9 @@ export const ReplyCard = memo<ReplyCardProps>(
             group
             swipe-enabled
             ${
-              hasUserInteraction
+              isSwipeModeActive
+                ? "ring-2 ring-yellow-400/60 shadow-2xl shadow-yellow-500/20 scale-[1.02]"
+                : hasUserInteraction
                 ? "bg-gradient-to-br from-white/20 to-white/15 ring-2 ring-blue-400/40 shadow-2xl hover:shadow-blue-500/20 hover:scale-[1.02] hover:-translate-y-1"
                 : "hover:bg-gradient-to-br hover:from-white/18 hover:to-white/12 hover:scale-[1.01] hover:-translate-y-0.5"
             }
@@ -633,7 +700,9 @@ export const ReplyCard = memo<ReplyCardProps>(
           }
         }}
         className={`relative w-full text-left p-6 rounded-2xl transition-all duration-300 hover:scale-[1.02] focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 swipe-enabled ${
-          hasUserInteraction
+          isSwipeModeActive
+            ? "ring-2 ring-yellow-400/60 shadow-2xl shadow-yellow-500/20 scale-[1.02]"
+            : hasUserInteraction
             ? isDarkTheme
               ? "bg-gradient-to-br from-white/15 to-white/10 ring-2 ring-blue-400/40 shadow-xl shadow-blue-500/20 backdrop-blur-md border border-white/20"
               : "bg-gradient-to-br from-blue-50 to-purple-50 ring-2 ring-blue-400/30 shadow-xl shadow-blue-500/20"
