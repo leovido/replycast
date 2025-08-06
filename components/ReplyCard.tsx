@@ -37,6 +37,9 @@ export const ReplyCard = memo<ReplyCardProps>(
     const mouseStartY = useRef<number>(0);
     const isMouseDragging = useRef<boolean>(false);
 
+    // Timer ref for delayed swipe action indicators
+    const swipeActionTimer = useRef<NodeJS.Timeout | null>(null);
+
     const handleProfileClick = async (e: React.MouseEvent) => {
       e.preventDefault();
       e.stopPropagation();
@@ -48,26 +51,53 @@ export const ReplyCard = memo<ReplyCardProps>(
       }
     };
 
-    const handleTouchStart = useCallback((e: React.TouchEvent) => {
-      try {
-        const touch = e.touches[0];
-        if (!touch) return;
-
-        // Essential for iframe/WebView environments
-        e.stopPropagation();
-
-        touchStartX.current = touch.clientX;
-        touchStartY.current = touch.clientY;
-        setIsDragging(true);
-        setDragOffset(0);
-
-        if (process.env.NODE_ENV === "development") {
-          console.log("Touch start:", touch.clientX, touch.clientY);
-        }
-      } catch (error) {
-        console.error("Touch start error:", error);
+    // Helper functions for delayed swipe action indicators
+    const startSwipeActionTimer = useCallback(() => {
+      // Clear any existing timer
+      if (swipeActionTimer.current) {
+        clearTimeout(swipeActionTimer.current);
       }
+
+      // Start new timer for 1500ms delay
+      swipeActionTimer.current = setTimeout(() => {
+        setShowSwipeActions(true);
+      }, 1500);
     }, []);
+
+    const clearSwipeActionTimer = useCallback(() => {
+      if (swipeActionTimer.current) {
+        clearTimeout(swipeActionTimer.current);
+        swipeActionTimer.current = null;
+      }
+      setShowSwipeActions(false);
+    }, []);
+
+    const handleTouchStart = useCallback(
+      (e: React.TouchEvent) => {
+        try {
+          const touch = e.touches[0];
+          if (!touch) return;
+
+          // Essential for iframe/WebView environments
+          e.stopPropagation();
+
+          touchStartX.current = touch.clientX;
+          touchStartY.current = touch.clientY;
+          setIsDragging(true);
+          setDragOffset(0);
+
+          // Start timer for delayed swipe action indicators
+          startSwipeActionTimer();
+
+          if (process.env.NODE_ENV === "development") {
+            console.log("Touch start:", touch.clientX, touch.clientY);
+          }
+        } catch (error) {
+          console.error("Touch start error:", error);
+        }
+      },
+      [startSwipeActionTimer]
+    );
 
     const handleTouchMove = useCallback(
       (e: React.TouchEvent) => {
@@ -150,37 +180,45 @@ export const ReplyCard = memo<ReplyCardProps>(
 
           setIsDragging(false);
           setDragOffset(0);
+          clearSwipeActionTimer(); // Clear timer and hide indicators
         } catch (error) {
           console.error("Touch end error:", error);
           setIsDragging(false);
           setDragOffset(0);
+          clearSwipeActionTimer(); // Clear timer and hide indicators
         }
       },
-      [isDragging, onMarkAsRead, onDiscard, detail]
+      [isDragging, onMarkAsRead, onDiscard, detail, clearSwipeActionTimer]
     );
 
     // Mouse event handlers for desktop support
-    const handleMouseDown = useCallback((e: React.MouseEvent) => {
-      // Only handle left mouse button
-      if (e.button !== 0) return;
+    const handleMouseDown = useCallback(
+      (e: React.MouseEvent) => {
+        // Only handle left mouse button
+        if (e.button !== 0) return;
 
-      try {
-        e.stopPropagation();
-        e.preventDefault();
+        try {
+          e.stopPropagation();
+          e.preventDefault();
 
-        mouseStartX.current = e.clientX;
-        mouseStartY.current = e.clientY;
-        isMouseDragging.current = true;
-        setIsDragging(true);
-        setDragOffset(0);
+          mouseStartX.current = e.clientX;
+          mouseStartY.current = e.clientY;
+          isMouseDragging.current = true;
+          setIsDragging(true);
+          setDragOffset(0);
 
-        if (process.env.NODE_ENV === "development") {
-          console.log("Mouse down (desktop):", e.clientX, e.clientY);
+          // Start timer for delayed swipe action indicators
+          startSwipeActionTimer();
+
+          if (process.env.NODE_ENV === "development") {
+            console.log("Mouse down (desktop):", e.clientX, e.clientY);
+          }
+        } catch (error) {
+          console.error("Mouse down error:", error);
         }
-      } catch (error) {
-        console.error("Mouse down error:", error);
-      }
-    }, []);
+      },
+      [startSwipeActionTimer]
+    );
 
     const handleMouseMove = useCallback(
       (e: React.MouseEvent) => {
@@ -258,14 +296,16 @@ export const ReplyCard = memo<ReplyCardProps>(
           setIsDragging(false);
           setDragOffset(0);
           isMouseDragging.current = false;
+          clearSwipeActionTimer(); // Clear timer and hide indicators
         } catch (error) {
           console.error("Mouse up error:", error);
           setIsDragging(false);
           setDragOffset(0);
           isMouseDragging.current = false;
+          clearSwipeActionTimer(); // Clear timer and hide indicators
         }
       },
-      [isDragging, onMarkAsRead, onDiscard, detail]
+      [isDragging, onMarkAsRead, onDiscard, detail, clearSwipeActionTimer]
     );
 
     // Global mouse up handler to catch mouse release outside the component
@@ -275,6 +315,7 @@ export const ReplyCard = memo<ReplyCardProps>(
           setIsDragging(false);
           setDragOffset(0);
           isMouseDragging.current = false;
+          clearSwipeActionTimer(); // Clear timer and hide indicators
         }
       };
 
@@ -284,7 +325,16 @@ export const ReplyCard = memo<ReplyCardProps>(
           document.removeEventListener("mouseup", handleGlobalMouseUp);
         };
       }
-    }, [isDragging]);
+    }, [isDragging, clearSwipeActionTimer]);
+
+    // Cleanup timer on unmount
+    useEffect(() => {
+      return () => {
+        if (swipeActionTimer.current) {
+          clearTimeout(swipeActionTimer.current);
+        }
+      };
+    }, []);
 
     const hasUserInteraction =
       detail.hasUserInteraction || detail.userLiked || detail.userRecasted;
@@ -327,19 +377,23 @@ export const ReplyCard = memo<ReplyCardProps>(
           `}
           style={{ transform }}
         >
-          {/* Swipe Action Indicators */}
-          {isDragging && (
+          {/* Swipe Action Indicators - delayed by 1500ms */}
+          {showSwipeActions && (
             <>
-              <div className="absolute left-0 top-0 bottom-0 w-20 bg-red-500/20 flex items-center justify-center rounded-l-2xl">
-                <div className="text-red-400 text-sm font-medium">
-                  Mark Read
+              {onMarkAsRead && (
+                <div className="absolute left-0 top-0 bottom-0 w-20 bg-green-500/20 flex items-center justify-center rounded-l-2xl">
+                  <div className="text-green-400 text-sm font-medium">
+                    Mark Read
+                  </div>
                 </div>
-              </div>
-              <div className="absolute right-0 top-0 bottom-0 w-20 bg-blue-500/20 flex items-center justify-center rounded-r-2xl">
-                <div className="text-blue-400 text-sm font-medium">
-                  Open Cast
+              )}
+              {onDiscard && (
+                <div className="absolute right-0 top-0 bottom-0 w-20 bg-red-500/20 flex items-center justify-center rounded-r-2xl">
+                  <div className="text-red-400 text-sm font-medium">
+                    Discard
+                  </div>
                 </div>
-              </div>
+              )}
             </>
           )}
 
@@ -589,8 +643,8 @@ export const ReplyCard = memo<ReplyCardProps>(
         }`}
         style={{ transform }}
       >
-        {/* Swipe Action Indicators */}
-        {isDragging && (
+        {/* Swipe Action Indicators - delayed by 1500ms */}
+        {showSwipeActions && (
           <>
             {onDiscard && (
               <div className="absolute left-0 top-0 bottom-0 w-20 bg-red-500/20 flex items-center justify-center rounded-l-2xl">
