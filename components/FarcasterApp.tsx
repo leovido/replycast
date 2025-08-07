@@ -508,111 +508,111 @@ export default function FarcasterApp() {
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
     >
-      <div className="container mx-auto px-4 max-w-6xl flex-1 flex flex-col">
-        {/* Pull to refresh indicator */}
-        {pullDistance > 0 && (
+      {/* Pull to refresh indicator */}
+      {pullDistance > 0 && (
+        <div
+          className="fixed top-0 left-0 right-0 z-50 flex items-center justify-center py-4"
+          style={{ transform: `translateY(${pullDistance}px)` }}
+        >
           <div
-            className="fixed top-0 left-0 right-0 z-50 flex items-center justify-center py-4"
-            style={{ transform: `translateY(${pullDistance}px)` }}
+            className={`px-4 py-2 rounded-full ${
+              isDarkTheme
+                ? "bg-white/20 backdrop-blur-md text-white"
+                : "bg-gray-800/20 backdrop-blur-md text-gray-800"
+            }`}
           >
-            <div
-              className={`px-4 py-2 rounded-full ${
-                isDarkTheme
-                  ? "bg-white/20 backdrop-blur-md text-white"
-                  : "bg-gray-800/20 backdrop-blur-md text-gray-800"
+            {isRefreshingPull ? (
+              <div className="flex items-center gap-2">
+                <div className="animate-spin rounded-full h-4 w-4 border-2 border-current border-t-transparent"></div>
+                <span className="text-sm">Refreshing...</span>
+              </div>
+            ) : (
+              <span className="text-sm">Pull to refresh</span>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Header */}
+      <div
+        className={`sticky top-0 z-40 backdrop-blur-md border-b mb-6 ${
+          themeMode === "Farcaster"
+            ? "bg-purple-900/95 border-white/10"
+            : themeMode === "light"
+            ? "bg-white/95 border-gray-200 text-gray-900"
+            : "bg-black/80 border-white/10"
+        }`}
+      >
+        <div className="container mx-auto px-4 max-w-6xl flex items-center justify-between py-4">
+          <div>
+            <h1
+              className={`text-2xl font-bold mb-2 ${
+                themeMode === "light" ? "text-gray-900" : "text-white"
               }`}
             >
-              {isRefreshingPull ? (
-                <div className="flex items-center gap-2">
-                  <div className="animate-spin rounded-full h-4 w-4 border-2 border-current border-t-transparent"></div>
-                  <span className="text-sm">Refreshing...</span>
-                </div>
-              ) : (
-                <span className="text-sm">Pull to refresh</span>
+              ReplyCast
+            </h1>
+            <div
+              className={`${
+                themeMode === "light" ? "text-gray-600" : "text-white/70"
+              }`}
+            >
+              {activeTab === "inbox" && (
+                <>
+                  <span className="font-semibold">
+                    {allConversations.length}
+                  </span>{" "}
+                  unreplied conversation
+                  {allConversations.length !== 1 ? "s" : ""}
+                </>
+              )}
+              {activeTab === "focus" && (
+                <>
+                  <span className="font-semibold">
+                    {markedAsReadConversations.length}
+                  </span>{" "}
+                  focus conversation
+                  {markedAsReadConversations.length !== 1 ? "s" : ""}
+                </>
+              )}
+              {activeTab === "analytics" && (
+                <>
+                  <span className="font-semibold">
+                    {allConversations.length}
+                  </span>{" "}
+                  total conversations analyzed
+                </>
               )}
             </div>
           </div>
-        )}
-
-        {/* Header */}
-        <div
-          className={`sticky top-0 z-40 backdrop-blur-md border-b mb-6 -mx-4 px-4 py-4 ${
-            themeMode === "Farcaster"
-              ? "bg-purple-900/95 border-white/10"
-              : themeMode === "light"
-              ? "bg-white/95 border-gray-200 text-gray-900"
-              : "bg-black/80 border-white/10"
-          }`}
-        >
-          <div className="flex items-center justify-between">
-            <div>
-              <h1
-                className={`text-2xl font-bold mb-2 ${
-                  themeMode === "light" ? "text-gray-900" : "text-white"
-                }`}
-              >
-                ReplyCast
-              </h1>
-              <div
-                className={`${
-                  themeMode === "light" ? "text-gray-600" : "text-white/70"
-                }`}
-              >
-                {activeTab === "inbox" && (
-                  <>
-                    <span className="font-semibold">
-                      {allConversations.length}
-                    </span>{" "}
-                    unreplied conversation
-                    {allConversations.length !== 1 ? "s" : ""}
-                  </>
-                )}
-                {activeTab === "focus" && (
-                  <>
-                    <span className="font-semibold">
-                      {markedAsReadConversations.length}
-                    </span>{" "}
-                    focus conversation
-                    {markedAsReadConversations.length !== 1 ? "s" : ""}
-                  </>
-                )}
-                {activeTab === "analytics" && (
-                  <>
-                    <span className="font-semibold">
-                      {allConversations.length}
-                    </span>{" "}
-                    total conversations analyzed
-                  </>
-                )}
-              </div>
-            </div>
-            <button
-              onClick={() => {
-                sdk.haptics?.impactOccurred?.("light");
-                setIsSettingsOpen(true);
-              }}
-              className={`p-3 rounded-xl transition-all duration-200 ${
-                isDarkTheme
-                  ? "bg-white/10 hover:bg-white/20 text-white"
-                  : "bg-gray-100 hover:bg-gray-200 text-gray-700"
-              }`}
-              aria-label="Settings"
+          <button
+            onClick={() => {
+              sdk.haptics?.impactOccurred?.("light");
+              setIsSettingsOpen(true);
+            }}
+            className={`p-3 rounded-xl transition-all duration-200 ${
+              isDarkTheme
+                ? "bg-white/10 hover:bg-white/20 text-white"
+                : "bg-gray-100 hover:bg-gray-200 text-gray-700"
+            }`}
+            aria-label="Settings"
+          >
+            <svg
+              width={20}
+              height={20}
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={2}
             >
-              <svg
-                width={20}
-                height={20}
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth={2}
-              >
-                <path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" />
-                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1Z" />
-              </svg>
-            </button>
-          </div>
+              <path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" />
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1Z" />
+            </svg>
+          </button>
         </div>
+      </div>
 
+      <div className="container mx-auto px-4 max-w-6xl flex-1 flex flex-col">
         {/* User Info Card */}
         {user && (
           <div
