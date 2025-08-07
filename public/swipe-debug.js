@@ -45,7 +45,7 @@
       <div>Iframe: ${isInIframe ? "✅" : "❌"}</div>
       <div>WebView: ${isWebView ? "✅" : "❌"}</div>
       <div>Farcaster: ${isFarcaster ? "✅" : "❌"}</div>
-      <div>Long Press: 500ms to activate</div>
+                    <div>Long Press: 250ms to activate</div>
       <div>Swipe Mode: ${swipeModeActive}</div>
       <div>Time: ${new Date().toLocaleTimeString()}</div>
       <div>${info}</div>
@@ -58,7 +58,7 @@
     function (e) {
       const target = e.target.closest(".swipe-enabled");
       if (target) {
-        updateDebugInfo(`👆 Long Press Started (500ms timer)`);
+        updateDebugInfo(`👆 Long Press Started (250ms timer)`);
         console.log(
           "🔍 Touch Start - Long Press Timer:",
           e.touches[0].clientX,
@@ -75,7 +75,7 @@
     function (e) {
       const target = e.target.closest(".swipe-enabled");
       if (target) {
-        updateDebugInfo(`🖱️ Long Press Started (desktop 500ms timer)`);
+        updateDebugInfo(`🖱️ Long Press Started (desktop 250ms timer)`);
         console.log(
           "🔍 Mouse Down - Long Press Timer:",
           e.clientX,

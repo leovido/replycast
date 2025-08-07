@@ -29,6 +29,8 @@ export const ReplyCard = memo<ReplyCardProps>(
     const [dragOffset, setDragOffset] = useState(0);
     const [isSwipeModeActive, setIsSwipeModeActive] = useState(false);
     const [showSwipeActions, setShowSwipeActions] = useState(false);
+    const [wasSwipeActionPerformed, setWasSwipeActionPerformed] =
+      useState(false);
     const cardRef = useRef<HTMLButtonElement>(null);
     const touchStartX = useRef<number>(0);
     const touchStartY = useRef<number>(0);
@@ -62,7 +64,7 @@ export const ReplyCard = memo<ReplyCardProps>(
 
       hasMovedDuringPress.current = false;
 
-      // Start long press timer for 500ms (iOS-style)
+      // Start long press timer for 250ms (faster activation)
       longPressTimer.current = setTimeout(() => {
         // Only activate swipe mode if user hasn't moved (not scrolling)
         if (!hasMovedDuringPress.current) {
@@ -77,10 +79,10 @@ export const ReplyCard = memo<ReplyCardProps>(
           }
 
           if (process.env.NODE_ENV === "development") {
-            console.log("🔓 Swipe mode activated after 500ms long press");
+            console.log("🔓 Swipe mode activated after 250ms long press");
           }
         }
-      }, 500);
+      }, 250);
     }, []);
 
     const clearLongPress = useCallback(() => {
@@ -93,6 +95,12 @@ export const ReplyCard = memo<ReplyCardProps>(
       setIsDragging(false);
       setDragOffset(0);
       hasMovedDuringPress.current = false;
+      // Don't reset wasSwipeActionPerformed here - we need to track it for onClick prevention
+    }, []);
+
+    // Function to reset swipe action flag (called after onClick)
+    const resetSwipeActionFlag = useCallback(() => {
+      setWasSwipeActionPerformed(false);
     }, []);
 
     const handleTouchStart = useCallback(
@@ -204,6 +212,7 @@ export const ReplyCard = memo<ReplyCardProps>(
                 } catch (error) {
                   // Haptic not available, continue anyway
                 }
+                setWasSwipeActionPerformed(true);
                 onMarkAsRead(detail);
               } else if (deltaX < 0 && onDiscard) {
                 // Swipe left - discard (not interested)
@@ -216,6 +225,7 @@ export const ReplyCard = memo<ReplyCardProps>(
                 } catch (error) {
                   // Haptic not available, continue anyway
                 }
+                setWasSwipeActionPerformed(true);
                 onDiscard(detail);
               }
             }
@@ -339,6 +349,7 @@ export const ReplyCard = memo<ReplyCardProps>(
                 } catch (error) {
                   // Haptic not available, continue anyway
                 }
+                setWasSwipeActionPerformed(true);
                 onMarkAsRead(detail);
               } else if (deltaX < 0 && onDiscard) {
                 // Swipe left - discard (not interested)
@@ -351,6 +362,7 @@ export const ReplyCard = memo<ReplyCardProps>(
                 } catch (error) {
                   // Haptic not available, continue anyway
                 }
+                setWasSwipeActionPerformed(true);
                 onDiscard(detail);
               }
             }
@@ -419,10 +431,16 @@ export const ReplyCard = memo<ReplyCardProps>(
           onMouseMove={handleMouseMove}
           onMouseUp={handleMouseUp}
           onClick={(e) => {
-            // Only trigger onClick if not dragging
-            if (!isDragging) {
+            // Only trigger onClick if not dragging and no swipe action was performed
+            if (!isDragging && !wasSwipeActionPerformed && !isSwipeModeActive) {
               console.log("Card clicked - opening cast");
               onClick();
+            } else if (wasSwipeActionPerformed || isSwipeModeActive) {
+              console.log(
+                "Card click prevented - swipe action was performed or swipe mode was active"
+              );
+              // Reset the flag after preventing the click
+              resetSwipeActionFlag();
             }
           }}
           className={`
@@ -694,10 +712,16 @@ export const ReplyCard = memo<ReplyCardProps>(
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
         onClick={(e) => {
-          // Only trigger onClick if not dragging
-          if (!isDragging) {
+          // Only trigger onClick if not dragging and no swipe action was performed
+          if (!isDragging && !wasSwipeActionPerformed && !isSwipeModeActive) {
             console.log("Card clicked (new design) - opening cast");
             onClick();
+          } else if (wasSwipeActionPerformed || isSwipeModeActive) {
+            console.log(
+              "Card click prevented (new design) - swipe action was performed or swipe mode was active"
+            );
+            // Reset the flag after preventing the click
+            resetSwipeActionFlag();
           }
         }}
         className={`relative w-full text-left p-6 rounded-2xl transition-all duration-300 hover:scale-[1.02] focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 swipe-enabled ${

@@ -1,0 +1,1 @@
+Tab Bar Positioning Fix: The tab bar uses 'sticky bottom-0 z-50' positioning. All content areas (ConversationList, FocusTab, AnalyticsTab) must have 'pb-20' (80px bottom padding) to prevent content from appearing over the tab bar. The 'Today's conversations loaded' text and other bottom content should never overlap with the sticky tab bar.
