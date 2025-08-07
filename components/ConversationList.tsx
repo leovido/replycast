@@ -216,7 +216,7 @@ export function ConversationList({
 
         {/* Today filter message */}
         {!hasMore && conversations.length > 0 && dayFilter === "today" && (
-          <div className="col-span-full flex justify-center py-6">
+          <div className="col-span-full flex justify-center py-6 pb-20">
             <div
               className={`text-center max-w-md ${
                 isDarkTheme ? "text-white/60" : "text-gray-600"

@@ -122,7 +122,7 @@ export function FocusTab({
   }
 
   return (
-    <div className="min-h-[calc(100vh-200px)] flex flex-col">
+    <div className="min-h-[calc(100vh-200px)] flex flex-col pb-20">
       <div className="mb-4">
         <div className="flex items-center gap-3 mb-2">
           <h2

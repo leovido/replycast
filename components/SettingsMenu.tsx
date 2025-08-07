@@ -1,5 +1,124 @@
-import React from "react";
+import React, { useState } from "react";
 import { sdk } from "@farcaster/miniapp-sdk";
+
+interface AddToFarcasterButtonProps {
+  isDarkTheme: boolean;
+}
+
+function AddToFarcasterButton({ isDarkTheme }: AddToFarcasterButtonProps) {
+  const [isLoading, setIsLoading] = useState(false);
+  const [isAdded, setIsAdded] = useState(false);
+  const [showMessage, setShowMessage] = useState<string | null>(null);
+
+  // Check if already added on mount
+  React.useEffect(() => {
+    const checkIfAdded = async () => {
+      try {
+        const context = await sdk.context;
+        setIsAdded(context.client.added);
+      } catch (error) {
+        console.error("Failed to get context:", error);
+      }
+    };
+    checkIfAdded();
+  }, []);
+
+  const handleAddMiniApp = async () => {
+    try {
+      setIsLoading(true);
+      await sdk.actions.addMiniApp();
+      setIsAdded(true);
+      setShowMessage("✅ Added to Farcaster!");
+
+      // Hide success message after 3 seconds
+      setTimeout(() => setShowMessage(null), 3000);
+    } catch (error: any) {
+      console.error("Failed to add Mini App:", error);
+      if (error?.name === "RejectedByUser") {
+        setShowMessage("❌ Cancelled by user");
+      } else {
+        setShowMessage("❌ Failed to add");
+      }
+
+      // Hide error message after 3 seconds
+      setTimeout(() => setShowMessage(null), 3000);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <div className="space-y-3">
+      {isAdded ? (
+        <div
+          className={`p-4 rounded-xl border-2 border-dashed ${
+            isDarkTheme
+              ? "bg-green-500/10 border-green-500/30 text-green-400"
+              : "bg-green-50 border-green-200 text-green-700"
+          }`}
+        >
+          <div className="flex items-center gap-3">
+            <span className="text-lg">✅</span>
+            <div>
+              <div className="font-medium">Added to Farcaster</div>
+              <div className="text-sm opacity-70">
+                ReplyCast is in your Mini Apps collection
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <button
+          onClick={handleAddMiniApp}
+          disabled={isLoading}
+          className={`w-full p-4 rounded-xl transition-all duration-200 flex items-center justify-center gap-3 ${
+            isLoading
+              ? isDarkTheme
+                ? "bg-white/10 text-white/50 cursor-not-allowed"
+                : "bg-gray-100 text-gray-400 cursor-not-allowed"
+              : isDarkTheme
+              ? "bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 border border-blue-500/30"
+              : "bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200"
+          }`}
+        >
+          {isLoading ? (
+            <>
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
+              <span>Adding...</span>
+            </>
+          ) : (
+            <>
+              <span className="text-lg">📱</span>
+              <span className="font-medium">Add to Farcaster</span>
+            </>
+          )}
+        </button>
+      )}
+
+      {showMessage && (
+        <div
+          className={`p-3 rounded-lg text-sm ${
+            showMessage.includes("✅")
+              ? isDarkTheme
+                ? "bg-green-500/20 text-green-400"
+                : "bg-green-100 text-green-700"
+              : isDarkTheme
+              ? "bg-red-500/20 text-red-400"
+              : "bg-red-100 text-red-700"
+          }`}
+        >
+          {showMessage}
+        </div>
+      )}
+
+      <div
+        className={`text-xs ${isDarkTheme ? "text-white/50" : "text-gray-500"}`}
+      >
+        Get quick access to ReplyCast from your Farcaster client
+      </div>
+    </div>
+  );
+}
 
 interface SettingsMenuProps {
   isOpen: boolean;
@@ -231,6 +350,18 @@ export function SettingsMenu({
             <option value="3days">Last 3 Days</option>
             <option value="7days">Last 7 Days</option>
           </select>
+        </div>
+
+        {/* Add to Farcaster Section */}
+        <div className="mb-6">
+          <h3
+            className={`text-sm font-semibold mb-3 ${
+              isDarkTheme ? "text-white/80" : "text-gray-700"
+            }`}
+          >
+            Mini App
+          </h3>
+          <AddToFarcasterButton isDarkTheme={isDarkTheme} />
         </div>
       </div>
     </div>
