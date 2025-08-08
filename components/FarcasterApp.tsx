@@ -173,6 +173,7 @@ export default function FarcasterApp() {
     if (typeof window === "undefined") return [];
     try {
       const stored = localStorage.getItem("farcaster-widget-marked-as-read");
+
       if (!stored) return [];
 
       const parsed = JSON.parse(stored);
@@ -197,29 +198,34 @@ export default function FarcasterApp() {
       }
 
       return uniqueConversations;
-    } catch {
+    } catch (error) {
+      console.error("Error loading marked-as-read:", error);
       return [];
     }
   });
 
   // Focus header count should respect day filter
   const filteredFocusCount = React.useMemo(() => {
+    // Filter out items with invalid timestamps first
+    const validConversations = markedAsReadConversations.filter(
+      (c: any) =>
+        c.timestamp && typeof c.timestamp === "number" && !isNaN(c.timestamp)
+    );
+
     if (dayFilter === "today") {
-      return markedAsReadConversations.filter((c: any) =>
-        isToday(c.timestamp)
-      ).length;
+      return validConversations.filter((c: any) => isToday(c.timestamp)).length;
     }
     if (dayFilter === "3days") {
-      return markedAsReadConversations.filter((c: any) =>
+      return validConversations.filter((c: any) =>
         isWithinLastDays(c.timestamp, 3)
       ).length;
     }
     if (dayFilter === "7days") {
-      return markedAsReadConversations.filter((c: any) =>
+      return validConversations.filter((c: any) =>
         isWithinLastDays(c.timestamp, 7)
       ).length;
     }
-    return markedAsReadConversations.length;
+    return validConversations.length;
   }, [markedAsReadConversations, dayFilter]);
 
   // State for discarded conversations
@@ -302,7 +308,6 @@ export default function FarcasterApp() {
   const touchStartTime = useRef<number>(0);
 
   const handleMarkAsRead = (detail: any) => {
-    console.log("Marking as read:", detail);
     setMarkedAsReadConversations((prev) => {
       // Check if this cast is already marked as read using castHash as unique identifier
       const isDuplicate = prev.some(
@@ -310,12 +315,18 @@ export default function FarcasterApp() {
       );
 
       if (isDuplicate) {
-        console.log("Cast already marked as read:", detail.castHash);
         showToast("Cast already marked as read", "info");
         return prev; // Return existing list without adding duplicate
       }
 
-      const newList = [...prev, detail];
+      // Ensure timestamp is set properly
+      const detailWithTimestamp = {
+        ...detail,
+        timestamp: detail.timestamp || Date.now(),
+      };
+
+      const newList = [...prev, detailWithTimestamp];
+
       // Store in localStorage
       if (typeof window !== "undefined") {
         try {
@@ -323,8 +334,8 @@ export default function FarcasterApp() {
             "farcaster-widget-marked-as-read",
             JSON.stringify(newList)
           );
-        } catch {
-          // Ignore storage errors
+        } catch (error) {
+          console.error("Error saving to localStorage:", error);
         }
       }
 
@@ -589,9 +600,7 @@ export default function FarcasterApp() {
               )}
               {activeTab === "focus" && (
                 <>
-                  <span className="font-semibold">
-                    {filteredFocusCount}
-                  </span>{" "}
+                  <span className="font-semibold">{filteredFocusCount}</span>{" "}
                   focus conversation
                   {filteredFocusCount !== 1 ? "s" : ""}
                 </>

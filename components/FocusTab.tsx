@@ -40,17 +40,23 @@ export function FocusTab({
 
   // Apply date filter to focus items
   const filteredMarkedAsRead = React.useMemo(() => {
-    if (!dayFilter || dayFilter === "all") return markedAsReadConversations;
+    // Filter out items with invalid timestamps first
+    const validConversations = markedAsReadConversations.filter(
+      (c) =>
+        c.timestamp && typeof c.timestamp === "number" && !isNaN(c.timestamp)
+    );
+
+    if (!dayFilter || dayFilter === "all") return validConversations;
     if (dayFilter === "today") {
-      return markedAsReadConversations.filter((c) => isToday(c.timestamp));
+      return validConversations.filter((c) => isToday(c.timestamp));
     }
     if (dayFilter === "3days") {
-      return markedAsReadConversations.filter((c) => isWithinLastDays(c.timestamp, 3));
+      return validConversations.filter((c) => isWithinLastDays(c.timestamp, 3));
     }
     if (dayFilter === "7days") {
-      return markedAsReadConversations.filter((c) => isWithinLastDays(c.timestamp, 7));
+      return validConversations.filter((c) => isWithinLastDays(c.timestamp, 7));
     }
-    return markedAsReadConversations;
+    return validConversations;
   }, [markedAsReadConversations, dayFilter]);
 
   // Check if tutorial has been completed
