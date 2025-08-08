@@ -79,7 +79,6 @@ export const ReplyCard = memo<ReplyCardProps>(
           }
 
           if (process.env.NODE_ENV === "development") {
-            console.log("🔓 Swipe mode activated after 250ms long press");
           }
         }
       }, 250);
@@ -183,7 +182,6 @@ export const ReplyCard = memo<ReplyCardProps>(
               }
 
               if (process.env.NODE_ENV === "development") {
-                console.log("Swipe mode - Touch move:", deltaX);
               }
             } else if (Math.abs(deltaY) > Math.abs(deltaX)) {
               // Vertical movement - prevent scrolling but don't update drag state
@@ -226,7 +224,6 @@ export const ReplyCard = memo<ReplyCardProps>(
               if (deltaX > 0 && onMarkAsRead) {
                 // Swipe right - mark as read (only if onMarkAsRead is provided)
                 if (process.env.NODE_ENV === "development") {
-                  console.log("Swipe right - marking as read");
                 }
                 try {
                   // Trigger haptic feedback
@@ -239,7 +236,6 @@ export const ReplyCard = memo<ReplyCardProps>(
               } else if (deltaX < 0 && onDiscard) {
                 // Swipe left - discard (not interested)
                 if (process.env.NODE_ENV === "development") {
-                  console.log("Swipe left - discarding cast");
                 }
                 try {
                   // Trigger haptic feedback
@@ -332,7 +328,6 @@ export const ReplyCard = memo<ReplyCardProps>(
               }
 
               if (process.env.NODE_ENV === "development") {
-                console.log("Swipe mode - Mouse move (desktop):", deltaX);
               }
             } else if (Math.abs(deltaY) > Math.abs(deltaX)) {
               // Vertical movement - prevent scrolling but don't update drag state
@@ -372,7 +367,6 @@ export const ReplyCard = memo<ReplyCardProps>(
               if (deltaX > 0 && onMarkAsRead) {
                 // Swipe right - mark as read (only if onMarkAsRead is provided)
                 if (process.env.NODE_ENV === "development") {
-                  console.log("Mouse swipe right - marking as read");
                 }
                 try {
                   // Trigger haptic feedback (will be ignored on desktop but works on mobile)
@@ -385,7 +379,6 @@ export const ReplyCard = memo<ReplyCardProps>(
               } else if (deltaX < 0 && onDiscard) {
                 // Swipe left - discard (not interested)
                 if (process.env.NODE_ENV === "development") {
-                  console.log("Mouse swipe left - discarding cast");
                 }
                 try {
                   // Trigger haptic feedback (will be ignored on desktop but works on mobile)
@@ -468,7 +461,6 @@ export const ReplyCard = memo<ReplyCardProps>(
           onClick={(e) => {
             // Only trigger onClick if not dragging and no swipe action was performed
             if (!isDragging && !wasSwipeActionPerformed && !isSwipeModeActive) {
-              console.log("Card clicked - opening cast");
               onClick();
             } else if (wasSwipeActionPerformed || isSwipeModeActive) {
               console.log(
@@ -749,7 +741,6 @@ export const ReplyCard = memo<ReplyCardProps>(
         onClick={(e) => {
           // Only trigger onClick if not dragging and no swipe action was performed
           if (!isDragging && !wasSwipeActionPerformed && !isSwipeModeActive) {
-            console.log("Card clicked (new design) - opening cast");
             onClick();
           } else if (wasSwipeActionPerformed || isSwipeModeActive) {
             console.log(
