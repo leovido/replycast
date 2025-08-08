@@ -348,6 +348,8 @@ export default function FarcasterApp() {
 
   const handleDiscard = (detail: any) => {
     console.log("Discarding cast:", detail);
+
+    // Add to discarded list
     setDiscardedConversations((prev) => {
       // Check if this cast is already discarded using castHash as unique identifier
       const isDuplicate = prev.some(
@@ -373,11 +375,30 @@ export default function FarcasterApp() {
         }
       }
 
-      // Show success toast
-      showToast("Cast discarded", "success");
-
       return newList;
     });
+
+    // Remove from marked-as-read list (for Focus tab)
+    setMarkedAsReadConversations((prev) => {
+      const filtered = prev.filter((item) => item.castHash !== detail.castHash);
+
+      // Update localStorage
+      if (typeof window !== "undefined") {
+        try {
+          localStorage.setItem(
+            "farcaster-widget-marked-as-read",
+            JSON.stringify(filtered)
+          );
+        } catch {
+          // Ignore storage errors
+        }
+      }
+
+      return filtered;
+    });
+
+    // Show success toast
+    showToast("Cast discarded", "success");
   };
 
   // Swipe to refresh handlers
