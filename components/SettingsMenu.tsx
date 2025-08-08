@@ -1,11 +1,13 @@
 import React, { useState } from "react";
 import { sdk } from "@farcaster/miniapp-sdk";
+import { useAppAnalytics } from "../hooks/useAnalytics";
 
 interface AddToFarcasterButtonProps {
   isDarkTheme: boolean;
 }
 
 function AddToFarcasterButton({ isDarkTheme }: AddToFarcasterButtonProps) {
+  const { trackAddToFarcaster } = useAppAnalytics();
   const [isLoading, setIsLoading] = useState(false);
   const [isAdded, setIsAdded] = useState(false);
   const [showMessage, setShowMessage] = useState<string | null>(null);
@@ -30,10 +32,22 @@ function AddToFarcasterButton({ isDarkTheme }: AddToFarcasterButtonProps) {
       setIsAdded(true);
       setShowMessage("✅ Added to Farcaster!");
 
+      // Track successful add
+      trackAddToFarcaster(true, {
+        theme: isDarkTheme ? "dark" : "light",
+      });
+
       // Hide success message after 3 seconds
       setTimeout(() => setShowMessage(null), 3000);
     } catch (error: any) {
       console.error("Failed to add Mini App:", error);
+
+      // Track failed add
+      trackAddToFarcaster(false, {
+        error: error?.name || "unknown",
+        theme: isDarkTheme ? "dark" : "light",
+      });
+
       if (error?.name === "RejectedByUser") {
         setShowMessage("❌ Cancelled by user");
       } else {
