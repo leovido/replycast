@@ -31,7 +31,6 @@ export function FarcasterSignIn({ onSignIn, onError }: FarcasterSignInProps) {
             try {
               const ctx = await sdk.context;
               if (ctx?.user) {
-                console.log("SignIn: Got user context:", ctx.user);
                 onSignIn(ctx.user);
                 return true;
               } else {
@@ -42,7 +41,6 @@ export function FarcasterSignIn({ onSignIn, onError }: FarcasterSignInProps) {
                 return false;
               }
             } catch (err) {
-              console.log("SignIn: Mini App context not available yet");
               return false;
             }
           };
@@ -59,8 +57,6 @@ export function FarcasterSignIn({ onSignIn, onError }: FarcasterSignInProps) {
                 await new Promise((resolve) => setTimeout(resolve, 500));
               }
             }
-
-            console.log("SignIn: Failed to get user context after retries");
           };
 
           attemptContext();
@@ -82,7 +78,7 @@ export function FarcasterSignIn({ onSignIn, onError }: FarcasterSignInProps) {
       // Check if signIn action is available
       if (!sdk.actions?.signIn) {
         // Fallback: simulate sign-in for demo purposes
-        console.log("Sign in not available, using demo mode");
+
         const mockUser = {
           fid: 12345,
           username: "demo_user",
@@ -104,7 +100,6 @@ export function FarcasterSignIn({ onSignIn, onError }: FarcasterSignInProps) {
 
       // In a real app, you would send this to your server for verification
       // For now, we'll simulate a successful sign-in
-      console.log("Sign in result:", result);
 
       // Simulate getting user data (in production, verify with your server)
       const mockUser = {

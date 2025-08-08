@@ -347,8 +347,6 @@ export default function FarcasterApp() {
   };
 
   const handleDiscard = (detail: any) => {
-    console.log("Discarding cast:", detail);
-
     // Add to discarded list
     setDiscardedConversations((prev) => {
       // Check if this cast is already discarded using castHash as unique identifier
@@ -357,7 +355,6 @@ export default function FarcasterApp() {
       );
 
       if (isDuplicate) {
-        console.log("Cast already discarded:", detail.castHash);
         showToast("Cast already discarded", "info");
         return prev; // Return existing list without adding duplicate
       }
@@ -461,8 +458,6 @@ export default function FarcasterApp() {
       const isWebView = /WebView|wv/.test(navigator.userAgent);
 
       if (isInIframe || isWebView) {
-        console.log("🔧 Iframe/WebView detected - applying touch event fixes");
-
         // Create a more aggressive touch event handler for iframe environments
         const enhanceTouchEvents = () => {
           const swipeElements = document.querySelectorAll(".swipe-enabled");
@@ -764,14 +759,6 @@ export default function FarcasterApp() {
         <div className="flex-1 overflow-y-auto">
           {activeTab === "inbox" && (
             <>
-              {console.log(
-                "Inbox tab - hasMore:",
-                hasMore,
-                "isLoadingMore:",
-                isLoadingMore,
-                "conversations:",
-                filteredConversations.length
-              )}
               {filteredConversations.length === 0 && !dataLoading ? (
                 <EmptyState
                   title="No Conversations"
@@ -837,7 +824,6 @@ export default function FarcasterApp() {
               hasMore={hasMore}
               observerRef={observerRef}
               onReply={async (detail) => {
-                console.log("Opening cast from focus:", detail);
                 try {
                   await sdk.actions.viewCast({ hash: detail.castHash });
                 } catch (error) {
