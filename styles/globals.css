@@ -49,16 +49,26 @@
   -o-user-drag: none;
   /* Ensure proper event handling in production */
   pointer-events: auto;
-  /* Fix for iOS WebView touch issues */
+  /* Hardware acceleration for smooth interactions */
   -webkit-transform: translateZ(0);
   transform: translateZ(0);
   /* Desktop mouse drag cursor */
   cursor: grab;
+  /* Smooth transitions for all interactions */
+  transition: transform 0.1s ease-out, box-shadow 0.2s ease-out;
 }
 
 /* When swipe mode is active, restrict to horizontal panning only */
 .swipe-enabled.swipe-mode-active {
   touch-action: pan-x;
+  /* Prevent any vertical scrolling when swipe mode is active */
+  overflow: hidden;
+  /* Hardware acceleration for smooth swiping */
+  will-change: transform;
+  -webkit-transform: translateZ(0);
+  transform: translateZ(0);
+  /* Smooth transitions for swipe mode activation */
+  transition: transform 0.1s ease-out;
 }
 
 /* Active dragging state */

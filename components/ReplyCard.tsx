@@ -90,13 +90,26 @@ export const ReplyCard = memo<ReplyCardProps>(
         clearTimeout(longPressTimer.current);
         longPressTimer.current = null;
       }
-      setIsSwipeModeActive(false);
-      setShowSwipeActions(false);
-      setIsDragging(false);
-      setDragOffset(0);
+
+      // Smooth reset with animation
+      if (isSwipeModeActive || isDragging) {
+        // Add a small delay for smooth transition back to normal state
+        setTimeout(() => {
+          setIsSwipeModeActive(false);
+          setShowSwipeActions(false);
+          setIsDragging(false);
+          setDragOffset(0);
+        }, 50);
+      } else {
+        setIsSwipeModeActive(false);
+        setShowSwipeActions(false);
+        setIsDragging(false);
+        setDragOffset(0);
+      }
+
       hasMovedDuringPress.current = false;
       // Don't reset wasSwipeActionPerformed here - we need to track it for onClick prevention
-    }, []);
+    }, [isSwipeModeActive, isDragging]);
 
     // Function to reset swipe action flag (called after onClick)
     const resetSwipeActionFlag = useCallback(() => {
@@ -156,18 +169,27 @@ export const ReplyCard = memo<ReplyCardProps>(
             // Essential for iframe/WebView environments - stop event propagation
             e.stopPropagation();
 
-            // Only allow horizontal swipes in swipe mode
-            if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 10) {
-              // Use passive: false to allow preventDefault
-              if (e.cancelable) {
-                e.preventDefault();
-              }
+            // Prevent all vertical scrolling when in swipe mode
+            if (e.cancelable) {
+              e.preventDefault();
+            }
 
-              setIsDragging(true);
-              setDragOffset(deltaX);
+            // Allow horizontal swipes with lower threshold for smoother feel
+            if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 5) {
+              // Only update state if dragging status changed or significant movement
+              if (!isDragging || Math.abs(deltaX - dragOffset) > 2) {
+                setIsDragging(true);
+                setDragOffset(deltaX);
+              }
 
               if (process.env.NODE_ENV === "development") {
                 console.log("Swipe mode - Touch move:", deltaX);
+              }
+            } else if (Math.abs(deltaY) > Math.abs(deltaX)) {
+              // Vertical movement - prevent scrolling but don't update drag state
+              if (isDragging) {
+                setIsDragging(false);
+                setDragOffset(0);
               }
             }
           }
@@ -189,7 +211,7 @@ export const ReplyCard = memo<ReplyCardProps>(
             e.stopPropagation();
 
             const deltaX = touch.clientX - touchStartX.current;
-            const swipeThreshold = 40; // Minimum distance for swipe action
+            const swipeThreshold = 30; // Lower threshold for more responsive swipes
 
             if (process.env.NODE_ENV === "development") {
               console.log(
@@ -301,13 +323,22 @@ export const ReplyCard = memo<ReplyCardProps>(
             e.stopPropagation();
             e.preventDefault();
 
-            // Only allow horizontal swipes in swipe mode
-            if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 10) {
-              setIsDragging(true);
-              setDragOffset(deltaX);
+            // Allow horizontal swipes with lower threshold for smoother feel
+            if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 5) {
+              // Only update state if dragging status changed or significant movement
+              if (!isDragging || Math.abs(deltaX - dragOffset) > 2) {
+                setIsDragging(true);
+                setDragOffset(deltaX);
+              }
 
               if (process.env.NODE_ENV === "development") {
                 console.log("Swipe mode - Mouse move (desktop):", deltaX);
+              }
+            } else if (Math.abs(deltaY) > Math.abs(deltaX)) {
+              // Vertical movement - prevent scrolling but don't update drag state
+              if (isDragging) {
+                setIsDragging(false);
+                setDragOffset(0);
               }
             }
           }
@@ -326,7 +357,7 @@ export const ReplyCard = memo<ReplyCardProps>(
             e.stopPropagation();
 
             const deltaX = e.clientX - mouseStartX.current;
-            const swipeThreshold = 40; // Same threshold as touch events
+            const swipeThreshold = 30; // Lower threshold for more responsive swipes
 
             if (process.env.NODE_ENV === "development") {
               console.log(
@@ -416,8 +447,12 @@ export const ReplyCard = memo<ReplyCardProps>(
     const hasUserInteraction =
       detail.hasUserInteraction || detail.userLiked || detail.userRecasted;
 
-    // Calculate transform based on drag
-    const transform = isDragging ? `translateX(${dragOffset}px)` : "";
+    // Calculate transform based on drag with hardware acceleration
+    const transform = isDragging
+      ? `translate3d(${dragOffset}px, 0, 0)`
+      : isSwipeModeActive
+      ? "translate3d(0, 0, 0)"
+      : "";
 
     // Render old design
     if (useOldDesign) {
