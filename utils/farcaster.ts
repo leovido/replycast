@@ -18,6 +18,17 @@ export function isToday(timestamp: number): boolean {
   );
 }
 
+// Check if timestamp is within the last N calendar days, including today
+export function isWithinLastDays(timestamp: number, days: number): boolean {
+  if (days <= 1) {
+    return isToday(timestamp);
+  }
+  const startOfToday = new Date();
+  startOfToday.setHours(0, 0, 0, 0);
+  const windowStartMs = startOfToday.getTime() - (days - 1) * 24 * 60 * 60 * 1000;
+  return timestamp >= windowStartMs;
+}
+
 // API function to fetch today's replies
 export async function fetchTodaysReplies(
   fid: number,

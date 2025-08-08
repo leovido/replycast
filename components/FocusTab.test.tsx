@@ -8,6 +8,7 @@ jest.mock("react", () => ({
   useState: jest.fn((initial) => [initial, jest.fn()]),
   useEffect: jest.fn((fn) => fn()),
   useRef: jest.fn(() => ({ current: null })),
+  useCallback: jest.fn((fn) => fn),
 }));
 
 // Mock localStorage
@@ -64,7 +65,7 @@ const defaultProps = {
   themeMode: "dark" as const,
   onMarkAsRead: jest.fn(),
   onDiscard: jest.fn(),
-  dayFilter: "today" as const,
+  dayFilter: "all" as const,
 };
 
 describe("FocusTab", () => {

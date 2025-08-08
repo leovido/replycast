@@ -502,14 +502,14 @@ export const ReplyCard = memo<ReplyCardProps>(
           {showSwipeActions && (
             <>
               {onMarkAsRead && (
-                <div className="absolute left-0 top-0 bottom-0 w-20 bg-green-500/20 flex items-center justify-center rounded-l-2xl">
+                <div className="absolute right-0 top-0 bottom-0 w-20 bg-green-500/20 flex items-center justify-center rounded-r-2xl">
                   <div className="text-green-400 text-sm font-medium">
                     Mark Read
                   </div>
                 </div>
               )}
               {onDiscard && (
-                <div className="absolute right-0 top-0 bottom-0 w-20 bg-red-500/20 flex items-center justify-center rounded-r-2xl">
+                <div className="absolute left-0 top-0 bottom-0 w-20 bg-red-500/20 flex items-center justify-center rounded-l-2xl">
                   <div className="text-red-400 text-sm font-medium">
                     Discard
                   </div>

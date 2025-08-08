@@ -2,7 +2,9 @@ import React, { useState, useEffect } from "react";
 import type { UnrepliedDetail } from "@/types/types";
 import { ConversationList } from "./ConversationList";
 import { FocusTutorial } from "./FocusTutorial";
+import { EmptyState } from "./EmptyState";
 import type { RefObject } from "react";
+import { isToday, isWithinLastDays } from "@/utils/farcaster";
 
 interface FocusTabProps {
   markedAsReadConversations: UnrepliedDetail[];
@@ -36,6 +38,27 @@ export function FocusTab({
   dayFilter,
 }: FocusTabProps) {
   const [showTutorial, setShowTutorial] = useState(false);
+
+  // Apply date filter to focus items
+  const filteredMarkedAsRead = React.useMemo(() => {
+    // Filter out items with invalid timestamps first
+    const validConversations = markedAsReadConversations.filter(
+      (c) =>
+        c.timestamp && typeof c.timestamp === "number" && !isNaN(c.timestamp)
+    );
+
+    if (!dayFilter || dayFilter === "all") return validConversations;
+    if (dayFilter === "today") {
+      return validConversations.filter((c) => isToday(c.timestamp));
+    }
+    if (dayFilter === "3days") {
+      return validConversations.filter((c) => isWithinLastDays(c.timestamp, 3));
+    }
+    if (dayFilter === "7days") {
+      return validConversations.filter((c) => isWithinLastDays(c.timestamp, 7));
+    }
+    return validConversations;
+  }, [markedAsReadConversations, dayFilter]);
 
   // Check if tutorial has been completed
   useEffect(() => {
@@ -82,42 +105,34 @@ export function FocusTab({
     );
   }
 
-  if (markedAsReadConversations.length === 0) {
+  if (filteredMarkedAsRead.length === 0) {
     return (
-      <div className="flex items-center justify-center py-12">
-        <div className="text-center">
-          <div
-            className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 ${
-              isDarkTheme ? "bg-white/10" : "bg-gray-100"
-            }`}
+      <EmptyState
+        title="No Focus Items"
+        description="Conversations you mark as read will appear here for easy reference."
+        icon={
+          <svg
+            width={32}
+            height={32}
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={2}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className={isDarkTheme ? "text-white/40" : "text-gray-400"}
           >
-            <svg
-              width={24}
-              height={24}
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth={2}
-            >
-              <circle cx="12" cy="12" r="3" />
-              <path d="M12 1v6m0 6v6" />
-              <path d="M3.6 3.6l4.2 4.2m8.4 8.4 4.2 4.2" />
-              <path d="M1 12h6m6 0h6" />
-              <path d="M3.6 20.4l4.2-4.2m8.4-8.4 4.2-4.2" />
-            </svg>
-          </div>
-          <h3
-            className={`text-lg font-semibold mb-2 ${
-              isDarkTheme ? "text-white" : "text-gray-900"
-            }`}
-          >
-            No Focus Items
-          </h3>
-          <p className={`${isDarkTheme ? "text-white/60" : "text-gray-600"}`}>
-            Conversations you mark as read will appear here for easy reference.
-          </p>
-        </div>
-      </div>
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+            <path d="M9 10h.01" />
+            <path d="M15 10h.01" />
+          </svg>
+        }
+        themeMode={themeMode}
+        action={{
+          label: "Refresh",
+          onClick: () => window.location.reload(),
+        }}
+      />
     );
   }
 
@@ -130,7 +145,7 @@ export function FocusTab({
               isDarkTheme ? "text-white" : "text-gray-900"
             }`}
           >
-            Focus ({markedAsReadConversations.length})
+            Focus ({filteredMarkedAsRead.length})
           </h2>
           <div
             className={`px-2 py-1 rounded-full text-xs font-medium ${
@@ -139,7 +154,7 @@ export function FocusTab({
                 : "bg-blue-100 text-blue-700 border border-blue-200"
             }`}
           >
-            {markedAsReadConversations.reduce(
+            {filteredMarkedAsRead.reduce(
               (total, conversation) => total + (conversation.replyCount || 0),
               0
             )}{" "}
@@ -157,7 +172,7 @@ export function FocusTab({
 
       <div className="flex-1">
         <ConversationList
-          conversations={markedAsReadConversations}
+          conversations={filteredMarkedAsRead}
           viewMode={viewMode}
           loading={loading}
           observerRef={observerRef}
