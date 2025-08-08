@@ -3,6 +3,7 @@ import type { UnrepliedDetail } from "@/types/types";
 import { ConversationList } from "./ConversationList";
 import { FocusTutorial } from "./FocusTutorial";
 import type { RefObject } from "react";
+import { isToday, isWithinLastDays } from "@/utils/farcaster";
 
 interface FocusTabProps {
   markedAsReadConversations: UnrepliedDetail[];
@@ -36,6 +37,21 @@ export function FocusTab({
   dayFilter,
 }: FocusTabProps) {
   const [showTutorial, setShowTutorial] = useState(false);
+
+  // Apply date filter to focus items
+  const filteredMarkedAsRead = React.useMemo(() => {
+    if (!dayFilter || dayFilter === "all") return markedAsReadConversations;
+    if (dayFilter === "today") {
+      return markedAsReadConversations.filter((c) => isToday(c.timestamp));
+    }
+    if (dayFilter === "3days") {
+      return markedAsReadConversations.filter((c) => isWithinLastDays(c.timestamp, 3));
+    }
+    if (dayFilter === "7days") {
+      return markedAsReadConversations.filter((c) => isWithinLastDays(c.timestamp, 7));
+    }
+    return markedAsReadConversations;
+  }, [markedAsReadConversations, dayFilter]);
 
   // Check if tutorial has been completed
   useEffect(() => {
@@ -82,7 +98,7 @@ export function FocusTab({
     );
   }
 
-  if (markedAsReadConversations.length === 0) {
+  if (filteredMarkedAsRead.length === 0) {
     return (
       <div className="flex items-center justify-center py-12">
         <div className="text-center">
@@ -130,7 +146,7 @@ export function FocusTab({
               isDarkTheme ? "text-white" : "text-gray-900"
             }`}
           >
-            Focus ({markedAsReadConversations.length})
+            Focus ({filteredMarkedAsRead.length})
           </h2>
           <div
             className={`px-2 py-1 rounded-full text-xs font-medium ${
@@ -139,7 +155,7 @@ export function FocusTab({
                 : "bg-blue-100 text-blue-700 border border-blue-200"
             }`}
           >
-            {markedAsReadConversations.reduce(
+            {filteredMarkedAsRead.reduce(
               (total, conversation) => total + (conversation.replyCount || 0),
               0
             )}{" "}
@@ -157,7 +173,7 @@ export function FocusTab({
 
       <div className="flex-1">
         <ConversationList
-          conversations={markedAsReadConversations}
+          conversations={filteredMarkedAsRead}
           viewMode={viewMode}
           loading={loading}
           observerRef={observerRef}

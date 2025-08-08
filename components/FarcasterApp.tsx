@@ -15,6 +15,7 @@ import { ToastNotification } from "./ToastNotification";
 import { EmptyState } from "./EmptyState";
 import { sortDetails } from "../utils/farcaster";
 import Image from "next/image";
+import { isToday, isWithinLastDays } from "@/utils/farcaster";
 
 // Local storage keys
 const STORAGE_KEYS = {
@@ -200,6 +201,26 @@ export default function FarcasterApp() {
       return [];
     }
   });
+
+  // Focus header count should respect day filter
+  const filteredFocusCount = React.useMemo(() => {
+    if (dayFilter === "today") {
+      return markedAsReadConversations.filter((c: any) =>
+        isToday(c.timestamp)
+      ).length;
+    }
+    if (dayFilter === "3days") {
+      return markedAsReadConversations.filter((c: any) =>
+        isWithinLastDays(c.timestamp, 3)
+      ).length;
+    }
+    if (dayFilter === "7days") {
+      return markedAsReadConversations.filter((c: any) =>
+        isWithinLastDays(c.timestamp, 7)
+      ).length;
+    }
+    return markedAsReadConversations.length;
+  }, [markedAsReadConversations, dayFilter]);
 
   // State for discarded conversations
   const [discardedConversations, setDiscardedConversations] = useState<any[]>(
@@ -569,10 +590,10 @@ export default function FarcasterApp() {
               {activeTab === "focus" && (
                 <>
                   <span className="font-semibold">
-                    {markedAsReadConversations.length}
+                    {filteredFocusCount}
                   </span>{" "}
                   focus conversation
-                  {markedAsReadConversations.length !== 1 ? "s" : ""}
+                  {filteredFocusCount !== 1 ? "s" : ""}
                 </>
               )}
               {activeTab === "analytics" && (

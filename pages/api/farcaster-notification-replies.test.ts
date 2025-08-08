@@ -126,7 +126,7 @@ describe("/api/farcaster-notification-replies", () => {
 
       const { req, res } = createMocks({
         method: "GET",
-        query: { fid: "123", limit: "25" },
+        query: { fid: "123", limit: "25", dayFilter: "all" },
       });
 
       await handler(req, res);
@@ -137,7 +137,7 @@ describe("/api/farcaster-notification-replies", () => {
       expect(data.unrepliedCount).toBe(2);
       expect(data.unrepliedDetails).toHaveLength(2);
       expect(data.nextCursor).toBe("next-cursor");
-      expect(data.message).toBe("You have 2 unreplied comments today.");
+      expect(data.message).toBe("You have 2 unreplied comments.");
 
       // Check first notification details
       const firstDetail = data.unrepliedDetails[0];
@@ -215,7 +215,7 @@ describe("/api/farcaster-notification-replies", () => {
 
       const { req, res } = createMocks({
         method: "GET",
-        query: { fid: "123" },
+        query: { fid: "123", dayFilter: "all" },
       });
 
       await handler(req, res);
@@ -276,7 +276,7 @@ describe("/api/farcaster-notification-replies", () => {
 
       const { req, res } = createMocks({
         method: "GET",
-        query: { fid: "123" },
+        query: { fid: "123", dayFilter: "all" },
       });
 
       await handler(req, res);
@@ -296,7 +296,7 @@ describe("/api/farcaster-notification-replies", () => {
 
       const { req, res } = createMocks({
         method: "GET",
-        query: { fid: "123" },
+        query: { fid: "123", dayFilter: "all" },
       });
 
       await handler(req, res);
@@ -334,7 +334,7 @@ describe("/api/farcaster-notification-replies", () => {
 
       const { req, res } = createMocks({
         method: "GET",
-        query: { fid: "123" },
+        query: { fid: "123", dayFilter: "all" },
       });
 
       await handler(req, res);
@@ -377,7 +377,7 @@ describe("/api/farcaster-notification-replies", () => {
 
       const { req, res } = createMocks({
         method: "GET",
-        query: { fid: "123" },
+        query: { fid: "123", dayFilter: "all" },
       });
 
       await handler(req, res);
@@ -424,7 +424,7 @@ describe("/api/farcaster-notification-replies", () => {
 
       const { req, res } = createMocks({
         method: "GET",
-        query: { fid: "123", cursor: "test-cursor" },
+        query: { fid: "123", cursor: "test-cursor", dayFilter: "all" },
       });
 
       await handler(req, res);
@@ -469,7 +469,7 @@ describe("/api/farcaster-notification-replies", () => {
 
       const { req, res } = createMocks({
         method: "GET",
-        query: { fid: "123", type: "mentions" },
+        query: { fid: "123", type: "mentions", dayFilter: "all" },
       });
 
       await handler(req, res);
