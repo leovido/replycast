@@ -10,6 +10,7 @@ import {
 
 // Analytics event constants
 export const ANALYTICS_EVENTS = {
+  PAGE_VIEW: "page_view",
   APP_OPENED: "app_opened",
   TAB_CHANGED: "tab_changed",
   SWIPE_ACTION: "swipe_action",
@@ -24,6 +25,8 @@ export const ANALYTICS_EVENTS = {
   ERROR_OCCURRED: "error_occurred",
   API_CALL_FAILED: "api_call_failed",
   PERFORMANCE_ISSUE: "performance_issue",
+  USER_IDENTIFIED: "user_identified",
+  PROPERTY_SET: "property_set",
 } as const;
 
 // Analytics action constants
