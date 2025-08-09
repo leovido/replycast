@@ -35,7 +35,7 @@ class VercelAnalytics implements AnalyticsProvider {
   trackError(error: Error, context?: Record<string, any>): void {
     if (typeof window !== "undefined" && this.isInitialized) {
       // Vercel Analytics automatically tracks errors
-      track(ANALYTICS_EVENTS.ERROR_OCCURRED, {
+      track("error_occurred", {
         error: error.message,
         ...context,
       });
@@ -46,7 +46,7 @@ class VercelAnalytics implements AnalyticsProvider {
   trackPageView(pageName: string, properties?: Record<string, any>): void {
     if (typeof window !== "undefined" && this.isInitialized) {
       // Vercel Analytics automatically tracks page views
-      track(ANALYTICS_EVENTS.PAGE_VIEW, { pageName, ...properties });
+      track("page_view", { pageName, ...properties });
       console.log("📊 Vercel Analytics Page View:", pageName, properties);
     }
   }
@@ -55,7 +55,7 @@ class VercelAnalytics implements AnalyticsProvider {
     if (typeof window !== "undefined" && this.isInitialized) {
       // Vercel Analytics doesn't have explicit user setting
       // But we can track user-related events
-      this.trackEvent(ANALYTICS_EVENTS.USER_IDENTIFIED, {
+      this.trackEvent("user_identified", {
         userId,
         ...properties,
       });
@@ -66,7 +66,7 @@ class VercelAnalytics implements AnalyticsProvider {
     if (typeof window !== "undefined" && this.isInitialized) {
       // Vercel Analytics doesn't have explicit property setting
       // But we can track property changes as events
-      this.trackEvent(ANALYTICS_EVENTS.PROPERTY_SET, { key, value });
+      this.trackEvent("property_set", { key, value });
     }
   }
 }
