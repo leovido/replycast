@@ -1,6 +1,7 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { sdk } from "@farcaster/miniapp-sdk";
 import { useAppAnalytics } from "../hooks/useAnalytics";
+import { privacyManager, type PrivacyConfig } from "../utils/privacy";
 
 interface AddToFarcasterButtonProps {
   isDarkTheme: boolean;
@@ -161,6 +162,20 @@ export function SettingsMenu({
   onDayFilterChange,
   isDarkTheme,
 }: SettingsMenuProps) {
+  const [privacyConfig, setPrivacyConfig] = useState<PrivacyConfig>(
+    privacyManager.getConfig()
+  );
+
+  useEffect(() => {
+    setPrivacyConfig(privacyManager.getConfig());
+  }, [isOpen]);
+
+  const handlePrivacyChange = (key: keyof PrivacyConfig, value: boolean) => {
+    const newConfig = { ...privacyConfig, [key]: value };
+    setPrivacyConfig(newConfig);
+    privacyManager.updateConfig({ [key]: value });
+  };
+
   if (!isOpen) return null;
 
   return (
@@ -376,6 +391,133 @@ export function SettingsMenu({
             Mini App
           </h3>
           <AddToFarcasterButton isDarkTheme={isDarkTheme} />
+        </div>
+
+        {/* Privacy Settings Section */}
+        <div className="mb-6">
+          <h3
+            className={`text-sm font-semibold mb-3 ${
+              isDarkTheme ? "text-white/80" : "text-gray-700"
+            }`}
+          >
+            Privacy & Analytics
+          </h3>
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <span
+                className={`text-sm ${
+                  isDarkTheme ? "text-white/70" : "text-gray-600"
+                }`}
+              >
+                Analytics
+              </span>
+              <button
+                onClick={() =>
+                  handlePrivacyChange(
+                    "enableAnalytics",
+                    !privacyConfig.enableAnalytics
+                  )
+                }
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                  privacyConfig.enableAnalytics
+                    ? "bg-blue-500"
+                    : isDarkTheme
+                    ? "bg-white/20"
+                    : "bg-gray-200"
+                }`}
+              >
+                <span
+                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                    privacyConfig.enableAnalytics
+                      ? "translate-x-6"
+                      : "translate-x-1"
+                  }`}
+                />
+              </button>
+            </div>
+
+            <div className="flex items-center justify-between">
+              <span
+                className={`text-sm ${
+                  isDarkTheme ? "text-white/70" : "text-gray-600"
+                }`}
+              >
+                Error Tracking
+              </span>
+              <button
+                onClick={() =>
+                  handlePrivacyChange(
+                    "enableErrorTracking",
+                    !privacyConfig.enableErrorTracking
+                  )
+                }
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                  privacyConfig.enableErrorTracking
+                    ? "bg-blue-500"
+                    : isDarkTheme
+                    ? "bg-white/20"
+                    : "bg-gray-200"
+                }`}
+              >
+                <span
+                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                    privacyConfig.enableErrorTracking
+                      ? "translate-x-6"
+                      : "translate-x-1"
+                  }`}
+                />
+              </button>
+            </div>
+
+            <div className="flex items-center justify-between">
+              <span
+                className={`text-sm ${
+                  isDarkTheme ? "text-white/70" : "text-gray-600"
+                }`}
+              >
+                Filter Sensitive Data
+              </span>
+              <button
+                onClick={() =>
+                  handlePrivacyChange(
+                    "sensitiveFieldFiltering",
+                    !privacyConfig.sensitiveFieldFiltering
+                  )
+                }
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                  privacyConfig.sensitiveFieldFiltering
+                    ? "bg-blue-500"
+                    : isDarkTheme
+                    ? "bg-white/20"
+                    : "bg-gray-200"
+                }`}
+              >
+                <span
+                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                    privacyConfig.sensitiveFieldFiltering
+                      ? "translate-x-6"
+                      : "translate-x-1"
+                  }`}
+                />
+              </button>
+            </div>
+          </div>
+
+          <div
+            className={`mt-3 p-3 rounded-lg ${
+              isDarkTheme ? "bg-white/5" : "bg-gray-50"
+            }`}
+          >
+            <p
+              className={`text-xs ${
+                isDarkTheme ? "text-white/60" : "text-gray-500"
+              }`}
+            >
+              🔒 ReplyCast uses privacy-focused analytics. No personal data is
+              tracked or stored. All data is anonymous and automatically deleted
+              after 30 days.
+            </p>
+          </div>
         </div>
       </div>
     </div>

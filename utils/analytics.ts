@@ -1,5 +1,6 @@
 import { ANALYTICS_EVENTS } from "@/hooks/useAnalytics";
 import { track } from "@vercel/analytics";
+import { privacyManager } from "./privacy";
 
 export interface AnalyticsProvider {
   init(): void;
@@ -21,22 +22,69 @@ class VercelAnalytics implements AnalyticsProvider {
   }
 
   trackEvent(eventName: string, properties?: Record<string, any>): void {
-    if (typeof window !== "undefined" && this.isInitialized) {
-      // Vercel Analytics automatically tracks events
-      // You can add custom event tracking here if needed
-      track(eventName, properties);
-      console.log("📊 Vercel Analytics Event:", eventName, properties);
+    if (
+      typeof window !== "undefined" &&
+      this.isInitialized &&
+      privacyManager.shouldTrackAnalytics()
+    ) {
+      // Filter out sensitive data before sending
+      const sanitizedProperties = this.sanitizeEventData(properties);
+
+      track(eventName, sanitizedProperties);
+      console.log("📊 Vercel Analytics Event:", eventName, sanitizedProperties);
     }
   }
 
+  private sanitizeEventData(
+    data?: Record<string, any>
+  ): Record<string, any> | undefined {
+    if (!data) return data;
+
+    const sanitized = { ...data };
+
+    // Remove potentially sensitive fields
+    const sensitiveFields = [
+      "fid",
+      "castHash",
+      "username",
+      "userId",
+      "email",
+      "token",
+    ];
+
+    sensitiveFields.forEach((field) => {
+      if (sanitized[field]) {
+        // Hash or remove sensitive data
+        if (field === "castHash") {
+          // Keep only first 8 characters for debugging while maintaining privacy
+          sanitized[field] = sanitized[field].substring(0, 8) + "...";
+        } else if (field === "username" || field === "fid") {
+          // Replace with generic identifier
+          delete sanitized[field];
+          sanitized.hasUser = true;
+        } else {
+          delete sanitized[field];
+        }
+      }
+    });
+
+    return sanitized;
+  }
+
   trackError(error: Error, context?: Record<string, any>): void {
-    if (typeof window !== "undefined" && this.isInitialized) {
-      // Vercel Analytics automatically tracks errors
+    if (
+      typeof window !== "undefined" &&
+      this.isInitialized &&
+      privacyManager.shouldTrackErrors()
+    ) {
+      // Filter sensitive data from error context
+      const sanitizedContext = this.sanitizeEventData(context);
+
       track("error_occurred", {
         error: error.message,
-        ...context,
+        ...sanitizedContext,
       });
-      console.error("📊 Vercel Analytics Error:", error, context);
+      console.error("📊 Vercel Analytics Error:", error, sanitizedContext);
     }
   }
 
