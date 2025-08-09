@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { sdk } from "@farcaster/miniapp-sdk";
+import { SignInButton } from "@farcaster/auth-kit";
 
 interface FarcasterSignInProps {
   onSignIn: (user: {
@@ -70,58 +71,22 @@ export function FarcasterSignIn({ onSignIn, onError }: FarcasterSignInProps) {
     checkEnvironment();
   }, [onSignIn]);
 
-  const handleSignIn = async () => {
-    setIsLoading(true);
-    setError(null);
-
+  const handleSignInSuccess = (data: any) => {
     try {
-      // Check if signIn action is available
-      if (!sdk.actions?.signIn) {
-        // Fallback: simulate sign-in for demo purposes
-
-        const mockUser = {
-          fid: 12345,
-          username: "demo_user",
-          displayName: "Demo User",
-          pfpUrl: "https://randomuser.me/api/portraits/men/1.jpg",
-        };
-        onSignIn(mockUser);
-        return;
-      }
-
-      // Generate a secure nonce (in production, this should come from your server)
-      const nonce =
-        Math.random().toString(36).substring(2, 15) +
-        Math.random().toString(36).substring(2, 15);
-
-      const result = await sdk.actions.signIn({
-        nonce,
-      });
-
-      // In a real app, you would send this to your server for verification
-      // For now, we'll simulate a successful sign-in
-
-      // Simulate getting user data (in production, verify with your server)
-      const mockUser = {
-        fid: 12345, // This would come from server verification
-        username: "user123",
-        displayName: "Farcaster User",
-        pfpUrl: "https://randomuser.me/api/portraits/men/1.jpg",
-      };
-
-      onSignIn(mockUser);
-    } catch (err) {
-      const error = err as Error;
-      console.error("Sign in error:", error.message);
-      const errorMessage =
-        err instanceof Error
-          ? err.message
-          : "Failed to sign in with Farcaster. Please try again.";
-      setError(errorMessage);
-      onError("Sign in failed");
-    } finally {
-      setIsLoading(false);
+      const { fid, username, displayName, pfpUrl } = data || {};
+      if (!fid) throw new Error("Missing fid from sign-in response");
+      onSignIn({ fid, username, displayName, pfpUrl });
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "Sign in parsing error";
+      setError(msg);
+      onError(msg);
     }
+  };
+
+  const handleSignInError = (e: any) => {
+    const msg = e instanceof Error ? e.message : "Failed to sign in with Farcaster.";
+    setError(msg);
+    onError(msg);
   };
 
   // If we're in a Mini App and context is available, don't show sign-in
@@ -162,23 +127,11 @@ export function FarcasterSignIn({ onSignIn, onError }: FarcasterSignInProps) {
             </div>
           )}
 
-          <button
-            onClick={handleSignIn}
-            disabled={isLoading}
+          <SignInButton
+            onSuccess={handleSignInSuccess}
+            onError={handleSignInError}
             className="w-full bg-white text-purple-600 font-semibold py-3 px-6 rounded-lg hover:bg-gray-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
-          >
-            {isLoading ? (
-              <>
-                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-purple-600"></div>
-                <span>Signing in...</span>
-              </>
-            ) : (
-              <>
-                <span>🔗</span>
-                <span>Connect with Farcaster</span>
-              </>
-            )}
-          </button>
+          />
 
           <div className="text-center text-white/60 text-sm mt-6">
             <p>
