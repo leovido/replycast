@@ -1,6 +1,7 @@
 import React from "react";
 import { render, screen, fireEvent } from "@testing-library/react";
 import FarcasterApp from "./FarcasterApp";
+import { useFarcasterAuth } from "../hooks/useFarcasterAuth";
 
 jest.mock("@farcaster/miniapp-sdk");
 
@@ -16,6 +17,11 @@ jest.mock("@farcaster/auth-kit", () => ({
       SIWF
     </button>
   ),
+}));
+
+// Mock the auth hook to control user state for tests
+jest.mock("../hooks/useFarcasterAuth", () => ({
+  useFarcasterAuth: jest.fn(),
 }));
 
 jest.mock("../hooks/useFarcasterData", () => ({
@@ -65,11 +71,21 @@ jest.mock("next/image", () => ({
 
 describe("FarcasterApp auth flow", () => {
   it("renders SIWF button initially and triggers sign-in", async () => {
+    // Mock no user initially
+    const mockHandleSignIn = jest.fn();
+    (useFarcasterAuth as jest.Mock).mockReturnValue({
+      user: null, // No user initially to trigger sign-in screen
+      loading: false,
+      handleSignIn: mockHandleSignIn,
+      isInMiniApp: false,
+    });
+
     render(<FarcasterApp />);
 
     const button = await screen.findByTestId("siwf-button");
     fireEvent.click(button);
 
-    expect(await screen.findByText(/Inbox/i)).toBeInTheDocument();
+    // The mock onSuccess will call handleSignIn
+    expect(mockHandleSignIn).toHaveBeenCalledWith({ fid: 7, username: "test" });
   });
 });

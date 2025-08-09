@@ -1,5 +1,6 @@
 import React, { useEffect } from "react";
 import { createPortal } from "react-dom";
+import { SignInButton } from "@farcaster/auth-kit";
 
 interface QRCodeModalProps {
   isOpen: boolean;
@@ -7,6 +8,8 @@ interface QRCodeModalProps {
   qrCodeUri?: string;
   isLoading: boolean;
   error?: string;
+  onSignInSuccess?: (data: any) => void;
+  onSignInError?: (error: any) => void;
 }
 
 export function QRCodeModal({
@@ -15,6 +18,8 @@ export function QRCodeModal({
   qrCodeUri,
   isLoading,
   error,
+  onSignInSuccess,
+  onSignInError,
 }: QRCodeModalProps) {
   // Close modal on Escape key
   useEffect(() => {
@@ -123,7 +128,7 @@ export function QRCodeModal({
               </div>
 
               {/* Instructions */}
-              <div className="space-y-3">
+              <div className="space-y-3 text-center">
                 <p className="text-gray-600 text-sm">
                   Scan this QR code with your Farcaster app
                 </p>
@@ -132,13 +137,37 @@ export function QRCodeModal({
                     <img
                       src="/fc-logo.png"
                       alt="Farcaster"
-                      className="w-10 h-10"
+                      className="w-5 h-5 rounded border bg-white"
                     />
                   </div>
+                  <span className="text-xs text-gray-500">
+                    Works with Warpcast and other Farcaster clients
+                  </span>
                 </div>
+
+                {/* Copy Link Button */}
+                <button
+                  onClick={() => {
+                    if (qrCodeUri) {
+                      navigator.clipboard.writeText(qrCodeUri);
+                      // You could add a toast notification here
+                    }
+                  }}
+                  className="text-xs text-purple-600 hover:text-purple-700 underline transition-colors"
+                >
+                  Copy sign-in link
+                </button>
               </div>
             </div>
           )}
+
+          {/* Alternative sign-in */}
+          <div className="mt-6 pt-6 border-t border-gray-200">
+            <p className="text-center text-gray-500 text-sm mb-4">
+              Or sign in directly:
+            </p>
+            <SignInButton onSuccess={onSignInSuccess} onError={onSignInError} />
+          </div>
         </div>
       </div>
     </div>

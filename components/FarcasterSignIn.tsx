@@ -155,6 +155,25 @@ export function FarcasterSignIn({ onSignIn, onError }: FarcasterSignInProps) {
               <img src="/fc-logo.png" alt="Farcaster" width={24} height={24} />
               <span>Sign In with Farcaster</span>
             </Button>
+
+            {/* Secondary Traditional Sign-In Button */}
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-white/20"></div>
+              </div>
+              <div className="relative flex justify-center text-sm">
+                <span className="bg-gradient-to-br from-purple-600 to-blue-500 px-3 text-white/60">
+                  or
+                </span>
+              </div>
+            </div>
+
+            <div className="w-full">
+              <SignInButton
+                onSuccess={handleSignInSuccess}
+                onError={handleSignInError}
+              />
+            </div>
           </div>
 
           {/* QR Code Modal */}
@@ -164,6 +183,8 @@ export function FarcasterSignIn({ onSignIn, onError }: FarcasterSignInProps) {
             qrCodeUri="https://warpcast.com/~/sign-in-with-farcaster"
             isLoading={false}
             error={undefined}
+            onSignInSuccess={handleSignInSuccess}
+            onSignInError={handleSignInError}
           />
 
           <div className="text-center text-white/60 text-sm mt-6">
