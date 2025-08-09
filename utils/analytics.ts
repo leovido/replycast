@@ -1,7 +1,6 @@
 import { ANALYTICS_EVENTS } from "@/hooks/useAnalytics";
 import { track } from "@vercel/analytics";
 
-// Vercel Analytics implementation
 export interface AnalyticsProvider {
   init(): void;
   trackEvent(eventName: string, properties?: Record<string, any>): void;
@@ -11,13 +10,11 @@ export interface AnalyticsProvider {
   setProperty(key: string, value: any): void;
 }
 
-// Vercel Analytics implementation
 class VercelAnalytics implements AnalyticsProvider {
   private isInitialized = false;
 
   init(): void {
     if (typeof window !== "undefined" && !this.isInitialized) {
-      // Vercel Analytics is automatically initialized
       this.isInitialized = true;
       console.log("📊 Vercel Analytics initialized");
     }
@@ -46,7 +43,7 @@ class VercelAnalytics implements AnalyticsProvider {
   trackPageView(pageName: string, properties?: Record<string, any>): void {
     if (typeof window !== "undefined" && this.isInitialized) {
       // Vercel Analytics automatically tracks page views
-      track("page_view", { pageName, ...properties });
+      track(ANALYTICS_EVENTS.PAGE_VIEW, { pageName, ...properties });
       console.log("📊 Vercel Analytics Page View:", pageName, properties);
     }
   }
@@ -55,7 +52,7 @@ class VercelAnalytics implements AnalyticsProvider {
     if (typeof window !== "undefined" && this.isInitialized) {
       // Vercel Analytics doesn't have explicit user setting
       // But we can track user-related events
-      this.trackEvent("user_identified", {
+      this.trackEvent(ANALYTICS_EVENTS.USER_IDENTIFIED, {
         userId,
         ...properties,
       });
@@ -66,7 +63,7 @@ class VercelAnalytics implements AnalyticsProvider {
     if (typeof window !== "undefined" && this.isInitialized) {
       // Vercel Analytics doesn't have explicit property setting
       // But we can track property changes as events
-      this.trackEvent("property_set", { key, value });
+      this.trackEvent(ANALYTICS_EVENTS.PROPERTY_SET, { key, value });
     }
   }
 }
