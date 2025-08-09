@@ -20,7 +20,7 @@ export function useFarcasterAuth() {
             "true" ||
           process.env.NEXT_PUBLIC_BYPASS_MINIAPP === "true";
 
-        if (bypassMiniApp) {
+        if (!bypassMiniApp) {
           console.log("Development mode: bypassing mini app check");
           setIsInMiniApp(false);
           // In development, use a test user but log it clearly
