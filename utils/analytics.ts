@@ -1,0 +1,219 @@
+import { ANALYTICS_EVENTS } from "@/hooks/useAnalytics";
+import { track } from "@vercel/analytics";
+import { privacyManager } from "./privacy";
+
+export interface AnalyticsProvider {
+  init(): void;
+  trackEvent(eventName: string, properties?: Record<string, any>): void;
+  trackError(error: Error, context?: Record<string, any>): void;
+  trackPageView(pageName: string, properties?: Record<string, any>): void;
+  setUser(userId: string, properties?: Record<string, any>): void;
+  setProperty(key: string, value: any): void;
+}
+
+class VercelAnalytics implements AnalyticsProvider {
+  private isInitialized = false;
+
+  init(): void {
+    if (typeof window !== "undefined" && !this.isInitialized) {
+      this.isInitialized = true;
+      console.log("📊 Vercel Analytics initialized");
+    }
+  }
+
+  trackEvent(eventName: string, properties?: Record<string, any>): void {
+    if (
+      typeof window !== "undefined" &&
+      this.isInitialized &&
+      privacyManager.shouldTrackAnalytics()
+    ) {
+      // Filter out sensitive data before sending
+      const sanitizedProperties = this.sanitizeEventData(properties);
+
+      track(eventName, sanitizedProperties);
+      console.log("📊 Vercel Analytics Event:", eventName, sanitizedProperties);
+    }
+  }
+
+  private sanitizeEventData(
+    data?: Record<string, any>
+  ): Record<string, any> | undefined {
+    if (!data) return data;
+
+    const sanitized = { ...data };
+
+    // Remove potentially sensitive fields
+    const sensitiveFields = [
+      "fid",
+      "castHash",
+      "username",
+      "userId",
+      "email",
+      "token",
+    ];
+
+    sensitiveFields.forEach((field) => {
+      if (sanitized[field]) {
+        // Hash or remove sensitive data
+        if (field === "castHash") {
+          // Keep only first 8 characters for debugging while maintaining privacy
+          sanitized[field] = sanitized[field].substring(0, 8) + "...";
+        } else if (field === "username" || field === "fid") {
+          // Replace with generic identifier
+          delete sanitized[field];
+          sanitized.hasUser = true;
+        } else {
+          delete sanitized[field];
+        }
+      }
+    });
+
+    return sanitized;
+  }
+
+  trackError(error: Error, context?: Record<string, any>): void {
+    if (
+      typeof window !== "undefined" &&
+      this.isInitialized &&
+      privacyManager.shouldTrackErrors()
+    ) {
+      // Filter sensitive data from error context
+      const sanitizedContext = this.sanitizeEventData(context);
+
+      track("error_occurred", {
+        error: error.message,
+        ...sanitizedContext,
+      });
+      console.error("📊 Vercel Analytics Error:", error, sanitizedContext);
+    }
+  }
+
+  trackPageView(pageName: string, properties?: Record<string, any>): void {
+    if (typeof window !== "undefined" && this.isInitialized) {
+      // Vercel Analytics automatically tracks page views
+      track(ANALYTICS_EVENTS.PAGE_VIEW, { pageName, ...properties });
+      console.log("📊 Vercel Analytics Page View:", pageName, properties);
+    }
+  }
+
+  setUser(userId: string, properties?: Record<string, any>): void {
+    if (typeof window !== "undefined" && this.isInitialized) {
+      // Vercel Analytics doesn't have explicit user setting
+      // But we can track user-related events
+      this.trackEvent(ANALYTICS_EVENTS.USER_IDENTIFIED, {
+        userId,
+        ...properties,
+      });
+    }
+  }
+
+  setProperty(key: string, value: any): void {
+    if (typeof window !== "undefined" && this.isInitialized) {
+      // Vercel Analytics doesn't have explicit property setting
+      // But we can track property changes as events
+      this.trackEvent(ANALYTICS_EVENTS.PROPERTY_SET, { key, value });
+    }
+  }
+}
+
+// Analytics configuration
+interface AnalyticsConfig {
+  enabled: boolean;
+  debug?: boolean;
+}
+
+// Analytics manager
+class AnalyticsManager {
+  private provider: AnalyticsProvider;
+  private config: AnalyticsConfig;
+
+  constructor(config: AnalyticsConfig) {
+    this.config = config;
+    this.provider = new VercelAnalytics();
+  }
+
+  init(): void {
+    if (this.config.enabled) {
+      this.provider.init();
+    }
+  }
+
+  trackEvent(eventName: string, properties?: Record<string, any>): void {
+    if (this.config.enabled) {
+      this.provider.trackEvent(eventName, properties);
+    }
+  }
+
+  trackError(error: Error, context?: Record<string, any>): void {
+    if (this.config.enabled) {
+      this.provider.trackError(error, context);
+    }
+  }
+
+  trackPageView(pageName: string, properties?: Record<string, any>): void {
+    if (this.config.enabled) {
+      this.provider.trackPageView(pageName, properties);
+    }
+  }
+
+  setUser(userId: string, properties?: Record<string, any>): void {
+    if (this.config.enabled) {
+      this.provider.setUser(userId, properties);
+    }
+  }
+
+  setProperty(key: string, value: any): void {
+    if (this.config.enabled) {
+      this.provider.setProperty(key, value);
+    }
+  }
+
+  // Method to enable/disable analytics
+  setEnabled(enabled: boolean): void {
+    this.config.enabled = enabled;
+    console.log(`📊 Analytics ${enabled ? "enabled" : "disabled"}`);
+  }
+}
+
+// Default configuration
+const defaultConfig: AnalyticsConfig = {
+  enabled:
+    process.env.NODE_ENV === "production" ||
+    process.env.NEXT_PUBLIC_ANALYTICS_ENABLED === "true",
+  debug: process.env.NODE_ENV === "development",
+};
+
+// Create and export the analytics instance
+export const analytics = new AnalyticsManager(defaultConfig);
+
+// Convenience functions for easy usage
+export const trackEvent = (
+  eventName: string,
+  properties?: Record<string, any>
+) => {
+  analytics.trackEvent(eventName, properties);
+};
+
+export const trackError = (error: Error, context?: Record<string, any>) => {
+  analytics.trackError(error, context);
+};
+
+export const trackPageView = (
+  pageName: string,
+  properties?: Record<string, any>
+) => {
+  analytics.trackPageView(pageName, properties);
+};
+
+export const setUser = (userId: string, properties?: Record<string, any>) => {
+  analytics.setUser(userId, properties);
+};
+
+export const setProperty = (key: string, value: any) => {
+  analytics.setProperty(key, value);
+};
+
+// Initialize analytics
+if (typeof window !== "undefined") {
+  analytics.init();
+}

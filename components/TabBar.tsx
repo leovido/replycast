@@ -1,5 +1,6 @@
 import React from "react";
 import { sdk } from "@farcaster/miniapp-sdk";
+import { useAppAnalytics } from "../hooks/useAnalytics";
 
 export type TabType = "inbox" | "focus" | "analytics";
 
@@ -76,6 +77,21 @@ export function TabBar({
   isDarkTheme,
   themeMode,
 }: TabBarProps) {
+  const { trackTabChanged } = useAppAnalytics();
+
+  const handleTabChange = (tab: TabType) => {
+    // Track tab change
+    trackTabChanged(tab, {
+      previousTab: activeTab,
+      theme: themeMode,
+    });
+
+    // Trigger haptic feedback
+    sdk.haptics?.impactOccurred?.("light");
+
+    // Call the original onTabChange
+    onTabChange(tab);
+  };
   const getBackgroundClass = () => {
     switch (themeMode) {
       case "dark":
@@ -132,10 +148,7 @@ export function TabBar({
           return (
             <button
               key={tab.id}
-              onClick={() => {
-                sdk.haptics?.impactOccurred?.("light");
-                onTabChange(tab.id);
-              }}
+              onClick={() => handleTabChange(tab.id)}
               className={`flex flex-col items-center justify-center w-full py-2 rounded-lg transition-all duration-200 ${
                 isActive ? "scale-105" : "hover:scale-102 hover:bg-white/5"
               }`}

@@ -13,11 +13,15 @@ module.exports = {
   testTimeout: 10000,
   moduleNameMapper: {
     "^@/(.*)$": "<rootDir>/$1",
+    "^@vercel/analytics$": "<rootDir>/__mocks__/@vercel/analytics.js",
   },
   transform: {
     "^.+\\.(js|jsx|ts|tsx)$": "babel-jest",
   },
-  transformIgnorePatterns: ["node_modules/(?!(@farcaster|@testing-library)/)"],
+  transformIgnorePatterns: [
+    "node_modules/(?!@ngrx|(?!deck.gl)|ng-dynamic)",
+    "node_modules/(?!(@farcaster|@testing-library)/)",
+  ],
   // Add these options to help with test isolation
   maxWorkers: 1, // Run tests sequentially
   maxConcurrency: 1, // Limit concurrent test execution

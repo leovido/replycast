@@ -1,0 +1,22 @@
+{
+  "name": "ReplyCast - Never Miss a Reply",
+  "short_name": "ReplyCast",
+  "description": "Track and reply to your unreplied Farcaster conversations. Stay engaged with your community!",
+  "icons": [
+    {
+      "src": "/favicon.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    },
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ],
+  "theme_color": "#6C2BD7",
+  "background_color": "#6C2BD7",
+  "display": "standalone",
+  "start_url": "/",
+  "scope": "/"
+}

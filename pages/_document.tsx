@@ -56,6 +56,12 @@ export default function Document() {
           content="width=device-width, initial-scale=1, user-scalable=no"
         />
 
+        {/* Favicon */}
+        <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+        <link rel="icon" href="/favicon.png" type="image/png" />
+        <link rel="apple-touch-icon" href="/favicon.png" />
+        <link rel="manifest" href="/site.webmanifest" />
+
         {/* Touch Event Meta Tags for iframe/WebView environments */}
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />

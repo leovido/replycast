@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Button } from "./Button";
+import { useAppAnalytics, ANALYTICS_ACTIONS } from "../hooks/useAnalytics";
 
 interface FocusTutorialProps {
   isDarkTheme: boolean;
@@ -12,6 +13,7 @@ export function FocusTutorial({
   themeMode = "Farcaster",
   onComplete,
 }: FocusTutorialProps) {
+  const { trackTutorialCompleted } = useAppAnalytics();
   const [isAnimating, setIsAnimating] = useState(false);
   const [showConfirmation, setShowConfirmation] = useState(false);
 
@@ -42,6 +44,11 @@ export function FocusTutorial({
 
   const handleConfirm = () => {
     setShowConfirmation(true);
+
+    // Track tutorial completion
+    trackTutorialCompleted(ANALYTICS_ACTIONS.TUTORIAL.FOCUS_TUTORIAL, {
+      theme: themeMode,
+    });
 
     // Store that user has seen the tutorial
     if (typeof window !== "undefined") {

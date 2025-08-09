@@ -2,6 +2,7 @@ import React, { memo, useState, useRef, useEffect, useCallback } from "react";
 import Image from "next/image";
 import { sdk } from "@farcaster/miniapp-sdk";
 import type { UnrepliedDetail } from "@/types/types";
+import { useAppAnalytics } from "../hooks/useAnalytics";
 
 export interface ReplyCardProps {
   detail: UnrepliedDetail;
@@ -25,6 +26,7 @@ export const ReplyCard = memo<ReplyCardProps>(
     onMarkAsRead,
     onDiscard,
   }) => {
+    const { trackCastViewed } = useAppAnalytics();
     const [isDragging, setIsDragging] = useState(false);
     const [dragOffset, setDragOffset] = useState(0);
     const [isSwipeModeActive, setIsSwipeModeActive] = useState(false);

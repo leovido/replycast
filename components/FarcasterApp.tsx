@@ -4,6 +4,7 @@ import { useFarcasterAuth } from "../hooks/useFarcasterAuth";
 import { useOpenRank } from "../hooks/useOpenRank";
 import { useFarcasterData } from "../hooks/useFarcasterData";
 import { useInfiniteScroll } from "../hooks/useInfiniteScroll";
+import { useAppAnalytics, ANALYTICS_ACTIONS } from "../hooks/useAnalytics";
 import { ConversationList } from "./ConversationList";
 import { LoadingScreen } from "./LoadingScreen";
 import { FarcasterSignIn } from "./FarcasterSignIn";
@@ -47,6 +48,19 @@ const setStoredValue = <T,>(key: string, value: T): void => {
 };
 
 export default function FarcasterApp() {
+  // Initialize analytics
+  const {
+    trackAppOpened,
+    trackTabChanged,
+    trackThemeChanged,
+    trackSettingsOpened,
+    trackMarkAsRead,
+    trackDiscardCast,
+    trackRefreshData,
+    trackAppError,
+    trackCastViewed,
+  } = useAppAnalytics();
+
   // Initialize state from local storage
   const [themeMode, setThemeMode] = useState<"dark" | "light" | "Farcaster">(
     () => {
@@ -78,6 +92,17 @@ export default function FarcasterApp() {
     "all" | "today" | "3days" | "7days"
   >(() => getStoredValue(STORAGE_KEYS.DAY_FILTER, "today"));
 
+  // Track app opened
+  useEffect(() => {
+    trackAppOpened({
+      theme: themeMode,
+      activeTab,
+      isInMiniApp:
+        typeof window !== "undefined" &&
+        window.location.href.includes("farcaster"),
+    });
+  }, []); // Only run once on mount
+
   // Update local storage when settings change
   useEffect(() => {
     setStoredValue(STORAGE_KEYS.THEME_MODE, themeMode);
@@ -85,7 +110,12 @@ export default function FarcasterApp() {
 
   useEffect(() => {
     setStoredValue(STORAGE_KEYS.ACTIVE_TAB, activeTab);
-  }, [activeTab]);
+    // Track tab changes
+    trackTabChanged(activeTab, {
+      previousTab: activeTab,
+      theme: themeMode,
+    });
+  }, [activeTab, trackTabChanged, themeMode]);
 
   useEffect(() => {
     setStoredValue(STORAGE_KEYS.VIEW_MODE, viewMode);
@@ -103,6 +133,10 @@ export default function FarcasterApp() {
 
   const handleThemeChange = (newTheme: "dark" | "light" | "Farcaster") => {
     setThemeMode(newTheme);
+    trackThemeChanged(newTheme, {
+      previousTheme: themeMode,
+      activeTab,
+    });
   };
 
   const getBackgroundClass = () => {
@@ -342,6 +376,13 @@ export default function FarcasterApp() {
       // Show success toast
       showToast("Marked as read", "success");
 
+      // Track analytics
+      trackMarkAsRead(detail.castHash, {
+        username: detail.username,
+        activeTab,
+        theme: themeMode,
+      });
+
       return newList;
     });
   };
@@ -371,6 +412,13 @@ export default function FarcasterApp() {
           // Ignore storage errors
         }
       }
+
+      // Track analytics
+      trackDiscardCast(detail.castHash, {
+        username: detail.username,
+        activeTab,
+        theme: themeMode,
+      });
 
       return newList;
     });
@@ -429,6 +477,12 @@ export default function FarcasterApp() {
     // Trigger refresh if pulled down enough and fast enough
     if (deltaY > 80 && deltaTime < 1000 && window.scrollY === 0) {
       setIsRefreshingPull(true);
+      // Track refresh analytics
+      trackRefreshData({
+        method: ANALYTICS_ACTIONS.REFRESH.PULL_TO_REFRESH,
+        activeTab,
+        theme: themeMode,
+      });
       handleRefresh().finally(() => {
         setIsRefreshingPull(false);
         setPullDistance(0);
@@ -635,6 +689,10 @@ export default function FarcasterApp() {
             onClick={() => {
               sdk.haptics?.impactOccurred?.("light");
               setIsSettingsOpen(true);
+              trackSettingsOpened({
+                activeTab,
+                theme: themeMode,
+              });
             }}
             className={`p-3 rounded-xl transition-all duration-200 ${
               isDarkTheme
@@ -804,8 +862,19 @@ export default function FarcasterApp() {
                   onReply={async (detail) => {
                     try {
                       await sdk.actions.viewCast({ hash: detail.castHash });
+                      // Track cast viewed
+                      trackCastViewed(detail.castHash, {
+                        username: detail.username,
+                        activeTab,
+                        theme: themeMode,
+                      });
                     } catch (error) {
                       console.error("Failed to open cast:", error);
+                      trackAppError(error as Error, {
+                        action: "view_cast",
+                        castHash: detail.castHash,
+                        activeTab,
+                      });
                     }
                   }}
                   dayFilter={dayFilter}
@@ -826,8 +895,19 @@ export default function FarcasterApp() {
               onReply={async (detail) => {
                 try {
                   await sdk.actions.viewCast({ hash: detail.castHash });
+                  // Track cast viewed
+                  trackCastViewed(detail.castHash, {
+                    username: detail.username,
+                    activeTab,
+                    theme: themeMode,
+                  });
                 } catch (error) {
                   console.error("Failed to open cast:", error);
+                  trackAppError(error as Error, {
+                    action: "view_cast",
+                    castHash: detail.castHash,
+                    activeTab,
+                  });
                 }
               }}
               isDarkTheme={isDarkTheme}
