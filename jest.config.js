@@ -1,32 +1,19 @@
-module.exports = {
+/** @type {import('jest').Config} */
+const config = {
   testEnvironment: "jsdom",
-  testMatch: ["**/*.test.js", "**/*.test.ts", "**/*.test.tsx"],
-  collectCoverageFrom: [
-    "test-api-local.js",
-    "test-api-simple.js",
-    "pages/api/**/*.ts",
-    "components/**/*.tsx",
-    "!**/node_modules/**",
-  ],
-  coverageReporters: ["text", "lcov", "html"],
   setupFilesAfterEnv: ["<rootDir>/jest.setup.js"],
-  testTimeout: 10000,
   moduleNameMapper: {
-    "^@/(.*)$": "<rootDir>/$1",
-    "^@vercel/analytics$": "<rootDir>/__mocks__/@vercel/analytics.js",
+    "^@/(.*)": "<rootDir>/$1",
+    "^@farcaster/miniapp-sdk$": "<rootDir>/__mocks__/@farcaster/miniapp-sdk.js",
+    "^@farcaster/auth-kit$": "<rootDir>/__mocks__/@farcaster/auth-kit.js",
+    "^@vercel/analytics(\/next)?$": "<rootDir>/__mocks__/@vercel/analytics.js",
   },
   transform: {
-    "^.+\\.(js|jsx|ts|tsx)$": "babel-jest",
+    "^.+\\.(t|j)sx?$": "babel-jest",
   },
   transformIgnorePatterns: [
     "node_modules/(?!@ngrx|(?!deck.gl)|ng-dynamic)",
-    "node_modules/(?!(@farcaster|@testing-library)/)",
   ],
-  // Add these options to help with test isolation
-  maxWorkers: 1, // Run tests sequentially
-  maxConcurrency: 1, // Limit concurrent test execution
-  // Clear mocks between tests
-  clearMocks: true,
-  // Reset modules between tests
-  resetModules: true,
 };
+
+module.exports = config;

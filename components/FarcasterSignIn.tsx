@@ -1,5 +1,8 @@
 import { useState, useEffect } from "react";
 import { sdk } from "@farcaster/miniapp-sdk";
+import { SignInButton } from "@farcaster/auth-kit";
+import { QRCodeModal } from "./QRCodeModal";
+import { Button } from "./Button";
 
 interface FarcasterSignInProps {
   onSignIn: (user: {
@@ -15,6 +18,15 @@ export function FarcasterSignIn({ onSignIn, onError }: FarcasterSignInProps) {
   const [isInMiniApp, setIsInMiniApp] = useState<boolean | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showQRModal, setShowQRModal] = useState(false);
+
+  // Generate a random nonce for SIWF
+  const [nonce] = useState(() => {
+    return Array.from(crypto.getRandomValues(new Uint8Array(32)))
+      .map((b) => b.toString(16).padStart(2, "0"))
+
+      .join("");
+  });
 
   useEffect(() => {
     const checkEnvironment = async () => {
@@ -70,59 +82,28 @@ export function FarcasterSignIn({ onSignIn, onError }: FarcasterSignInProps) {
     checkEnvironment();
   }, [onSignIn]);
 
-  const handleSignIn = async () => {
-    setIsLoading(true);
-    setError(null);
-
+  const handleSignInSuccess = (data: any) => {
     try {
-      // Check if signIn action is available
-      if (!sdk.actions?.signIn) {
-        // Fallback: simulate sign-in for demo purposes
-
-        const mockUser = {
-          fid: 12345,
-          username: "demo_user",
-          displayName: "Demo User",
-          pfpUrl: "https://randomuser.me/api/portraits/men/1.jpg",
-        };
-        onSignIn(mockUser);
-        return;
-      }
-
-      // Generate a secure nonce (in production, this should come from your server)
-      const nonce =
-        Math.random().toString(36).substring(2, 15) +
-        Math.random().toString(36).substring(2, 15);
-
-      const result = await sdk.actions.signIn({
-        nonce,
-      });
-
-      // In a real app, you would send this to your server for verification
-      // For now, we'll simulate a successful sign-in
-
-      // Simulate getting user data (in production, verify with your server)
-      const mockUser = {
-        fid: 12345, // This would come from server verification
-        username: "user123",
-        displayName: "Farcaster User",
-        pfpUrl: "https://randomuser.me/api/portraits/men/1.jpg",
-      };
-
-      onSignIn(mockUser);
-    } catch (err) {
-      const error = err as Error;
-      console.error("Sign in error:", error.message);
-      const errorMessage =
-        err instanceof Error
-          ? err.message
-          : "Failed to sign in with Farcaster. Please try again.";
-      setError(errorMessage);
-      onError("Sign in failed");
-    } finally {
-      setIsLoading(false);
+      const { fid, username, displayName, pfpUrl } = data || {};
+      if (!fid) throw new Error("Missing fid from sign-in response");
+      setShowQRModal(false); // Close modal on success
+      onSignIn({ fid, username, displayName, pfpUrl });
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "Sign in parsing error";
+      setError(msg);
+      onError(msg);
     }
   };
+
+  const handleSignInError = (e: any) => {
+    const msg =
+      e instanceof Error ? e.message : "Failed to sign in with Farcaster.";
+    setError(msg);
+    onError(msg);
+  };
+
+  // For now, we'll keep it simple and enhance the UI without the custom hook
+  // TODO: Implement useSignIn hook when available
 
   // If we're in a Mini App and context is available, don't show sign-in
   if (isInMiniApp === true) {
@@ -162,23 +143,49 @@ export function FarcasterSignIn({ onSignIn, onError }: FarcasterSignInProps) {
             </div>
           )}
 
-          <button
-            onClick={handleSignIn}
-            disabled={isLoading}
-            className="w-full bg-white text-purple-600 font-semibold py-3 px-6 rounded-lg hover:bg-gray-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
-          >
-            {isLoading ? (
-              <>
-                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-purple-600"></div>
-                <span>Signing in...</span>
-              </>
-            ) : (
-              <>
-                <span>🔗</span>
-                <span>Connect with Farcaster</span>
-              </>
-            )}
-          </button>
+          {/* Custom Sign-In Buttons */}
+          <div className="space-y-3">
+            {/* Primary Enhanced Sign-In Button */}
+            <Button
+              onClick={() => setShowQRModal(true)}
+              disabled={isLoading}
+              className="w-full bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 disabled:from-purple-400 disabled:to-purple-500 text-white font-semibold py-4 px-6 rounded-xl transition-all duration-200 transform hover:scale-[1.02] disabled:scale-100 disabled:cursor-not-allowed flex items-center justify-center space-x-3 shadow-lg"
+            >
+              {/* Replacing <Image> with <img> for better compatibility */}
+              <img src="/fc-logo.png" alt="Farcaster" width={24} height={24} />
+              <span>Sign In with Farcaster</span>
+            </Button>
+
+            {/* Secondary Traditional Sign-In Button */}
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-white/20"></div>
+              </div>
+              <div className="relative flex justify-center text-sm">
+                <span className="bg-gradient-to-br from-purple-600 to-blue-500 px-3 text-white/60">
+                  or
+                </span>
+              </div>
+            </div>
+
+            <div className="w-full">
+              <SignInButton
+                onSuccess={handleSignInSuccess}
+                onError={handleSignInError}
+              />
+            </div>
+          </div>
+
+          {/* QR Code Modal */}
+          <QRCodeModal
+            isOpen={showQRModal}
+            onClose={() => setShowQRModal(false)}
+            qrCodeUri="https://warpcast.com/~/sign-in-with-farcaster"
+            isLoading={false}
+            error={undefined}
+            onSignInSuccess={handleSignInSuccess}
+            onSignInError={handleSignInError}
+          />
 
           <div className="text-center text-white/60 text-sm mt-6">
             <p>

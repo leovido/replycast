@@ -1,24 +1,14 @@
-require("@testing-library/jest-dom");
+import "@testing-library/jest-dom";
 
-// Suppress console.error during tests
+// Silence console errors in tests to reduce noise
 const originalError = console.error;
 beforeAll(() => {
   console.error = (...args) => {
-    const message = args[0];
-
-    // Suppress specific error messages from tests
-    if (
-      typeof message === "string" &&
-      (message.includes("Warning: ReactDOM.render is no longer supported") ||
-        message.includes("Notification replies API error:") ||
-        message.includes("Error checking if user replied:") ||
-        message.includes("Cannot read properties of undefined") ||
-        message.includes("API Error"))
-    ) {
-      return; // Don't log these specific errors
+    const msg = args[0] || "";
+    if (typeof msg === "string" && /Warning:.*not wrapped in act/.test(msg)) {
+      return;
     }
-
-    originalError.call(console, ...args);
+    originalError.apply(console, args);
   };
 });
 
