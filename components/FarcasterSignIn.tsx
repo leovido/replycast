@@ -84,7 +84,8 @@ export function FarcasterSignIn({ onSignIn, onError }: FarcasterSignInProps) {
   };
 
   const handleSignInError = (e: any) => {
-    const msg = e instanceof Error ? e.message : "Failed to sign in with Farcaster.";
+    const msg =
+      e instanceof Error ? e.message : "Failed to sign in with Farcaster.";
     setError(msg);
     onError(msg);
   };
@@ -127,11 +128,12 @@ export function FarcasterSignIn({ onSignIn, onError }: FarcasterSignInProps) {
             </div>
           )}
 
-          <SignInButton
-            onSuccess={handleSignInSuccess}
-            onError={handleSignInError}
-            className="w-full bg-white text-purple-600 font-semibold py-3 px-6 rounded-lg hover:bg-gray-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
-          />
+          <div className="w-full">
+            <SignInButton
+              onSuccess={handleSignInSuccess}
+              onError={handleSignInError}
+            />
+          </div>
 
           <div className="text-center text-white/60 text-sm mt-6">
             <p>
