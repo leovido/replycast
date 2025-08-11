@@ -82,6 +82,15 @@
   transition: transform 0.1s ease-out;
 }
 
+/* During long-press timer, immediately prevent vertical scrolling on mobile */
+body.long-press-active .swipe-enabled {
+  touch-action: pan-x !important;
+  -webkit-touch-action: pan-x !important;
+  /* Prevent any vertical scrolling during long-press */
+  overscroll-behavior-y: contain;
+  -webkit-overflow-scrolling: auto;
+}
+
 /* Active dragging state */
 .swipe-enabled:active {
   cursor: grabbing;

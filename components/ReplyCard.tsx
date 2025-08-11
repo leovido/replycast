@@ -66,6 +66,14 @@ export const ReplyCard = memo<ReplyCardProps>(
 
       hasMovedDuringPress.current = false;
 
+      // Immediately apply touch-action: pan-x to prevent vertical scrolling on mobile
+      try {
+        if (typeof window !== "undefined" && typeof document !== "undefined") {
+          // Add a CSS class to the body that will be applied to all swipe-enabled elements
+          document.body.classList.add("long-press-active");
+        }
+      } catch {}
+
       // Start long press timer for 250ms (faster activation)
       longPressTimer.current = setTimeout(() => {
         // Only activate swipe mode if user hasn't moved (not scrolling)
@@ -95,6 +103,8 @@ export const ReplyCard = memo<ReplyCardProps>(
       // Always unlock vertical scroll and remove listeners when clearing
       try {
         if (typeof window !== "undefined" && typeof document !== "undefined") {
+          // Remove the long-press-active class
+          document.body.classList.remove("long-press-active");
         }
       } catch {}
 
