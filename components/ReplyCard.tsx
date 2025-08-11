@@ -46,6 +46,9 @@ export const ReplyCard = memo<ReplyCardProps>(
     const longPressTimer = useRef<NodeJS.Timeout | null>(null);
     const hasMovedDuringPress = useRef<boolean>(false);
 
+    // Ref to store the global touchmove listener for cleanup
+    const removeGlobalTouchMoveListenerRef = useRef<() => void>(() => {});
+
     const handleProfileClick = async (e: React.MouseEvent) => {
       e.preventDefault();
       e.stopPropagation();
@@ -71,6 +74,45 @@ export const ReplyCard = memo<ReplyCardProps>(
         if (typeof window !== "undefined" && typeof document !== "undefined") {
           // Add a CSS class to the body that will be applied to all swipe-enabled elements
           document.body.classList.add("long-press-active");
+
+          // For real mobile devices, we need to be more aggressive
+          // Add a global touchmove listener that prevents vertical scrolling during long-press
+          const preventVerticalScroll = (evt: TouchEvent) => {
+            // Only prevent if we're in long-press mode and not in swipe mode yet
+            if (longPressTimer.current && !isSwipeModeActive) {
+              // Check if the touch is on a swipe-enabled element
+              const target = evt.target as HTMLElement;
+              const isSwipeElement = target?.closest(".swipe-enabled");
+
+              if (isSwipeElement) {
+                // For swipe elements, check movement direction
+                const touch = evt.touches[0];
+                if (touch) {
+                  const deltaX = Math.abs(touch.clientX - touchStartX.current);
+                  const deltaY = Math.abs(touch.clientY - touchStartY.current);
+
+                  // If movement is more vertical than horizontal, prevent it
+                  if (deltaY > deltaX && deltaY > 5) {
+                    evt.preventDefault();
+                    evt.stopPropagation();
+                  }
+                }
+              }
+            }
+          };
+
+          // Add the listener with passive: false to allow preventDefault
+          document.addEventListener("touchmove", preventVerticalScroll, {
+            passive: false,
+          });
+
+          // Store the listener reference for cleanup
+          removeGlobalTouchMoveListenerRef.current = () => {
+            document.removeEventListener(
+              "touchmove",
+              preventVerticalScroll as EventListener
+            );
+          };
         }
       } catch {}
 
@@ -105,6 +147,12 @@ export const ReplyCard = memo<ReplyCardProps>(
         if (typeof window !== "undefined" && typeof document !== "undefined") {
           // Remove the long-press-active class
           document.body.classList.remove("long-press-active");
+
+          // Remove the global touchmove listener
+          if (removeGlobalTouchMoveListenerRef.current) {
+            removeGlobalTouchMoveListenerRef.current();
+            removeGlobalTouchMoveListenerRef.current = () => {};
+          }
         }
       } catch {}
 
@@ -470,6 +518,13 @@ export const ReplyCard = memo<ReplyCardProps>(
         if (longPressTimer.current) {
           clearTimeout(longPressTimer.current);
         }
+      };
+    }, []);
+
+    // Cleanup global touchmove listener on unmount
+    useEffect(() => {
+      return () => {
+        removeGlobalTouchMoveListenerRef.current();
       };
     }, []);
 
