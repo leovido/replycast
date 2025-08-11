@@ -331,7 +331,7 @@ export default function FarcasterApp() {
 
       // Compose a cast with app information
       const result = await sdk.actions.composeCast({
-        text: `Just discovered ReplyCast - a powerful tool to track unreplied conversations on Farcaster! 🚀\n\nTrack your engagement, focus on important conversations, and never miss a reply again.\n\nCheck it out:`,
+        text: `Just discovered ReplyCast - a powerful tool to track unreplied conversations on Farcaster! 🚀\n\nTrack important conversations, and never miss a reply again.\n\nCheck it out:`,
         embeds: ["https://farcaster.xyz/miniapps/5HKCCpZykEuD/replycast"], // You can update this to your specific app URL
       });
 
