@@ -92,6 +92,12 @@ export const ReplyCard = memo<ReplyCardProps>(
         longPressTimer.current = null;
       }
 
+      // Always unlock vertical scroll and remove listeners when clearing
+      try {
+        if (typeof window !== "undefined" && typeof document !== "undefined") {
+        }
+      } catch {}
+
       // Smooth reset with animation
       if (isSwipeModeActive || isDragging) {
         // Add a small delay for smooth transition back to normal state
@@ -153,6 +159,21 @@ export const ReplyCard = memo<ReplyCardProps>(
           const deltaY = touch.clientY - touchStartY.current;
           const totalMovement = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
 
+          // Enhanced scroll blocking: Block vertical scrolling when long-press timer is active
+          if (longPressTimer.current && !isSwipeModeActive) {
+            // Always prevent default to block vertical scrolling
+            e.preventDefault();
+            e.stopPropagation();
+
+            // Only allow horizontal movement for swiping
+            if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 5) {
+              // This is horizontal movement, allow it to continue
+              return;
+            }
+            // Vertical movement is completely blocked
+            return;
+          }
+
           // If user moves during long press, mark as moved (prevents swipe mode activation)
           if (totalMovement > 10) {
             hasMovedDuringPress.current = true;
@@ -165,39 +186,35 @@ export const ReplyCard = memo<ReplyCardProps>(
             }
           }
 
-          // Only process swipe gestures if swipe mode is active
+          // Enhanced scroll blocking: When swipe mode is active, completely block vertical scrolling
           if (isSwipeModeActive) {
             // Essential for iframe/WebView environments - stop event propagation
             e.stopPropagation();
 
-            // Prevent all vertical scrolling when in swipe mode
-            if (e.cancelable) {
-              e.preventDefault();
-            }
+            // Always prevent default when in swipe mode to stop any scrolling
+            e.preventDefault();
 
-            // Allow horizontal swipes with lower threshold for smoother feel
+            // Only allow horizontal swipes
             if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 5) {
               // Only update state if dragging status changed or significant movement
               if (!isDragging || Math.abs(deltaX - dragOffset) > 2) {
                 setIsDragging(true);
                 setDragOffset(deltaX);
               }
-
-              if (process.env.NODE_ENV === "development") {
-              }
-            } else if (Math.abs(deltaY) > Math.abs(deltaX)) {
-              // Vertical movement - prevent scrolling but don't update drag state
+            } else {
+              // Block any vertical movement completely
               if (isDragging) {
                 setIsDragging(false);
                 setDragOffset(0);
               }
+              // Don't return here - continue to block the event
             }
           }
         } catch (error) {
           console.error("Touch move error:", error);
         }
       },
-      [isSwipeModeActive, clearLongPress]
+      [isSwipeModeActive, clearLongPress, longPressTimer]
     );
 
     const handleTouchEnd = useCallback(
@@ -305,6 +322,21 @@ export const ReplyCard = memo<ReplyCardProps>(
           const deltaY = e.clientY - mouseStartY.current;
           const totalMovement = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
 
+          // Enhanced scroll blocking: Block vertical scrolling when long-press timer is active
+          if (longPressTimer.current && !isSwipeModeActive) {
+            // Always prevent default during long-press timer to block vertical scrolling
+            e.preventDefault();
+            e.stopPropagation();
+
+            // Only allow horizontal movement for swiping
+            if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 5) {
+              // This is horizontal movement, allow it to continue
+              return;
+            }
+            // Vertical movement is completely blocked
+            return;
+          }
+
           // If user moves during long press, mark as moved (prevents swipe mode activation)
           if (totalMovement > 10) {
             hasMovedDuringPress.current = true;
@@ -316,34 +348,32 @@ export const ReplyCard = memo<ReplyCardProps>(
             }
           }
 
-          // Only process swipe gestures if swipe mode is active
+          // Enhanced scroll blocking: When swipe mode is active, completely block vertical scrolling
           if (isSwipeModeActive) {
             e.stopPropagation();
             e.preventDefault();
 
-            // Allow horizontal swipes with lower threshold for smoother feel
+            // Only allow horizontal swipes
             if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 5) {
               // Only update state if dragging status changed or significant movement
               if (!isDragging || Math.abs(deltaX - dragOffset) > 2) {
                 setIsDragging(true);
                 setDragOffset(deltaX);
               }
-
-              if (process.env.NODE_ENV === "development") {
-              }
-            } else if (Math.abs(deltaY) > Math.abs(deltaX)) {
-              // Vertical movement - prevent scrolling but don't update drag state
+            } else {
+              // Block any vertical movement completely
               if (isDragging) {
                 setIsDragging(false);
                 setDragOffset(0);
               }
+              // Don't return here - continue to block the event
             }
           }
         } catch (error) {
           console.error("Mouse move error:", error);
         }
       },
-      [isSwipeModeActive, clearLongPress]
+      [isSwipeModeActive, clearLongPress, longPressTimer]
     );
 
     const handleMouseUp = useCallback(
@@ -756,7 +786,7 @@ export const ReplyCard = memo<ReplyCardProps>(
           isSwipeModeActive ? "swipe-mode-active" : ""
         } ${
           isSwipeModeActive
-            ? "ring-2 ring-yellow-400/60 shadow-2xl shadow-yellow-500/20 scale-[1.02]"
+            ? "ring-2 ring-yellow-400/60 shadow-2xl shadow-yellow-500/20 scale-[1.02] touch-none select-none"
             : hasUserInteraction
             ? isDarkTheme
               ? "bg-gradient-to-br from-white/15 to-white/10 ring-2 ring-blue-400/40 shadow-xl shadow-blue-500/20 backdrop-blur-md border border-white/20"
@@ -765,7 +795,16 @@ export const ReplyCard = memo<ReplyCardProps>(
             ? "bg-gradient-to-br from-white/12 to-white/8 backdrop-blur-md border border-white/15 hover:bg-gradient-to-br hover:from-white/15 hover:to-white/10 hover:shadow-lg hover:shadow-white/5"
             : "bg-white/80 backdrop-blur-sm border border-gray-200 hover:bg-white/90"
         }`}
-        style={{ transform }}
+        style={{
+          transform,
+          // Add this style when in long press mode to help with scroll blocking
+          ...(isSwipeModeActive && {
+            touchAction: "pan-x", // Only allow horizontal panning
+            userSelect: "none",
+            WebkitUserSelect: "none",
+            WebkitTouchCallout: "none",
+          }),
+        }}
       >
         {/* Swipe Action Indicators - delayed by 1500ms */}
         {showSwipeActions && (
