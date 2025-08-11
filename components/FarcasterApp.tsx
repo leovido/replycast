@@ -320,6 +320,36 @@ export default function FarcasterApp() {
     });
   };
 
+  // Handle sharing the app via composeCast
+  const handleShareApp = async () => {
+    try {
+      // Trigger haptic feedback
+      sdk.haptics?.impactOccurred?.("light");
+
+      // Show loading toast
+      showToast("Opening cast composer...", "info");
+
+      // Compose a cast with app information
+      const result = await sdk.actions.composeCast({
+        text: `Just discovered ReplyCast - a powerful tool to track unreplied conversations on Farcaster! 🚀\n\nTrack important conversations, and never miss a reply again.\n\nCheck it out:`,
+        embeds: ["https://farcaster.xyz/miniapps/5HKCCpZykEuD/replycast"], // You can update this to your specific app URL
+      });
+
+      // Handle the result
+      if (result?.cast) {
+        showToast("Cast shared successfully! 🎉", "success");
+        // Track analytics for successful share
+        // You can add analytics tracking here if needed
+      } else {
+        // User cancelled the cast
+        showToast("Cast cancelled", "info");
+      }
+    } catch (error) {
+      console.error("Failed to compose cast:", error);
+      showToast("Failed to share app", "error");
+    }
+  };
+
   const hideToast = () => {
     setToast((prev) => ({ ...prev, isVisible: false }));
   };
@@ -459,11 +489,16 @@ export default function FarcasterApp() {
     const currentY = e.touches[0].clientY;
     const deltaY = currentY - touchStartY.current;
 
-    // Only allow pull down when at the top
+    // Only allow pull down when at the top and only prevent default when actually pulling
     if (deltaY > 0 && window.scrollY === 0) {
       const pullDistance = Math.min(deltaY * 0.5, 100); // Limit pull distance
       setPullDistance(pullDistance);
-      e.preventDefault();
+
+      // Only prevent default if we're actually pulling down significantly
+      // This allows normal scrolling to work
+      if (deltaY > 10) {
+        e.preventDefault();
+      }
     }
   };
 
@@ -685,34 +720,62 @@ export default function FarcasterApp() {
               )}
             </div>
           </div>
-          <button
-            onClick={() => {
-              sdk.haptics?.impactOccurred?.("light");
-              setIsSettingsOpen(true);
-              trackSettingsOpened({
-                activeTab,
-                theme: themeMode,
-              });
-            }}
-            className={`p-3 rounded-xl transition-all duration-200 ${
-              isDarkTheme
-                ? "bg-white/10 hover:bg-white/20 text-white"
-                : "bg-gray-100 hover:bg-gray-200 text-gray-700"
-            }`}
-            aria-label="Settings"
-          >
-            <svg
-              width={20}
-              height={20}
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth={2}
+          <div className="flex items-center gap-2">
+            {/* Share Cast Button */}
+            <button
+              onClick={handleShareApp}
+              className={`p-3 rounded-xl transition-all duration-200 ${
+                isDarkTheme
+                  ? "bg-white/10 hover:bg-white/20 text-white"
+                  : "bg-gray-100 hover:bg-gray-200 text-gray-700"
+              }`}
+              aria-label="Share ReplyCast"
+              title="Share ReplyCast with your followers"
             >
-              <path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" />
-              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1Z" />
-            </svg>
-          </button>
+              <svg
+                width={20}
+                height={20}
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth={2}
+              >
+                <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" />
+                <polyline points="16,6 12,2 8,6" />
+                <line x1="12" y1="2" x2="12" y2="15" />
+              </svg>
+            </button>
+
+            {/* Settings Button */}
+            <button
+              onClick={() => {
+                sdk.haptics?.impactOccurred?.("light");
+                setIsSettingsOpen(true);
+                trackSettingsOpened({
+                  activeTab,
+                  theme: themeMode,
+                });
+              }}
+              className={`p-3 rounded-xl transition-all duration-200 ${
+                isDarkTheme
+                  ? "bg-white/10 hover:bg-white/20 text-white"
+                  : "bg-gray-100 hover:bg-gray-200 text-gray-700"
+              }`}
+              aria-label="Settings"
+            >
+              <svg
+                width={20}
+                height={20}
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth={2}
+              >
+                <path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" />
+                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1Z" />
+              </svg>
+            </button>
+          </div>
         </div>
       </div>
 
