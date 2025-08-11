@@ -159,6 +159,21 @@ export const ReplyCard = memo<ReplyCardProps>(
           const deltaY = touch.clientY - touchStartY.current;
           const totalMovement = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
 
+          // iOS-style behavior: block vertical scrolling immediately when long-press timer is active
+          if (longPressTimer.current && !isSwipeModeActive) {
+            // Always prevent default during long-press timer to block vertical scrolling
+            e.preventDefault();
+            e.stopPropagation();
+
+            // Allow horizontal movement for swiping
+            if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 5) {
+              // This is horizontal movement, allow it to continue
+              return;
+            }
+            // Vertical movement is blocked
+            return;
+          }
+
           // If user moves during long press, mark as moved (prevents swipe mode activation)
           if (totalMovement > 10) {
             hasMovedDuringPress.current = true;
@@ -201,7 +216,7 @@ export const ReplyCard = memo<ReplyCardProps>(
           console.error("Touch move error:", error);
         }
       },
-      [isSwipeModeActive, clearLongPress]
+      [isSwipeModeActive, clearLongPress, longPressTimer]
     );
 
     const handleTouchEnd = useCallback(
@@ -309,6 +324,21 @@ export const ReplyCard = memo<ReplyCardProps>(
           const deltaY = e.clientY - mouseStartY.current;
           const totalMovement = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
 
+          // iOS-style behavior: block vertical scrolling immediately when long-press timer is active
+          if (longPressTimer.current && !isSwipeModeActive) {
+            // Always prevent default during long-press timer to block vertical scrolling
+            e.preventDefault();
+            e.stopPropagation();
+
+            // Allow horizontal movement for swiping
+            if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 5) {
+              // This is horizontal movement, allow it to continue
+              return;
+            }
+            // Vertical movement is blocked
+            return;
+          }
+
           // If user moves during long press, mark as moved (prevents swipe mode activation)
           if (totalMovement > 10) {
             hasMovedDuringPress.current = true;
@@ -347,7 +377,7 @@ export const ReplyCard = memo<ReplyCardProps>(
           console.error("Mouse move error:", error);
         }
       },
-      [isSwipeModeActive, clearLongPress]
+      [isSwipeModeActive, clearLongPress, longPressTimer]
     );
 
     const handleMouseUp = useCallback(
