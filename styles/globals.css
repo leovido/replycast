@@ -38,6 +38,13 @@
   box-sizing: border-box;
 }
 
+/* Ensure sticky positioning works properly */
+html,
+body {
+  height: 100%;
+  overflow-x: hidden;
+}
+
 /* Touch event optimization for production */
 .touch-enabled {
   touch-action: manipulation;
@@ -96,6 +103,17 @@
   pointer-events: auto;
 }
 
+/* Lock vertical scrolling globally while swipe mode is active */
+body.lock-vertical-scroll {
+  overflow: hidden;
+  overscroll-behavior-y: contain;
+  -webkit-overflow-scrolling: auto;
+}
+/* On platforms that honor touch-action, further hint to allow only horizontal panning */
+body.lock-vertical-scroll {
+  touch-action: pan-x;
+}
+
 /* Active dragging state */
 .swipe-enabled:active {
   cursor: grabbing;
@@ -145,6 +163,18 @@ body {
 .flex.flex-col {
   overflow-y: auto;
   overflow-x: hidden;
+}
+
+/* Ensure main app containers allow scrolling */
+.min-h-screen {
+  /* overflow-y: auto; */
+  /* overflow-x: hidden; */
+}
+
+/* Ensure conversation lists can scroll */
+.flex.flex-col {
+  /* overflow-y: auto; */
+  /* overflow-x: hidden; */
 }
 
 /* Optimized scrollbar with GPU acceleration */
