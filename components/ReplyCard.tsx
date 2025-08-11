@@ -45,7 +45,6 @@ export const ReplyCard = memo<ReplyCardProps>(
     // Timer ref for long press activation (500ms)
     const longPressTimer = useRef<NodeJS.Timeout | null>(null);
     const hasMovedDuringPress = useRef<boolean>(false);
-    const removeGlobalTouchMoveListenerRef = useRef<(() => void) | null>(null);
 
     const handleProfileClick = async (e: React.MouseEvent) => {
       e.preventDefault();
@@ -74,24 +73,6 @@ export const ReplyCard = memo<ReplyCardProps>(
           setIsSwipeModeActive(true);
           setShowSwipeActions(true);
 
-          // Lock vertical scroll globally while in swipe mode
-          try {
-            if (typeof window !== "undefined" && typeof document !== "undefined") {
-              document.body.classList.add("lock-vertical-scroll");
-              // Add a non-passive touchmove listener to block vertical scroll bubbling
-              const onTouchMove = (evt: TouchEvent) => {
-                // Always prevent default during swipe mode to stop vertical scroll
-                if (evt.cancelable) {
-                  evt.preventDefault();
-                }
-              };
-              document.addEventListener("touchmove", onTouchMove, { passive: false });
-              removeGlobalTouchMoveListenerRef.current = () => {
-                document.removeEventListener("touchmove", onTouchMove as EventListener);
-              };
-            }
-          } catch {}
-
           // Trigger haptic feedback to indicate swipe mode activation
           try {
             sdk.haptics?.impactOccurred?.("medium");
@@ -114,11 +95,6 @@ export const ReplyCard = memo<ReplyCardProps>(
       // Always unlock vertical scroll and remove listeners when clearing
       try {
         if (typeof window !== "undefined" && typeof document !== "undefined") {
-          document.body.classList.remove("lock-vertical-scroll");
-          if (removeGlobalTouchMoveListenerRef.current) {
-            removeGlobalTouchMoveListenerRef.current();
-            removeGlobalTouchMoveListenerRef.current = null;
-          }
         }
       } catch {}
 
@@ -466,16 +442,6 @@ export const ReplyCard = memo<ReplyCardProps>(
         if (longPressTimer.current) {
           clearTimeout(longPressTimer.current);
         }
-        // Ensure scroll lock is cleared if component unmounts during swipe mode
-        try {
-          if (typeof window !== "undefined" && typeof document !== "undefined") {
-            document.body.classList.remove("lock-vertical-scroll");
-            if (removeGlobalTouchMoveListenerRef.current) {
-              removeGlobalTouchMoveListenerRef.current();
-              removeGlobalTouchMoveListenerRef.current = null;
-            }
-          }
-        } catch {}
       };
     }, []);
 
