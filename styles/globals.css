@@ -67,6 +67,11 @@
   cursor: grab;
   /* Smooth transitions for all interactions */
   transition: transform 0.1s ease-out, box-shadow 0.2s ease-out;
+  /* Prevent text selection during interactions */
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
 }
 
 /* When swipe mode is active, restrict to horizontal panning only */
@@ -80,6 +85,13 @@
   transform: translateZ(0);
   /* Smooth transitions for swipe mode activation */
   transition: transform 0.1s ease-out;
+  /* Ensure no text selection during swipe mode */
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+  /* Prevent any pointer events that might interfere */
+  pointer-events: auto;
 }
 
 /* Active dragging state */

@@ -66,7 +66,7 @@ export const ReplyCard = memo<ReplyCardProps>(
 
       hasMovedDuringPress.current = false;
 
-      // Start long press timer for 250ms (faster activation)
+      // Start long press timer for 200ms (faster activation for better UX)
       longPressTimer.current = setTimeout(() => {
         // Only activate swipe mode if user hasn't moved (not scrolling)
         if (!hasMovedDuringPress.current) {
@@ -81,9 +81,10 @@ export const ReplyCard = memo<ReplyCardProps>(
           }
 
           if (process.env.NODE_ENV === "development") {
+            console.log("Swipe mode activated");
           }
         }
-      }, 250);
+      }, 200); // Reduced from 250ms to 200ms
     }, []);
 
     const clearLongPress = useCallback(() => {
@@ -92,26 +93,27 @@ export const ReplyCard = memo<ReplyCardProps>(
         longPressTimer.current = null;
       }
 
-      // Always unlock vertical scroll and remove listeners when clearing
-      try {
-        if (typeof window !== "undefined" && typeof document !== "undefined") {
-        }
-      } catch {}
-
-      // Smooth reset with animation
-      if (isSwipeModeActive || isDragging) {
-        // Add a small delay for smooth transition back to normal state
-        setTimeout(() => {
+      // Don't immediately clear swipe mode if we're actively dragging
+      // This prevents the swipe mode from being cleared mid-swipe
+      if (!isDragging) {
+        // Smooth reset with animation
+        if (isSwipeModeActive) {
+          // Add a small delay for smooth transition back to normal state
+          setTimeout(() => {
+            setIsSwipeModeActive(false);
+            setShowSwipeActions(false);
+            setDragOffset(0);
+          }, 150); // Increased from 100ms to 150ms for better UX
+        } else {
           setIsSwipeModeActive(false);
           setShowSwipeActions(false);
-          setIsDragging(false);
           setDragOffset(0);
-        }, 50);
+        }
       } else {
-        setIsSwipeModeActive(false);
-        setShowSwipeActions(false);
-        setIsDragging(false);
-        setDragOffset(0);
+        // If we're still dragging, keep swipe mode active but clear the timer
+        if (process.env.NODE_ENV === "development") {
+          console.log("Keeping swipe mode active during drag");
+        }
       }
 
       hasMovedDuringPress.current = false;
@@ -121,6 +123,17 @@ export const ReplyCard = memo<ReplyCardProps>(
     // Function to reset swipe action flag (called after onClick)
     const resetSwipeActionFlag = useCallback(() => {
       setWasSwipeActionPerformed(false);
+    }, []);
+
+    // Function to reset drag state after swipe action
+    const resetDragState = useCallback(() => {
+      setIsDragging(false);
+      setDragOffset(0);
+      // Keep swipe mode active briefly to show the action was completed
+      setTimeout(() => {
+        setIsSwipeModeActive(false);
+        setShowSwipeActions(false);
+      }, 200);
     }, []);
 
     const handleTouchStart = useCallback(
@@ -159,23 +172,25 @@ export const ReplyCard = memo<ReplyCardProps>(
           const deltaY = touch.clientY - touchStartY.current;
           const totalMovement = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
 
-          // Enhanced scroll blocking: Block vertical scrolling when long-press timer is active
-          if (longPressTimer.current && !isSwipeModeActive) {
-            // Always prevent default to block vertical scrolling
-            e.preventDefault();
-            e.stopPropagation();
-
-            // Only allow horizontal movement for swiping
-            if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 5) {
-              // This is horizontal movement, allow it to continue
-              return;
-            }
-            // Vertical movement is completely blocked
-            return;
+          if (process.env.NODE_ENV === "development") {
+            console.log(
+              "Touch move:",
+              "deltaX:",
+              deltaX,
+              "deltaY:",
+              deltaY,
+              "totalMovement:",
+              totalMovement,
+              "isSwipeModeActive:",
+              isSwipeModeActive,
+              "isDragging:",
+              isDragging
+            );
           }
 
           // If user moves during long press, mark as moved (prevents swipe mode activation)
-          if (totalMovement > 10) {
+          if (totalMovement > 15) {
+            // Increased from 10 to 15 for better tolerance
             hasMovedDuringPress.current = true;
 
             // If not in swipe mode yet, allow normal scrolling
@@ -194,18 +209,28 @@ export const ReplyCard = memo<ReplyCardProps>(
             // Always prevent default when in swipe mode to stop any scrolling
             e.preventDefault();
 
-            // Only allow horizontal swipes
-            if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 5) {
+            // Improved horizontal swipe detection with better tolerance
+            if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 3) {
+              // Reduced from 5 to 3
               // Only update state if dragging status changed or significant movement
-              if (!isDragging || Math.abs(deltaX - dragOffset) > 2) {
+              if (!isDragging || Math.abs(deltaX - dragOffset) > 1) {
+                // Reduced from 2 to 1
                 setIsDragging(true);
                 setDragOffset(deltaX);
+                if (process.env.NODE_ENV === "development") {
+                  console.log("Setting dragging to true, offset:", deltaX);
+                }
               }
             } else {
               // Block any vertical movement completely
               if (isDragging) {
                 setIsDragging(false);
                 setDragOffset(0);
+                if (process.env.NODE_ENV === "development") {
+                  console.log(
+                    "Setting dragging to false due to vertical movement"
+                  );
+                }
               }
               // Don't return here - continue to block the event
             }
@@ -228,7 +253,7 @@ export const ReplyCard = memo<ReplyCardProps>(
             e.stopPropagation();
 
             const deltaX = touch.clientX - touchStartX.current;
-            const swipeThreshold = 30; // Lower threshold for more responsive swipes
+            const swipeThreshold = 25; // Reduced from 30 to 25 for more responsive swipes
 
             if (process.env.NODE_ENV === "development") {
               console.log(
@@ -243,6 +268,7 @@ export const ReplyCard = memo<ReplyCardProps>(
               if (deltaX > 0 && onMarkAsRead) {
                 // Swipe right - mark as read (only if onMarkAsRead is provided)
                 if (process.env.NODE_ENV === "development") {
+                  console.log("Mark as read triggered");
                 }
                 try {
                   // Trigger haptic feedback
@@ -252,9 +278,12 @@ export const ReplyCard = memo<ReplyCardProps>(
                 }
                 setWasSwipeActionPerformed(true);
                 onMarkAsRead(detail);
+                // Reset drag state after action
+                resetDragState();
               } else if (deltaX < 0 && onDiscard) {
                 // Swipe left - discard (not interested)
                 if (process.env.NODE_ENV === "development") {
+                  console.log("Discard triggered");
                 }
                 try {
                   // Trigger haptic feedback
@@ -264,7 +293,12 @@ export const ReplyCard = memo<ReplyCardProps>(
                 }
                 setWasSwipeActionPerformed(true);
                 onDiscard(detail);
+                // Reset drag state after action
+                resetDragState();
               }
+            } else {
+              // Swipe wasn't far enough, reset drag state
+              resetDragState();
             }
           }
 
@@ -282,6 +316,7 @@ export const ReplyCard = memo<ReplyCardProps>(
         onDiscard,
         detail,
         clearLongPress,
+        resetDragState,
       ]
     );
 
@@ -338,7 +373,8 @@ export const ReplyCard = memo<ReplyCardProps>(
           }
 
           // If user moves during long press, mark as moved (prevents swipe mode activation)
-          if (totalMovement > 10) {
+          if (totalMovement > 15) {
+            // Increased from 10 to 15 for consistency
             hasMovedDuringPress.current = true;
 
             // If not in swipe mode yet, clear long press
@@ -354,9 +390,11 @@ export const ReplyCard = memo<ReplyCardProps>(
             e.preventDefault();
 
             // Only allow horizontal swipes
-            if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 5) {
+            if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 3) {
+              // Reduced from 5 to 3
               // Only update state if dragging status changed or significant movement
-              if (!isDragging || Math.abs(deltaX - dragOffset) > 2) {
+              if (!isDragging || Math.abs(deltaX - dragOffset) > 1) {
+                // Reduced from 2 to 1
                 setIsDragging(true);
                 setDragOffset(deltaX);
               }
@@ -384,7 +422,7 @@ export const ReplyCard = memo<ReplyCardProps>(
             e.stopPropagation();
 
             const deltaX = e.clientX - mouseStartX.current;
-            const swipeThreshold = 30; // Lower threshold for more responsive swipes
+            const swipeThreshold = 25; // Reduced from 30 to 25 for consistency
 
             if (process.env.NODE_ENV === "development") {
               console.log(
@@ -399,6 +437,7 @@ export const ReplyCard = memo<ReplyCardProps>(
               if (deltaX > 0 && onMarkAsRead) {
                 // Swipe right - mark as read (only if onMarkAsRead is provided)
                 if (process.env.NODE_ENV === "development") {
+                  console.log("Mark as read triggered (mouse)");
                 }
                 try {
                   // Trigger haptic feedback (will be ignored on desktop but works on mobile)
@@ -408,9 +447,12 @@ export const ReplyCard = memo<ReplyCardProps>(
                 }
                 setWasSwipeActionPerformed(true);
                 onMarkAsRead(detail);
+                // Reset drag state after action
+                resetDragState();
               } else if (deltaX < 0 && onDiscard) {
                 // Swipe left - discard (not interested)
                 if (process.env.NODE_ENV === "development") {
+                  console.log("Discard triggered (mouse)");
                 }
                 try {
                   // Trigger haptic feedback (will be ignored on desktop but works on mobile)
@@ -420,7 +462,12 @@ export const ReplyCard = memo<ReplyCardProps>(
                 }
                 setWasSwipeActionPerformed(true);
                 onDiscard(detail);
+                // Reset drag state after action
+                resetDragState();
               }
+            } else {
+              // Swipe wasn't far enough, reset drag state
+              resetDragState();
             }
           }
 
@@ -440,6 +487,7 @@ export const ReplyCard = memo<ReplyCardProps>(
         onDiscard,
         detail,
         clearLongPress,
+        resetDragState,
       ]
     );
 
@@ -540,6 +588,13 @@ export const ReplyCard = memo<ReplyCardProps>(
                 </div>
               )}
             </>
+          )}
+
+          {/* Swipe Mode Indicator */}
+          {isSwipeModeActive && (
+            <div className="absolute top-2 left-1/2 transform -translate-x-1/2 bg-yellow-500/80 text-yellow-900 text-xs px-2 py-1 rounded-full font-medium">
+              Swipe Mode Active
+            </div>
           )}
 
           {/* Enhanced 3D effect for cards with interactions */}
@@ -822,6 +877,13 @@ export const ReplyCard = memo<ReplyCardProps>(
               </div>
             )}
           </>
+        )}
+
+        {/* Swipe Mode Indicator */}
+        {isSwipeModeActive && (
+          <div className="absolute top-2 left-1/2 transform -translate-x-1/2 bg-yellow-500/80 text-yellow-900 text-xs px-2 py-1 rounded-full font-medium">
+            Swipe Mode Active
+          </div>
         )}
 
         {/* Enhanced 3D effect for cards with interactions */}
