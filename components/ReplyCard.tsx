@@ -3,6 +3,7 @@ import Image from "next/image";
 import { sdk } from "@farcaster/miniapp-sdk";
 import type { UnrepliedDetail } from "@/types/types";
 import { useAppAnalytics } from "../hooks/useAnalytics";
+import { useLongPressScrollLock } from "../hooks/useLongPressScrollLock";
 
 export interface ReplyCardProps {
   detail: UnrepliedDetail;
@@ -36,6 +37,14 @@ export const ReplyCard = memo<ReplyCardProps>(
     const cardRef = useRef<HTMLButtonElement>(null);
     const touchStartX = useRef<number>(0);
     const touchStartY = useRef<number>(0);
+
+    // Use the scroll lock hook
+    const { active: isScrollLocked, bind: scrollLockBind } =
+      useLongPressScrollLock({
+        threshold: 250,
+        blockVerticalOnly: true,
+        activeClass: "swipe-mode-active",
+      });
 
     // Add mouse position refs for desktop support
     const mouseStartX = useRef<number>(0);
@@ -764,6 +773,7 @@ export const ReplyCard = memo<ReplyCardProps>(
     return (
       <button
         ref={cardRef}
+        {...scrollLockBind} // Spread the pointer event handlers for scroll locking
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
@@ -783,7 +793,7 @@ export const ReplyCard = memo<ReplyCardProps>(
           }
         }}
         className={`relative w-full text-left p-6 rounded-2xl transition-all duration-300 hover:scale-[1.02] focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 swipe-enabled ${
-          isSwipeModeActive ? "swipe-mode-active" : ""
+          isScrollLocked ? "swipe-mode-active" : ""
         } ${
           isSwipeModeActive
             ? "ring-2 ring-yellow-400/60 shadow-2xl shadow-yellow-500/20 scale-[1.02] touch-none select-none"
