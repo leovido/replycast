@@ -877,7 +877,7 @@ export default function FarcasterApp() {
         )}
 
         {/* Tab Content */}
-        <div className="flex-1 overflow-y-auto">
+        <div className="flex-1 overflow-y-auto pb-20">
           {activeTab === "inbox" && (
             <>
               {filteredConversations.length === 0 && !dataLoading ? (

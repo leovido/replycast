@@ -47,7 +47,7 @@ export function ConversationList({
   // Render old design
   if (useOldDesign) {
     return (
-      <div className="px-4 pb-12">
+      <div className="px-4 pb-20">
         <div className="max-w-6xl mx-auto">
           {viewMode === "list" ? (
             <div className="space-y-6">
@@ -156,7 +156,7 @@ export function ConversationList({
 
   // Render new design
   return (
-    <div className="px-6 pb-6">
+    <div className="px-6 pb-20">
       <div
         className={`
           max-w-6xl mx-auto
