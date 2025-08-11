@@ -84,11 +84,21 @@
 
 /* During long-press timer, immediately prevent vertical scrolling on mobile */
 body.long-press-active .swipe-enabled {
-  touch-action: pan-x !important;
-  -webkit-touch-action: pan-x !important;
-  /* Prevent any vertical scrolling during long-press */
-  overscroll-behavior-y: contain;
-  -webkit-overflow-scrolling: auto;
+  /* Use overflow-y: hidden to directly prevent vertical scrolling */
+  overflow-y: hidden !important;
+  /* Also prevent any parent containers from scrolling */
+  overscroll-behavior-y: contain !important;
+  /* Ensure touch events don't bubble up to scrollable parents */
+  touch-action: manipulation !important;
+  -webkit-touch-action: manipulation !important;
+}
+
+/* Also prevent body scrolling during long-press */
+body.long-press-active {
+  overflow-y: hidden !important;
+  overscroll-behavior-y: contain !important;
+  /* Prevent any momentum scrolling on iOS */
+  -webkit-overflow-scrolling: auto !important;
 }
 
 /* Active dragging state */
