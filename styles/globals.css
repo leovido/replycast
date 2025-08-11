@@ -74,19 +74,33 @@ body {
   cursor: grab;
   /* Smooth transitions for all interactions */
   transition: transform 0.1s ease-out, box-shadow 0.2s ease-out;
+  /* Prevent text selection during interactions */
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+  /* Allow normal scrolling by default */
+  overflow: visible;
 }
 
 /* When swipe mode is active, restrict to horizontal panning only */
 .swipe-enabled.swipe-mode-active {
   touch-action: pan-x;
-  /* Prevent any vertical scrolling when swipe mode is active */
-  overflow: hidden;
+  /* Don't hide overflow - let the parent container handle scrolling */
+  /* overflow: hidden; */
   /* Hardware acceleration for smooth swiping */
   will-change: transform;
   -webkit-transform: translateZ(0);
   transform: translateZ(0);
   /* Smooth transitions for swipe mode activation */
   transition: transform 0.1s ease-out;
+  /* Ensure no text selection during swipe mode */
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+  /* Prevent any pointer events that might interfere */
+  pointer-events: auto;
 }
 
 /* Lock vertical scrolling globally while swipe mode is active */
@@ -113,6 +127,16 @@ body.lock-vertical-scroll {
   user-select: none;
 }
 
+/* Remove the problematic lock-vertical-scroll rules that interfere with scrolling */
+/* body.lock-vertical-scroll {
+  overflow: hidden;
+  overscroll-behavior-y: contain;
+  -webkit-overflow-scrolling: auto;
+}
+body.lock-vertical-scroll {
+  touch-action: pan-x;
+} */
+
 body {
   font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
     Roboto, sans-serif;
@@ -124,6 +148,21 @@ body {
   background: var(--primary-gradient);
   min-height: 100vh;
   contain: layout style paint;
+  /* Ensure scrolling works */
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+/* Ensure main app containers allow scrolling */
+.min-h-screen {
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+/* Ensure conversation lists can scroll */
+.flex.flex-col {
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 /* Ensure main app containers allow scrolling */
