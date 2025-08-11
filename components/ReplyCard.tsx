@@ -66,14 +66,6 @@ export const ReplyCard = memo<ReplyCardProps>(
 
       hasMovedDuringPress.current = false;
 
-      // Immediately apply touch-action: pan-x to prevent vertical scrolling on mobile
-      try {
-        if (typeof window !== "undefined" && typeof document !== "undefined") {
-          // Add a CSS class to the body that will be applied to all swipe-enabled elements
-          document.body.classList.add("long-press-active");
-        }
-      } catch {}
-
       // Start long press timer for 250ms (faster activation)
       longPressTimer.current = setTimeout(() => {
         // Only activate swipe mode if user hasn't moved (not scrolling)
@@ -103,8 +95,6 @@ export const ReplyCard = memo<ReplyCardProps>(
       // Always unlock vertical scroll and remove listeners when clearing
       try {
         if (typeof window !== "undefined" && typeof document !== "undefined") {
-          // Remove the long-press-active class
-          document.body.classList.remove("long-press-active");
         }
       } catch {}
 
@@ -169,15 +159,6 @@ export const ReplyCard = memo<ReplyCardProps>(
           const deltaY = touch.clientY - touchStartY.current;
           const totalMovement = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
 
-          // If long-press timer is active, prevent vertical scrolling but allow horizontal movement
-          if (longPressTimer.current && !isSwipeModeActive) {
-            // Only block if movement is more vertical than horizontal
-            if (Math.abs(deltaY) > Math.abs(deltaX) && Math.abs(deltaY) > 5) {
-              e.preventDefault();
-              return;
-            }
-          }
-
           // If user moves during long press, mark as moved (prevents swipe mode activation)
           if (totalMovement > 10) {
             hasMovedDuringPress.current = true;
@@ -195,10 +176,8 @@ export const ReplyCard = memo<ReplyCardProps>(
             // Essential for iframe/WebView environments - stop event propagation
             e.stopPropagation();
 
-            // Prevent all vertical scrolling when in swipe mode
-            if (e.cancelable) {
-              e.preventDefault();
-            }
+            // Always prevent default when in swipe mode to stop any scrolling
+            e.preventDefault();
 
             // Allow horizontal swipes with lower threshold for smoother feel
             if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 5) {
@@ -222,7 +201,7 @@ export const ReplyCard = memo<ReplyCardProps>(
           console.error("Touch move error:", error);
         }
       },
-      [isSwipeModeActive, clearLongPress, longPressTimer]
+      [isSwipeModeActive, clearLongPress]
     );
 
     const handleTouchEnd = useCallback(
@@ -330,15 +309,6 @@ export const ReplyCard = memo<ReplyCardProps>(
           const deltaY = e.clientY - mouseStartY.current;
           const totalMovement = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
 
-          // If long-press timer is active, prevent vertical scrolling but allow horizontal movement
-          if (longPressTimer.current && !isSwipeModeActive) {
-            // Only block if movement is more vertical than horizontal
-            if (Math.abs(deltaY) > Math.abs(deltaX) && Math.abs(deltaY) > 5) {
-              e.preventDefault();
-              return;
-            }
-          }
-
           // If user moves during long press, mark as moved (prevents swipe mode activation)
           if (totalMovement > 10) {
             hasMovedDuringPress.current = true;
@@ -377,7 +347,7 @@ export const ReplyCard = memo<ReplyCardProps>(
           console.error("Mouse move error:", error);
         }
       },
-      [isSwipeModeActive, clearLongPress, longPressTimer]
+      [isSwipeModeActive, clearLongPress]
     );
 
     const handleMouseUp = useCallback(
