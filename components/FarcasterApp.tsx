@@ -489,11 +489,16 @@ export default function FarcasterApp() {
     const currentY = e.touches[0].clientY;
     const deltaY = currentY - touchStartY.current;
 
-    // Only allow pull down when at the top
+    // Only allow pull down when at the top and only prevent default when actually pulling
     if (deltaY > 0 && window.scrollY === 0) {
       const pullDistance = Math.min(deltaY * 0.5, 100); // Limit pull distance
       setPullDistance(pullDistance);
-      e.preventDefault();
+
+      // Only prevent default if we're actually pulling down significantly
+      // This allows normal scrolling to work
+      if (deltaY > 10) {
+        e.preventDefault();
+      }
     }
   };
 
