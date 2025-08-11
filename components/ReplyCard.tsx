@@ -66,12 +66,29 @@ export const ReplyCard = memo<ReplyCardProps>(
 
       hasMovedDuringPress.current = false;
 
-      // Start long press timer for 200ms (faster activation for better UX)
+      if (process.env.NODE_ENV === "development") {
+        console.log("Long press timer started");
+      }
+
+      // Detect if we're on desktop (even in mobile view)
+      const isDesktop =
+        !("ontouchstart" in window) || window.navigator.maxTouchPoints === 0;
+      const longPressDelay = isDesktop ? 150 : 200; // Faster activation on desktop
+
+      // Start long press timer
       longPressTimer.current = setTimeout(() => {
         // Only activate swipe mode if user hasn't moved (not scrolling)
         if (!hasMovedDuringPress.current) {
           setIsSwipeModeActive(true);
           setShowSwipeActions(true);
+
+          if (process.env.NODE_ENV === "development") {
+            console.log(
+              `Swipe mode activated on ${
+                isDesktop ? "desktop" : "mobile"
+              } - user can now swipe`
+            );
+          }
 
           // Trigger haptic feedback to indicate swipe mode activation
           try {
@@ -79,18 +96,23 @@ export const ReplyCard = memo<ReplyCardProps>(
           } catch (error) {
             // Haptic not available, continue anyway
           }
-
+        } else {
           if (process.env.NODE_ENV === "development") {
-            console.log("Swipe mode activated");
+            console.log(
+              "Swipe mode not activated - user moved during long press"
+            );
           }
         }
-      }, 200); // Reduced from 250ms to 200ms
+      }, longPressDelay);
     }, []);
 
     const clearLongPress = useCallback(() => {
       if (longPressTimer.current) {
         clearTimeout(longPressTimer.current);
         longPressTimer.current = null;
+        if (process.env.NODE_ENV === "development") {
+          console.log("Long press timer cleared");
+        }
       }
 
       // Don't immediately clear swipe mode if we're actively dragging
@@ -98,6 +120,9 @@ export const ReplyCard = memo<ReplyCardProps>(
       if (!isDragging) {
         // Smooth reset with animation
         if (isSwipeModeActive) {
+          if (process.env.NODE_ENV === "development") {
+            console.log("Resetting swipe mode (not dragging)");
+          }
           // Add a small delay for smooth transition back to normal state
           setTimeout(() => {
             setIsSwipeModeActive(false);
@@ -152,14 +177,16 @@ export const ReplyCard = memo<ReplyCardProps>(
             console.log(
               "Touch start - long press timer started:",
               touch.clientX,
-              touch.clientY
+              touch.clientY,
+              "Current swipe mode:",
+              isSwipeModeActive
             );
           }
         } catch (error) {
           console.error("Touch start error:", error);
         }
       },
-      [startLongPress]
+      [startLongPress, isSwipeModeActive]
     );
 
     const handleTouchMove = useCallback(
@@ -189,8 +216,8 @@ export const ReplyCard = memo<ReplyCardProps>(
           }
 
           // If user moves during long press, mark as moved (prevents swipe mode activation)
-          if (totalMovement > 15) {
-            // Increased from 10 to 15 for better tolerance
+          if (totalMovement > 25) {
+            // Increased from 15 to 25 for desktop mobile view
             hasMovedDuringPress.current = true;
 
             // If not in swipe mode yet, allow normal scrolling
@@ -201,13 +228,13 @@ export const ReplyCard = memo<ReplyCardProps>(
             }
           }
 
-          // Enhanced scroll blocking: When swipe mode is active, completely block vertical scrolling
+          // ONLY block events when swipe mode is actually active
           if (isSwipeModeActive) {
             // Essential for iframe/WebView environments - stop event propagation
             e.stopPropagation();
 
-            // Always prevent default when in swipe mode to stop any scrolling
-            e.preventDefault();
+            // Don't call preventDefault on passive events - it will be ignored
+            // Instead, use CSS to control scrolling behavior
 
             // Improved horizontal swipe detection with better tolerance
             if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 3) {
@@ -235,11 +262,12 @@ export const ReplyCard = memo<ReplyCardProps>(
               // Don't return here - continue to block the event
             }
           }
+          // If not in swipe mode, don't block anything - allow normal scrolling
         } catch (error) {
           console.error("Touch move error:", error);
         }
       },
-      [isSwipeModeActive, clearLongPress, longPressTimer]
+      [isSwipeModeActive, clearLongPress]
     );
 
     const handleTouchEnd = useCallback(
@@ -357,24 +385,9 @@ export const ReplyCard = memo<ReplyCardProps>(
           const deltaY = e.clientY - mouseStartY.current;
           const totalMovement = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
 
-          // Enhanced scroll blocking: Block vertical scrolling when long-press timer is active
-          if (longPressTimer.current && !isSwipeModeActive) {
-            // Always prevent default during long-press timer to block vertical scrolling
-            e.preventDefault();
-            e.stopPropagation();
-
-            // Only allow horizontal movement for swiping
-            if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 5) {
-              // This is horizontal movement, allow it to continue
-              return;
-            }
-            // Vertical movement is completely blocked
-            return;
-          }
-
           // If user moves during long press, mark as moved (prevents swipe mode activation)
-          if (totalMovement > 15) {
-            // Increased from 10 to 15 for consistency
+          if (totalMovement > 25) {
+            // Increased from 15 to 25 for desktop mobile view
             hasMovedDuringPress.current = true;
 
             // If not in swipe mode yet, clear long press
@@ -384,10 +397,10 @@ export const ReplyCard = memo<ReplyCardProps>(
             }
           }
 
-          // Enhanced scroll blocking: When swipe mode is active, completely block vertical scrolling
+          // ONLY block events when swipe mode is actually active
           if (isSwipeModeActive) {
             e.stopPropagation();
-            e.preventDefault();
+            // Don't call preventDefault - it can interfere with mouse wheel scrolling
 
             // Only allow horizontal swipes
             if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 3) {
@@ -407,11 +420,12 @@ export const ReplyCard = memo<ReplyCardProps>(
               // Don't return here - continue to block the event
             }
           }
+          // If not in swipe mode, don't block anything - allow normal mouse interactions
         } catch (error) {
           console.error("Mouse move error:", error);
         }
       },
-      [isSwipeModeActive, clearLongPress, longPressTimer]
+      [isSwipeModeActive, clearLongPress]
     );
 
     const handleMouseUp = useCallback(
@@ -517,6 +531,35 @@ export const ReplyCard = memo<ReplyCardProps>(
       };
     }, []);
 
+    // Keyboard event handlers for desktop fallback
+    const handleKeyDown = useCallback(
+      (e: React.KeyboardEvent) => {
+        // Only handle when swipe mode is active
+        if (!isSwipeModeActive) return;
+
+        if (e.key === "ArrowLeft" && onDiscard) {
+          // Left arrow = discard
+          e.preventDefault();
+          if (process.env.NODE_ENV === "development") {
+            console.log("Discard triggered via keyboard");
+          }
+          setWasSwipeActionPerformed(true);
+          onDiscard(detail);
+          resetDragState();
+        } else if (e.key === "ArrowRight" && onMarkAsRead) {
+          // Right arrow = mark as read
+          e.preventDefault();
+          if (process.env.NODE_ENV === "development") {
+            console.log("Mark as read triggered via keyboard");
+          }
+          setWasSwipeActionPerformed(true);
+          onMarkAsRead(detail);
+          resetDragState();
+        }
+      },
+      [isSwipeModeActive, onDiscard, onMarkAsRead, detail, resetDragState]
+    );
+
     const hasUserInteraction =
       detail.hasUserInteraction || detail.userLiked || detail.userRecasted;
 
@@ -550,6 +593,8 @@ export const ReplyCard = memo<ReplyCardProps>(
               resetSwipeActionFlag();
             }
           }}
+          onKeyDown={handleKeyDown}
+          tabIndex={0}
           className={`
             relative isolate flex flex-col gap-6
             w-full
@@ -594,6 +639,32 @@ export const ReplyCard = memo<ReplyCardProps>(
           {isSwipeModeActive && (
             <div className="absolute top-2 left-1/2 transform -translate-x-1/2 bg-yellow-500/80 text-yellow-900 text-xs px-2 py-1 rounded-full font-medium">
               Swipe Mode Active
+            </div>
+          )}
+
+          {/* Desktop Keyboard Instructions */}
+          {isSwipeModeActive &&
+            (!("ontouchstart" in window) ||
+              window.navigator.maxTouchPoints === 0) && (
+              <div className="absolute top-8 left-1/2 transform -translate-x-1/2 bg-blue-500/80 text-white text-xs px-2 py-1 rounded-full font-medium">
+                Use ← → arrows or swipe
+              </div>
+            )}
+
+          {/* Long Press Timer Indicator */}
+          {longPressTimer.current && !isSwipeModeActive && (
+            <div className="absolute top-2 left-1/2 transform -translate-x-1/2 bg-blue-500/80 text-white text-xs px-2 py-1 rounded-full font-medium">
+              Hold to Activate
+            </div>
+          )}
+
+          {/* Desktop Detection Indicator (for debugging) */}
+          {process.env.NODE_ENV === "development" && (
+            <div className="absolute top-12 left-1/2 transform -translate-x-1/2 bg-gray-500/80 text-white text-xs px-2 py-1 rounded-full font-medium">
+              {!("ontouchstart" in window) ||
+              window.navigator.maxTouchPoints === 0
+                ? "Desktop"
+                : "Mobile"}
             </div>
           )}
 
@@ -837,6 +908,8 @@ export const ReplyCard = memo<ReplyCardProps>(
             resetSwipeActionFlag();
           }
         }}
+        onKeyDown={handleKeyDown}
+        tabIndex={0}
         className={`relative w-full text-left p-6 rounded-2xl transition-all duration-300 hover:scale-[1.02] focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 swipe-enabled ${
           isSwipeModeActive ? "swipe-mode-active" : ""
         } ${
@@ -883,6 +956,32 @@ export const ReplyCard = memo<ReplyCardProps>(
         {isSwipeModeActive && (
           <div className="absolute top-2 left-1/2 transform -translate-x-1/2 bg-yellow-500/80 text-yellow-900 text-xs px-2 py-1 rounded-full font-medium">
             Swipe Mode Active
+          </div>
+        )}
+
+        {/* Desktop Keyboard Instructions */}
+        {isSwipeModeActive &&
+          (!("ontouchstart" in window) ||
+            window.navigator.maxTouchPoints === 0) && (
+            <div className="absolute top-8 left-1/2 transform -translate-x-1/2 bg-blue-500/80 text-white text-xs px-2 py-1 rounded-full font-medium">
+              Use ← → arrows or swipe
+            </div>
+          )}
+
+        {/* Long Press Timer Indicator */}
+        {longPressTimer.current && !isSwipeModeActive && (
+          <div className="absolute top-2 left-1/2 transform -translate-x-1/2 bg-blue-500/80 text-white text-xs px-2 py-1 rounded-full font-medium">
+            Hold to Activate
+          </div>
+        )}
+
+        {/* Desktop Detection Indicator (for debugging) */}
+        {process.env.NODE_ENV === "development" && (
+          <div className="absolute top-12 left-1/2 transform -translate-x-1/2 bg-gray-500/80 text-white text-xs px-2 py-1 rounded-full font-medium">
+            {!("ontouchstart" in window) ||
+            window.navigator.maxTouchPoints === 0
+              ? "Desktop"
+              : "Mobile"}
           </div>
         )}
 

@@ -72,13 +72,15 @@
   -moz-user-select: none;
   -ms-user-select: none;
   user-select: none;
+  /* Allow normal scrolling by default */
+  overflow: visible;
 }
 
 /* When swipe mode is active, restrict to horizontal panning only */
 .swipe-enabled.swipe-mode-active {
   touch-action: pan-x;
-  /* Prevent any vertical scrolling when swipe mode is active */
-  overflow: hidden;
+  /* Don't hide overflow - let the parent container handle scrolling */
+  /* overflow: hidden; */
   /* Hardware acceleration for smooth swiping */
   will-change: transform;
   -webkit-transform: translateZ(0);
@@ -107,16 +109,15 @@
   user-select: none;
 }
 
-/* Lock vertical scrolling globally while swipe mode is active */
-body.lock-vertical-scroll {
+/* Remove the problematic lock-vertical-scroll rules that interfere with scrolling */
+/* body.lock-vertical-scroll {
   overflow: hidden;
   overscroll-behavior-y: contain;
   -webkit-overflow-scrolling: auto;
 }
-/* On platforms that honor touch-action, further hint to allow only horizontal panning */
 body.lock-vertical-scroll {
   touch-action: pan-x;
-}
+} */
 
 body {
   font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
@@ -129,6 +130,21 @@ body {
   background: var(--primary-gradient);
   min-height: 100vh;
   contain: layout style paint;
+  /* Ensure scrolling works */
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+/* Ensure main app containers allow scrolling */
+.min-h-screen {
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+/* Ensure conversation lists can scroll */
+.flex.flex-col {
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 /* Optimized scrollbar with GPU acceleration */
