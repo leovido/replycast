@@ -159,6 +159,15 @@ export const ReplyCard = memo<ReplyCardProps>(
           const deltaY = touch.clientY - touchStartY.current;
           const totalMovement = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
 
+          // If long-press timer is active, prevent vertical scrolling but allow horizontal movement
+          if (longPressTimer.current && !isSwipeModeActive) {
+            // Only block if movement is more vertical than horizontal
+            if (Math.abs(deltaY) > Math.abs(deltaX) && Math.abs(deltaY) > 5) {
+              e.preventDefault();
+              return;
+            }
+          }
+
           // If user moves during long press, mark as moved (prevents swipe mode activation)
           if (totalMovement > 10) {
             hasMovedDuringPress.current = true;
@@ -203,7 +212,7 @@ export const ReplyCard = memo<ReplyCardProps>(
           console.error("Touch move error:", error);
         }
       },
-      [isSwipeModeActive, clearLongPress]
+      [isSwipeModeActive, clearLongPress, longPressTimer]
     );
 
     const handleTouchEnd = useCallback(
@@ -311,6 +320,15 @@ export const ReplyCard = memo<ReplyCardProps>(
           const deltaY = e.clientY - mouseStartY.current;
           const totalMovement = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
 
+          // If long-press timer is active, prevent vertical scrolling but allow horizontal movement
+          if (longPressTimer.current && !isSwipeModeActive) {
+            // Only block if movement is more vertical than horizontal
+            if (Math.abs(deltaY) > Math.abs(deltaX) && Math.abs(deltaY) > 5) {
+              e.preventDefault();
+              return;
+            }
+          }
+
           // If user moves during long press, mark as moved (prevents swipe mode activation)
           if (totalMovement > 10) {
             hasMovedDuringPress.current = true;
@@ -349,7 +367,7 @@ export const ReplyCard = memo<ReplyCardProps>(
           console.error("Mouse move error:", error);
         }
       },
-      [isSwipeModeActive, clearLongPress]
+      [isSwipeModeActive, clearLongPress, longPressTimer]
     );
 
     const handleMouseUp = useCallback(
