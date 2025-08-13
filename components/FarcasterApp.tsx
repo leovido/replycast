@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { sdk } from "@farcaster/miniapp-sdk";
 import { useFarcasterAuth } from "../hooks/useFarcasterAuth";
-import { useOpenRank } from "../hooks/useOpenRank";
+import { useReputation } from "../hooks/useReputation";
 import { useFarcasterData } from "../hooks/useFarcasterData";
 import { useInfiniteScroll } from "../hooks/useInfiniteScroll";
 import { useAppAnalytics, ANALYTICS_ACTIONS } from "../hooks/useAnalytics";
@@ -25,6 +25,7 @@ const STORAGE_KEYS = {
   SORT_OPTION: "farcaster-widget-sort-option",
   DAY_FILTER: "farcaster-widget-day-filter",
   ACTIVE_TAB: "farcaster-widget-active-tab",
+  REPUTATION_TYPE: "farcaster-widget-reputation-type",
 } as const;
 
 // Helper functions for local storage
@@ -92,6 +93,10 @@ export default function FarcasterApp() {
     "all" | "today" | "3days" | "7days"
   >(() => getStoredValue(STORAGE_KEYS.DAY_FILTER, "today"));
 
+  const [reputationType, setReputationType] = useState<"quotient" | "openrank">(
+    () => getStoredValue(STORAGE_KEYS.REPUTATION_TYPE, "quotient")
+  );
+
   // Track app opened
   useEffect(() => {
     trackAppOpened({
@@ -129,6 +134,10 @@ export default function FarcasterApp() {
     setStoredValue(STORAGE_KEYS.DAY_FILTER, dayFilter);
   }, [dayFilter]);
 
+  useEffect(() => {
+    setStoredValue(STORAGE_KEYS.REPUTATION_TYPE, reputationType);
+  }, [reputationType]);
+
   const isDarkTheme = themeMode === "dark" || themeMode === "Farcaster";
 
   const handleThemeChange = (newTheme: "dark" | "light" | "Farcaster") => {
@@ -159,7 +168,15 @@ export default function FarcasterApp() {
     isInMiniApp,
   } = useFarcasterAuth();
 
-  const { fetchOpenRankRanks, clearCache, openRankRanks } = useOpenRank();
+  const {
+    fetchReputationData,
+    clearCache,
+    getReputationValue,
+    getReputationDisplay,
+    getReputationColor,
+    openRankRanks,
+    quotientScores,
+  } = useReputation();
 
   const {
     allConversations,
@@ -173,9 +190,10 @@ export default function FarcasterApp() {
     isRefreshing,
   } = useFarcasterData({
     user,
-    fetchOpenRankRanks,
+    fetchOpenRankRanks: fetchReputationData,
     clearOpenRankCache: clearCache,
     dayFilter,
+    reputationType,
   });
 
   // Mock getCacheStatus function since it's not available in the hook
@@ -197,7 +215,8 @@ export default function FarcasterApp() {
   const sortedConversations = sortDetails(
     allConversations,
     sortOption,
-    openRankRanks
+    openRankRanks,
+    quotientScores
   );
 
   // State for marked as read conversations
@@ -920,6 +939,8 @@ export default function FarcasterApp() {
                   onMarkAsRead={handleMarkAsRead}
                   onDiscard={handleDiscard}
                   openRankRanks={openRankRanks}
+                  quotientScores={quotientScores}
+                  reputationType={reputationType}
                   isLoadingMore={isLoadingMore}
                   hasMore={hasMore}
                   onReply={async (detail) => {
@@ -1001,6 +1022,15 @@ export default function FarcasterApp() {
         themeMode={themeMode}
       />
 
+      {/* Debug Info - Remove this after testing */}
+      {process.env.NODE_ENV === "development" && (
+        <div className="fixed top-4 right-4 z-50 bg-black/80 text-white p-3 rounded text-xs">
+          <div>Reputation: {reputationType}</div>
+          <div>Quotient Scores: {Object.keys(quotientScores).length}</div>
+          <div>OpenRank Scores: {Object.keys(openRankRanks).length}</div>
+        </div>
+      )}
+
       {/* Settings Menu */}
       <SettingsMenu
         isOpen={isSettingsOpen}
@@ -1015,6 +1045,8 @@ export default function FarcasterApp() {
         onSortChange={(option) => setSortOption(option as any)}
         dayFilter={dayFilter}
         onDayFilterChange={(filter) => setDayFilter(filter as any)}
+        reputationType={reputationType}
+        onReputationTypeChange={setReputationType}
         isDarkTheme={isDarkTheme}
       />
       {/* Toast Notification */}

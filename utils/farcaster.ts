@@ -25,7 +25,8 @@ export function isWithinLastDays(timestamp: number, days: number): boolean {
   }
   const startOfToday = new Date();
   startOfToday.setHours(0, 0, 0, 0);
-  const windowStartMs = startOfToday.getTime() - (days - 1) * 24 * 60 * 60 * 1000;
+  const windowStartMs =
+    startOfToday.getTime() - (days - 1) * 24 * 60 * 60 * 1000;
   return timestamp >= windowStartMs;
 }
 
@@ -107,7 +108,8 @@ export function getMinutesAgo(timeAgo: string): number {
 export function sortDetails(
   details: UnrepliedDetail[],
   sortOption: string,
-  openRankRanks: Record<number, number | null>
+  openRankRanks: Record<number, number | null>,
+  quotientScores: Record<number, { quotientScore: number } | null> = {}
 ): UnrepliedDetail[] {
   const arr = [...details]; // Create copy to avoid mutation
 
@@ -142,6 +144,18 @@ export function sortDetails(
         return group.sort((a, b) => a.authorFid - b.authorFid);
       case "fid-desc":
         return group.sort((a, b) => b.authorFid - a.authorFid);
+      case "quotient-asc":
+        return group.sort((a, b) => {
+          const scoreA = quotientScores[a.authorFid]?.quotientScore || 0;
+          const scoreB = quotientScores[b.authorFid]?.quotientScore || 0;
+          return scoreA - scoreB;
+        });
+      case "quotient-desc":
+        return group.sort((a, b) => {
+          const scoreA = quotientScores[a.authorFid]?.quotientScore || 0;
+          const scoreB = quotientScores[b.authorFid]?.quotientScore || 0;
+          return scoreB - scoreA;
+        });
       case "openrank-asc":
         return group.sort((a, b) => {
           const rankA = openRankRanks[a.authorFid] || Infinity;

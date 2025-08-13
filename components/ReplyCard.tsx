@@ -7,6 +7,8 @@ import { useAppAnalytics } from "../hooks/useAnalytics";
 export interface ReplyCardProps {
   detail: UnrepliedDetail;
   openRank: number | null;
+  quotientScore: number | null;
+  reputationType: "quotient" | "openrank";
   onClick: () => void;
   viewMode: "list" | "grid";
   isDarkTheme: boolean;
@@ -19,6 +21,8 @@ export const ReplyCard = memo<ReplyCardProps>(
   ({
     detail,
     openRank,
+    quotientScore,
+    reputationType,
     onClick,
     viewMode,
     isDarkTheme,
@@ -613,31 +617,65 @@ export const ReplyCard = memo<ReplyCardProps>(
               </div>
             </div>
 
-            {/* Time and OpenRank */}
+            {/* Time and Reputation */}
             <div className="flex flex-col items-end gap-1 text-right">
               <div className="text-white/60 text-sm">{detail.timeAgo}</div>
-              {openRank !== null && openRank !== undefined && (
-                <div className="flex items-center gap-1">
-                  <svg
-                    width={16}
-                    height={16}
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth={2}
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    className="text-yellow-400"
-                    aria-hidden="true"
-                  >
-                    <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26" />
-                  </svg>
-                  <span className="text-yellow-400 font-bold text-lg">
-                    #{openRank.toLocaleString()}
-                  </span>
-                </div>
-              )}
-              {(openRank === null || openRank === undefined) && (
+
+              {/* Show Quotient score when reputation type is quotient */}
+              {reputationType === "quotient" &&
+                quotientScore !== null &&
+                quotientScore !== undefined && (
+                  <div className="flex items-center gap-1">
+                    <svg
+                      width={16}
+                      height={16}
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth={2}
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      className="text-purple-400"
+                      aria-hidden="true"
+                    >
+                      <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                    </svg>
+                    <span className="text-purple-400 font-bold text-lg">
+                      {(quotientScore * 100).toFixed(0)}
+                    </span>
+                  </div>
+                )}
+
+              {/* Show OpenRank when reputation type is openrank */}
+              {reputationType === "openrank" &&
+                openRank !== null &&
+                openRank !== undefined && (
+                  <div className="flex items-center gap-1">
+                    <svg
+                      width={16}
+                      height={16}
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth={2}
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      className="text-yellow-400"
+                      aria-hidden="true"
+                    >
+                      <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26" />
+                    </svg>
+                    <span className="text-yellow-400 font-bold text-lg">
+                      #{openRank.toLocaleString()}
+                    </span>
+                  </div>
+                )}
+
+              {/* Show placeholder when no reputation data */}
+              {(reputationType === "quotient" &&
+                (quotientScore === null || quotientScore === undefined)) ||
+              (reputationType === "openrank" &&
+                (openRank === null || openRank === undefined)) ? (
                 <div className="flex items-center gap-1">
                   <svg
                     width={16}
@@ -655,7 +693,7 @@ export const ReplyCard = memo<ReplyCardProps>(
                   </svg>
                   <span className="text-white/40 text-sm">--</span>
                 </div>
-              )}
+              ) : null}
               {detail.userLiked && (
                 <div className="flex items-center gap-1 text-xs text-red-400">
                   <svg
@@ -904,7 +942,7 @@ export const ReplyCard = memo<ReplyCardProps>(
             </div>
           </div>
 
-          {/* Time and OpenRank */}
+          {/* Time and Reputation */}
           <div className="flex flex-col items-end gap-1 text-right">
             <div
               className={`text-sm ${
@@ -913,34 +951,74 @@ export const ReplyCard = memo<ReplyCardProps>(
             >
               {detail.timeAgo}
             </div>
-            {openRank !== null && openRank !== undefined && (
-              <div className="flex items-center gap-1">
-                <svg
-                  width={16}
-                  height={16}
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth={2}
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  className={
-                    isDarkTheme ? "text-yellow-400" : "text-purple-700"
-                  }
-                  aria-hidden="true"
-                >
-                  <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26" />
-                </svg>
-                <span
-                  className={`font-bold text-lg ${
-                    isDarkTheme ? "text-yellow-400" : "text-purple-700"
-                  }`}
-                >
-                  #{openRank.toLocaleString()}
-                </span>
-              </div>
-            )}
-            {(openRank === null || openRank === undefined) && (
+
+            {/* Show Quotient score when reputation type is quotient */}
+            {reputationType === "quotient" &&
+              quotientScore !== null &&
+              quotientScore !== undefined && (
+                <div className="flex items-center gap-1">
+                  <svg
+                    width={16}
+                    height={16}
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth={2}
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className={
+                      isDarkTheme ? "text-purple-400" : "text-purple-700"
+                    }
+                    aria-hidden="true"
+                  >
+                    <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26" />
+                  </svg>
+                  <span
+                    className={`font-bold text-lg ${
+                      isDarkTheme ? "text-purple-400" : "text-purple-700"
+                    }`}
+                  >
+                    {(quotientScore * 100).toFixed(0)}
+                  </span>
+                </div>
+              )}
+
+            {/* Show OpenRank when reputation type is openrank */}
+            {reputationType === "openrank" &&
+              openRank !== null &&
+              openRank !== undefined && (
+                <div className="flex items-center gap-1">
+                  <svg
+                    width={16}
+                    height={16}
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth={2}
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className={
+                      isDarkTheme ? "text-yellow-400" : "text-purple-700"
+                    }
+                    aria-hidden="true"
+                  >
+                    <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26" />
+                  </svg>
+                  <span
+                    className={`font-bold text-lg ${
+                      isDarkTheme ? "text-yellow-400" : "text-purple-700"
+                    }`}
+                  >
+                    #{openRank.toLocaleString()}
+                  </span>
+                </div>
+              )}
+
+            {/* Show placeholder when no reputation data */}
+            {(reputationType === "quotient" &&
+              (quotientScore === null || quotientScore === undefined)) ||
+            (reputationType === "openrank" &&
+              (openRank === null || openRank === undefined)) ? (
               <div className="flex items-center gap-1">
                 <svg
                   width={16}
@@ -964,7 +1042,7 @@ export const ReplyCard = memo<ReplyCardProps>(
                   --
                 </span>
               </div>
-            )}
+            ) : null}
             {detail.userLiked && (
               <div className="flex items-center gap-1 text-xs text-red-400">
                 <svg

@@ -1,10 +1,13 @@
 import { useState, useCallback, useRef } from "react";
+import { MockOpenRankService } from "@/utils/mockService";
 
 // Constants
 const CACHE_TTL = 5 * 60 * 1000; // 5 minutes in milliseconds
 
 export function useOpenRank() {
-  const [openRankRanks, setOpenRankRanks] = useState<Record<number, number | null>>({});
+  const [openRankRanks, setOpenRankRanks] = useState<
+    Record<number, number | null>
+  >({});
 
   // Cache for OpenRank data with TTL (5 minutes)
   const openRankCache = useRef<{
@@ -29,6 +32,41 @@ export function useOpenRank() {
   // Helper to fetch OpenRank ranks with caching (optimized)
   const fetchOpenRankRanks = useCallback(async (fids: number[]) => {
     if (fids.length === 0) return;
+
+    // Check if mocks are enabled
+    const useMocks =
+      process.env.NEXT_PUBLIC_USE_MOCKS === "true" ||
+      (typeof window !== "undefined" && (window as any).__FORCE_MOCKS__);
+
+    if (useMocks) {
+      try {
+        console.log("Mock: Using mock OpenRank data in hook");
+        const mockData = await MockOpenRankService.fetchRanks(fids);
+
+        if (mockData.ranks) {
+          // Convert string keys to numbers for consistency
+          const newRankMap: Record<number, number | null> = {};
+
+          Object.entries(mockData.ranks).forEach(([fid, rank]) => {
+            newRankMap[parseInt(fid)] = rank as number | null;
+          });
+
+          // Update cache with new data
+          openRankCache.current.data = {
+            ...openRankCache.current.data,
+            ...newRankMap,
+          };
+          openRankCache.current.timestamp = Date.now();
+
+          // Update state with new data
+          setOpenRankRanks((prev) => ({ ...prev, ...newRankMap }));
+        }
+        return;
+      } catch (error) {
+        console.error("Mock service error:", error);
+        // Fall back to real API if mock fails
+      }
+    }
 
     const now = Date.now();
     const uniqueFids = Array.from(new Set(fids)); // More efficient Set conversion
@@ -59,9 +97,12 @@ export function useOpenRank() {
     if (fidsToFetch.length === 0) return;
 
     try {
-      const response = await fetch(`/api/openRank?fids=${fidsToFetch.join(",")}`, {
-        signal: AbortSignal.timeout(10000), // 10 second timeout
-      });
+      const response = await fetch(
+        `/api/openRank?fids=${fidsToFetch.join(",")}`,
+        {
+          signal: AbortSignal.timeout(10000), // 10 second timeout
+        }
+      );
 
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
 

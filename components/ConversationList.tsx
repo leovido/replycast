@@ -17,6 +17,8 @@ interface ConversationListProps {
   conversations: UnrepliedDetail[];
   viewMode: "list" | "grid";
   openRankRanks: Record<number, number | null>;
+  quotientScores: Record<number, { quotientScore: number } | null>;
+  reputationType: "quotient" | "openrank";
   loading: boolean;
   isLoadingMore: boolean;
   hasMore: boolean;
@@ -33,6 +35,8 @@ export function ConversationList({
   conversations,
   viewMode,
   openRankRanks,
+  quotientScores,
+  reputationType,
   loading,
   isLoadingMore,
   hasMore,
@@ -47,15 +51,19 @@ export function ConversationList({
   // Render old design
   if (useOldDesign) {
     return (
-      <div className="px-4 pb-20">
+      <div className="px-4">
         <div className="max-w-6xl mx-auto">
           {viewMode === "list" ? (
-            <div className="space-y-6">
+            <div className="space-y-4">
               {conversations.map((cast, index) => (
                 <ReplyCard
                   key={`${cast.castHash}-${index}`}
                   detail={cast}
                   openRank={openRankRanks[cast.authorFid] || null}
+                  quotientScore={
+                    quotientScores[cast.authorFid]?.quotientScore || null
+                  }
+                  reputationType={reputationType}
                   onClick={() => onReply(cast)}
                   viewMode={viewMode}
                   isDarkTheme={true}
@@ -66,15 +74,19 @@ export function ConversationList({
               ))}
             </div>
           ) : (
-            <div className="columns-1 md:columns-2 lg:columns-3 gap-6 space-y-6">
+            <div className="columns-1 md:columns-2 lg:columns-3 gap-4 space-y-4">
               {conversations.map((cast, index) => (
                 <div
                   key={`${cast.castHash}-${index}`}
-                  className="break-inside-avoid mb-6"
+                  className="break-inside-avoid mb-4"
                 >
                   <ReplyCard
                     detail={cast}
                     openRank={openRankRanks[cast.authorFid] || null}
+                    quotientScore={
+                      quotientScores[cast.authorFid]?.quotientScore || null
+                    }
+                    reputationType={reputationType}
                     onClick={() => onReply(cast)}
                     viewMode={viewMode}
                     isDarkTheme={true}
@@ -89,7 +101,7 @@ export function ConversationList({
 
           {/* Loading More Indicator */}
           {isLoadingMore && (
-            <div className="text-center py-8">
+            <div className="text-center py-4">
               <div className="inline-flex items-center gap-3 text-white/80">
                 <svg
                   width={20}
@@ -117,7 +129,7 @@ export function ConversationList({
 
           {/* End of Results */}
           {!hasMore && conversations.length > 0 && (
-            <div className="text-center py-8">
+            <div className="text-center py-4">
               <div className="text-white/60 text-sm">
                 <span className="font-medium">🎉 All caught up!</span>
                 <p className="mt-1">
@@ -132,8 +144,8 @@ export function ConversationList({
 
           {/* Empty State */}
           {conversations.length === 0 && !loading && (
-            <div className="text-center py-12">
-              <div className="glass rounded-3xl p-12">
+            <div className="text-center py-6">
+              <div className="glass rounded-3xl p-8">
                 <div className="text-6xl mb-4">🎉</div>
                 <h3
                   className="text-2xl font-bold text-white mb-2"
@@ -156,25 +168,29 @@ export function ConversationList({
 
   // Render new design
   return (
-    <div className="px-6 pb-20">
+    <div className="px-6">
       <div
         className={`
           max-w-6xl mx-auto
           ${
             viewMode === "grid"
-              ? "columns-1 md:columns-2 lg:columns-3 gap-6"
-              : "space-y-6"
+              ? "columns-1 md:columns-2 lg:columns-3 gap-4"
+              : "space-y-4"
           }
         `}
       >
         {conversations.map((detail) => (
           <div
             key={detail.castHash}
-            className={viewMode === "grid" ? "mb-6 break-inside-avoid" : ""}
+            className={viewMode === "grid" ? "mb-4 break-inside-avoid" : ""}
           >
             <ReplyCard
               detail={detail}
               openRank={openRankRanks[detail.authorFid]}
+              quotientScore={
+                quotientScores[detail.authorFid]?.quotientScore || null
+              }
+              reputationType={reputationType}
               onClick={() => onReply(detail)}
               viewMode={viewMode}
               isDarkTheme={isDarkTheme}
@@ -185,7 +201,7 @@ export function ConversationList({
           </div>
         ))}
         {loading && (
-          <div className="col-span-full flex justify-center py-8">
+          <div className="col-span-full flex justify-center py-4">
             <div
               className={`animate-spin rounded-full h-8 w-8 border-b-2 ${
                 isDarkTheme ? "border-white/60" : "border-gray-600"
@@ -216,7 +232,7 @@ export function ConversationList({
 
         {/* Today filter message */}
         {!hasMore && conversations.length > 0 && dayFilter === "today" && (
-          <div className="col-span-full flex justify-center py-6 pb-20">
+          <div className="col-span-full flex justify-center py-4 pb-20">
             <div
               className={`text-center max-w-md ${
                 isDarkTheme ? "text-white/60" : "text-gray-600"
