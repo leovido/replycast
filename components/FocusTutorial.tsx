@@ -171,7 +171,7 @@ export function FocusTutorial({
             conversation to mark it as read
           </p>
           <p className="text-sm">
-            Marked conversations will here for easy reference
+            Marked conversations will show up here for easy reference
           </p>
         </div>
 
