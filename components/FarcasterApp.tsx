@@ -17,6 +17,7 @@ import { EmptyState } from "./EmptyState";
 import { sortDetails } from "../utils/farcaster";
 import Image from "next/image";
 import { isToday, isWithinLastDays } from "@/utils/farcaster";
+import type { ThemeMode } from "../types/types";
 
 // Local storage keys
 const STORAGE_KEYS = {
@@ -63,17 +64,15 @@ export default function FarcasterApp() {
   } = useAppAnalytics();
 
   // Initialize state from local storage
-  const [themeMode, setThemeMode] = useState<"dark" | "light" | "Farcaster">(
-    () => {
-      const storedValue = getStoredValue(STORAGE_KEYS.THEME_MODE, "Farcaster");
-      // Migration: Convert "glass" to "Farcaster"
-      if (storedValue === ("glass" as any)) {
-        setStoredValue(STORAGE_KEYS.THEME_MODE, "Farcaster");
-        return "Farcaster";
-      }
-      return storedValue;
+  const [themeMode, setThemeMode] = useState<ThemeMode>(() => {
+    const storedValue = getStoredValue(STORAGE_KEYS.THEME_MODE, "Farcaster");
+    // Migration: Convert "glass" to "Farcaster"
+    if (storedValue === ("glass" as any)) {
+      setStoredValue(STORAGE_KEYS.THEME_MODE, "Farcaster");
+      return "Farcaster";
     }
-  );
+    return storedValue;
+  });
   const [activeTab, setActiveTab] = useState<TabType>(() =>
     getStoredValue(STORAGE_KEYS.ACTIVE_TAB, "inbox")
   );
@@ -138,9 +137,10 @@ export default function FarcasterApp() {
     setStoredValue(STORAGE_KEYS.REPUTATION_TYPE, reputationType);
   }, [reputationType]);
 
-  const isDarkTheme = themeMode === "dark" || themeMode === "Farcaster";
+  const isDarkTheme =
+    themeMode === "dark" || themeMode === "Farcaster" || themeMode === "neon";
 
-  const handleThemeChange = (newTheme: "dark" | "light" | "Farcaster") => {
+  const handleThemeChange = (newTheme: ThemeMode) => {
     setThemeMode(newTheme);
     trackThemeChanged(newTheme, {
       previousTheme: themeMode,
@@ -156,6 +156,8 @@ export default function FarcasterApp() {
         return "bg-gradient-to-br from-gray-50 via-white to-gray-100";
       case "Farcaster":
         return "bg-gradient-to-br from-blue-900/20 via-purple-900/20 to-indigo-900/20 backdrop-blur-sm";
+      case "neon":
+        return "bg-gradient-to-br from-black via-gray-900 to-black";
       default:
         return "bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900";
     }

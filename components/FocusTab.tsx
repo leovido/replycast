@@ -5,6 +5,7 @@ import { FocusTutorial } from "./FocusTutorial";
 import { EmptyState } from "./EmptyState";
 import type { RefObject } from "react";
 import { isToday, isWithinLastDays } from "@/utils/farcaster";
+import type { ThemeMode } from "@/types/types";
 
 interface FocusTabProps {
   markedAsReadConversations: UnrepliedDetail[];
@@ -16,7 +17,7 @@ interface FocusTabProps {
   observerRef: RefObject<HTMLDivElement>;
   onReply: (detail: UnrepliedDetail) => void;
   isDarkTheme: boolean;
-  themeMode?: "dark" | "light" | "Farcaster";
+  themeMode?: ThemeMode;
   onMarkAsRead?: (detail: UnrepliedDetail) => void;
   onDiscard?: (detail: UnrepliedDetail) => void;
   dayFilter?: string;

@@ -1,13 +1,14 @@
 import React from "react";
 import type { UnrepliedDetail } from "@/types/types";
 import Image from "next/image";
+import type { ThemeMode } from "@/types/types";
 
 interface AnalyticsTabProps {
   allConversations: UnrepliedDetail[];
   userOpenRank: number | null;
   openRankRanks: Record<number, number | null>;
   isDarkTheme: boolean;
-  themeMode: "dark" | "light" | "Farcaster";
+  themeMode: ThemeMode;
 }
 
 export function AnalyticsTab({
@@ -30,6 +31,8 @@ export function AnalyticsTab({
     switch (themeMode) {
       case "light":
         return "bg-white/80 backdrop-blur-md border border-gray-200";
+      case "neon":
+        return "bg-pink-500/20 backdrop-blur-md border border-pink-500/40 shadow-lg shadow-pink-500/25";
       case "Farcaster":
         return "bg-purple-900/20 backdrop-blur-md border border-purple-800/30";
       default:
@@ -49,6 +52,8 @@ export function AnalyticsTab({
     switch (themeMode) {
       case "light":
         return "text-blue-600";
+      case "neon":
+        return "text-pink-400";
       case "Farcaster":
         return "text-purple-300";
       default:

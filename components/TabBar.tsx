@@ -1,6 +1,7 @@
 import React from "react";
 import { sdk } from "@farcaster/miniapp-sdk";
 import { useAppAnalytics } from "../hooks/useAnalytics";
+import type { ThemeMode } from "../types/types";
 
 export type TabType = "inbox" | "focus" | "analytics";
 
@@ -8,7 +9,7 @@ interface TabBarProps {
   activeTab: TabType;
   onTabChange: (tab: TabType) => void;
   isDarkTheme: boolean;
-  themeMode: "dark" | "light" | "Farcaster";
+  themeMode: ThemeMode;
 }
 
 const tabs = [
@@ -98,6 +99,8 @@ export function TabBar({
         return "bg-gray-900/95 backdrop-blur-md border-gray-800";
       case "light":
         return "bg-white/95 backdrop-blur-md border-gray-200";
+      case "neon":
+        return "bg-black/95 backdrop-blur-md border-pink-500/50 shadow-lg shadow-pink-500/25";
       case "Farcaster":
         return "bg-purple-900/95 backdrop-blur-md border-purple-800/50";
       default:
@@ -110,6 +113,8 @@ export function TabBar({
       switch (themeMode) {
         case "light":
           return "text-blue-600";
+        case "neon":
+          return "text-pink-400";
         case "Farcaster":
           return "text-purple-300";
         default:
@@ -119,6 +124,8 @@ export function TabBar({
       switch (themeMode) {
         case "light":
           return "text-gray-500";
+        case "neon":
+          return "text-cyan-400/60";
         case "Farcaster":
           return "text-white/60";
         default:
@@ -131,6 +138,8 @@ export function TabBar({
     switch (themeMode) {
       case "light":
         return "border-gray-200";
+      case "neon":
+        return "border-pink-500/50";
       case "Farcaster":
         return "border-purple-800/50";
       default:

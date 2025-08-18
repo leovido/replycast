@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { sdk } from "@farcaster/miniapp-sdk";
 import { useAppAnalytics } from "../hooks/useAnalytics";
 import { privacyManager, type PrivacyConfig } from "../utils/privacy";
+import type { ThemeMode } from "../types/types";
 
 interface AddToFarcasterButtonProps {
   isDarkTheme: boolean;
@@ -138,8 +139,8 @@ function AddToFarcasterButton({ isDarkTheme }: AddToFarcasterButtonProps) {
 interface SettingsMenuProps {
   isOpen: boolean;
   onClose: () => void;
-  themeMode: "dark" | "light" | "Farcaster";
-  onThemeChange: (theme: "dark" | "light" | "Farcaster") => void;
+  themeMode: ThemeMode;
+  onThemeChange: (theme: ThemeMode) => void;
   viewMode: "list" | "grid";
   onViewModeChange: (mode: "list" | "grid") => void;
   sortOption: string;
@@ -238,8 +239,8 @@ export function SettingsMenu({
           >
             Theme
           </h3>
-          <div className="grid grid-cols-3 gap-2">
-            {(["Farcaster", "dark", "light"] as const).map((theme) => (
+          <div className="grid grid-cols-4 gap-2">
+            {(["Farcaster", "dark", "light", "neon"] as const).map((theme) => (
               <button
                 key={theme}
                 onClick={() => {
@@ -258,7 +259,13 @@ export function SettingsMenu({
               >
                 <div className="flex flex-col items-center gap-2">
                   <div className="text-lg">
-                    {theme === "dark" ? "🌙" : theme === "light" ? "☀️" : "💎"}
+                    {theme === "dark"
+                      ? "🌙"
+                      : theme === "light"
+                      ? "☀️"
+                      : theme === "neon"
+                      ? "✨"
+                      : "💎"}
                   </div>
                   <span
                     className={`text-xs font-medium ${

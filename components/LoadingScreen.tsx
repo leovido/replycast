@@ -1,13 +1,12 @@
 import { memo } from "react";
+import type { ThemeMode } from "../types/types";
 
 interface LoadingScreenProps {
-  themeMode?: "dark" | "light" | "Farcaster";
+  themeMode?: ThemeMode;
 }
 
 // Helper function to get theme-aware styling
-const getThemeStyles = (
-  themeMode: "dark" | "light" | "Farcaster" = "Farcaster"
-) => {
+const getThemeStyles = (themeMode: ThemeMode = "Farcaster") => {
   switch (themeMode) {
     case "dark":
       return {
@@ -26,6 +25,15 @@ const getThemeStyles = (
         iconBg: "bg-gray-800/20",
         iconBorder: "border-gray-800/30",
         dots: "bg-gray-600/60",
+      };
+    case "neon":
+      return {
+        background: "bg-gradient-to-br from-black via-gray-900 to-black",
+        text: "text-pink-400",
+        textMuted: "text-cyan-400/80",
+        iconBg: "bg-pink-500/20",
+        iconBorder: "border-pink-500/40",
+        dots: "bg-cyan-400",
       };
     case "Farcaster":
     default:

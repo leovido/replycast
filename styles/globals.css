@@ -31,6 +31,12 @@
   --transition-medium: 300ms ease-out;
   --border-radius-lg: 1rem;
   --border-radius-xl: 1.5rem;
+
+  /* Neon theme variables */
+  --neon-pink: #ff0080;
+  --neon-cyan: #00ffff;
+  --neon-pink-glow: 0 0 20px rgba(255, 0, 128, 0.5);
+  --neon-cyan-glow: 0 0 20px rgba(0, 255, 255, 0.5);
 }
 
 /* Base styles with performance optimizations */
@@ -288,6 +294,25 @@ body {
 .performance-optimized {
   contain: layout style paint;
   will-change: auto;
+}
+
+/* Neon theme utilities */
+.neon-glow-pink {
+  box-shadow: var(--neon-pink-glow);
+}
+
+.neon-glow-cyan {
+  box-shadow: var(--neon-cyan-glow);
+}
+
+.neon-text-pink {
+  color: var(--neon-pink);
+  text-shadow: 0 0 10px rgba(255, 0, 128, 0.5);
+}
+
+.neon-text-cyan {
+  color: var(--neon-cyan);
+  text-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
 }
 
 /* Loading states with better performance */

@@ -7,6 +7,8 @@ export interface User {
 
 export type Cursor = string | null | undefined;
 
+export type ThemeMode = "dark" | "light" | "Farcaster" | "neon";
+
 export interface UnrepliedDetail {
   username: string;
   timeAgo: string;

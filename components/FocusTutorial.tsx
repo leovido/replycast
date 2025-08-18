@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from "react";
 import { Button } from "./Button";
 import { useAppAnalytics, ANALYTICS_ACTIONS } from "../hooks/useAnalytics";
+import type { ThemeMode } from "../types/types";
 
 interface FocusTutorialProps {
   isDarkTheme: boolean;
-  themeMode?: "dark" | "light" | "Farcaster";
+  themeMode?: ThemeMode;
   onComplete: () => void;
 }
 
@@ -89,6 +90,17 @@ export function FocusTutorial({
           textMuted: "text-gray-600",
           border: "border-gray-200",
           iconBg: "bg-gray-100",
+        };
+      case "neon":
+        return {
+          mainCard:
+            "bg-gradient-to-br from-pink-500/20 to-cyan-500/20 backdrop-blur-lg shadow-xl ring-1 ring-pink-500/30",
+          exampleCard:
+            "bg-gradient-to-br from-pink-500/10 to-cyan-500/10 backdrop-blur-lg",
+          text: "text-pink-400",
+          textMuted: "text-cyan-400/80",
+          border: "border-pink-500/30",
+          iconBg: "bg-pink-500/20",
         };
       case "Farcaster":
       default:
