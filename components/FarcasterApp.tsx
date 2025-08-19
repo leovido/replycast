@@ -146,7 +146,7 @@ export default function FarcasterApp() {
       case "light":
         return "bg-gradient-to-br from-gray-50 via-white to-gray-100";
       case "Farcaster":
-        return "bg-gradient-to-br from-blue-900/20 via-purple-900/20 to-indigo-900/20 backdrop-blur-sm";
+        return "bg-gradient-to-br from-purple-900 via-purple-800 to-indigo-900";
       default:
         return "bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900";
     }
