@@ -143,14 +143,11 @@ export function FarcasterSignIn({ onSignIn, onError }: FarcasterSignInProps) {
             </div>
           )}
 
-          {/* Custom Sign-In Buttons */}
-          <div className="space-y-3">
-            <div className="w-full">
-              <SignInButton
-                onSuccess={handleSignInSuccess}
-                onError={handleSignInError}
-              />
-            </div>
+          <div className="w-full">
+            <SignInButton
+              onSuccess={handleSignInSuccess}
+              onError={handleSignInError}
+            />
           </div>
 
           {/* QR Code Modal */}
