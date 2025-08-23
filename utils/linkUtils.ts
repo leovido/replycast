@@ -51,6 +51,17 @@ const VIDEO_DOMAINS = [
   "x.com",
 ];
 
+// Known domains that typically serve music
+const MUSIC_DOMAINS = [
+  "open.spotify.com",
+  "spotify.com",
+  "music.apple.com",
+  "tidal.com",
+  "soundcloud.com",
+  "bandcamp.com",
+  "deezer.com",
+];
+
 /**
  * Extract URLs from text content
  */
@@ -118,6 +129,18 @@ export function isVideoUrl(url: string): boolean {
 }
 
 /**
+ * Check if a URL points to a music service
+ */
+export function isMusicUrl(url: string): boolean {
+  try {
+    const urlObj = new URL(url);
+    return MUSIC_DOMAINS.some((domain) => urlObj.hostname.includes(domain));
+  } catch {
+    return false;
+  }
+}
+
+/**
  * Get the domain from a URL for display purposes
  */
 export function getDomainFromUrl(url: string): string {
@@ -171,13 +194,77 @@ export function getYouTubeThumbnail(url: string): string | null {
 }
 
 /**
+ * Extract metadata from Spotify URLs
+ */
+export function getSpotifyMetadata(
+  url: string
+): { title: string; artist?: string; type: string; trackId?: string } | null {
+  try {
+    const urlObj = new URL(url);
+    if (urlObj.hostname.includes("spotify.com")) {
+      const pathParts = urlObj.pathname.split("/");
+
+      if (pathParts[1] === "track" && pathParts[2]) {
+        return {
+          title: "Spotify Track",
+          type: "track",
+          trackId: pathParts[2],
+        };
+      } else if (pathParts[1] === "album" && pathParts[2]) {
+        return {
+          title: "Spotify Album",
+          type: "album",
+          trackId: pathParts[2],
+        };
+      } else if (pathParts[1] === "playlist" && pathParts[2]) {
+        return {
+          title: "Spotify Playlist",
+          type: "playlist",
+          trackId: pathParts[2],
+        };
+      } else if (pathParts[1] === "artist" && pathParts[2]) {
+        return {
+          title: "Spotify Artist",
+          type: "artist",
+          trackId: pathParts[2],
+        };
+      }
+    }
+  } catch {
+    // Invalid URL
+  }
+  return null;
+}
+
+/**
+ * Fetch rich metadata from Spotify (requires Spotify API or web scraping)
+ * This is a placeholder for future enhancement
+ */
+export async function getSpotifyRichMetadata(url: string): Promise<{
+  title: string;
+  artist: string;
+  album: string;
+  year: string;
+  coverArt: string;
+  description: string;
+} | null> {
+  // TODO: Implement real Spotify metadata fetching
+  // Options:
+  // 1. Spotify Web API (requires OAuth)
+  // 2. Web scraping (less reliable, may break)
+  // 3. Third-party services (like the HeyMeta tool)
+  return null;
+}
+
+/**
  * Classify a URL and return metadata
  */
 export function classifyUrl(url: string): {
-  type: "image" | "video" | "youtube" | "other";
+  type: "image" | "video" | "youtube" | "music" | "other";
   domain: string;
   title?: string;
   thumbnail?: string;
+  metadata?: any;
 } {
   const domain = getDomainFromUrl(url);
 
@@ -195,6 +282,19 @@ export function classifyUrl(url: string): {
       };
     }
     return { type: "video", domain };
+  }
+
+  if (isMusicUrl(url)) {
+    if (url.includes("spotify.com")) {
+      const spotifyData = getSpotifyMetadata(url);
+      return {
+        type: "music",
+        domain,
+        title: spotifyData?.title || "Spotify",
+        metadata: spotifyData,
+      };
+    }
+    return { type: "music", domain };
   }
 
   return { type: "other", domain };

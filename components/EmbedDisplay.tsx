@@ -77,6 +77,149 @@ export function EmbedDisplay({
     );
   };
 
+  const renderMusicEmbed = () => {
+    const isSpotify = url.includes("spotify.com");
+    const musicData = urlInfo.metadata;
+
+    // For Spotify tracks, we can show enhanced metadata when available
+    if (isSpotify && musicData?.type === "track") {
+      return (
+        <div className="flex flex-col">
+          {/* Spotify track with enhanced design */}
+          <div className="relative mb-3">
+            <div className="w-full h-32 bg-gradient-to-br from-green-400 to-green-600 rounded-lg flex items-center justify-center">
+              {/* Spotify logo as placeholder */}
+              <svg
+                className="w-16 h-16 text-white"
+                fill="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.6-1.079.6-.45 0-.9-.15-1.2-.45l-4.5-4.5-4.5 4.5c-.3.3-.75.45-1.2.45-.42 0-.84-.24-1.08-.6-.24-.36-.24-.84 0-1.2l4.5-4.5-4.5-4.5c-.24-.36-.24-.84 0-1.2.24-.36.66-.6 1.08-.6.45 0 .9.15 1.2.45l4.5 4.5 4.5-4.5c.3-.3.75-.45 1.2-.45.42 0 .84.24 1.08.6.24.36.24.84 0 1.2l-4.5 4.5 4.5-4.5c.24.36.24.84 0 1.2z" />
+              </svg>
+            </div>
+            {/* Play button overlay */}
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="bg-black/70 rounded-full p-3">
+                <svg
+                  className="w-6 h-6 text-white"
+                  fill="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path d="M8 5v14l11-7z" />
+                </svg>
+              </div>
+            </div>
+          </div>
+
+          {/* Track information */}
+          <div className="flex items-start gap-3">
+            <div className="w-10 h-10 bg-green-600 rounded-lg flex items-center justify-center flex-shrink-0">
+              <svg
+                className="w-6 h-6 text-white"
+                fill="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path d="M12 0C5.4 0 0 5.4 0 12s5.5 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.6-1.079.6-.45 0-.9-.15-1.2-.45l-4.5-4.5-4.5 4.5c-.3.3-.75.45-1.2.45-.42 0-.84-.24-1.08-.6-.24-.36-.24-.84 0-1.2l4.5-4.5-4.5-4.5c-.24-.36-.24-.84 0-1.2.24-.36.66-.6 1.08-.6.45 0 .9.15 1.2.45l4.5 4.5 4.5-4.5c.3-.3.75-.45 1.2-.45.42 0 .84.24 1.08.6.24.36.24.84 0 1.2l-4.5 4.5 4.5 4.5c.24.36.24.84 0 1.2z" />
+              </svg>
+            </div>
+            <div className="min-w-0 flex-1">
+              <p
+                className={`font-semibold text-sm truncate ${
+                  isDarkTheme ? "text-white" : "text-gray-900"
+                }`}
+              >
+                Spotify Track
+              </p>
+              <p
+                className={`text-xs ${
+                  isDarkTheme ? "text-white/70" : "text-gray-600"
+                }`}
+              >
+                {musicData.trackId
+                  ? `Track ID: ${musicData.trackId}`
+                  : "Music on Spotify"}
+              </p>
+              <p
+                className={`text-xs ${
+                  isDarkTheme ? "text-white/50" : "text-gray-500"
+                }`}
+              >
+                Click to open in Spotify
+              </p>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // Generic music embed for other music services
+    return (
+      <div className="flex flex-col">
+        {/* Music thumbnail/cover */}
+        <div className="relative mb-3">
+          <div className="w-full h-32 bg-gradient-to-br from-green-400 to-green-600 rounded-lg flex items-center justify-center">
+            <svg
+              className="w-16 h-16 text-white"
+              fill="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.6-1.079.6-.45 0-.9-.15-1.2-.45l-4.5-4.5-4.5 4.5c-.3.3-.75.45-1.2.45-.42 0-.84-.24-1.08-.6-.24-.36-.24-.84 0-1.2l4.5-4.5-4.5-4.5c-.24-.36-.24-.84 0-1.2.24-.36.66-.6 1.08-.6.45 0 .9.15 1.2.45l4.5 4.5 4.5-4.5c.3-.3.75-.45 1.2-.45.42 0 .84.24 1.08.6.24.36.24.84 0 1.2l-4.5 4.5 4.5-4.5c.24.36.24.84 0 1.2z" />
+            </svg>
+          </div>
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className="bg-black/70 rounded-full p-3">
+              <svg
+                className="w-6 h-6 text-white"
+                fill="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path d="M8 5v14l11-7z" />
+              </svg>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <div className="w-10 h-10 bg-green-600 rounded-lg flex items-center justify-center flex-shrink-0">
+            {isSpotify ? (
+              <svg
+                className="w-6 h-6 text-white"
+                fill="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.6-1.079.6-.45 0-.9-.15-1.2-.45l-4.5-4.5-4.5 4.5c-.3.3-.75.45-1.2.45-.42 0-.84-.24-1.08-.6-.24-.36-.24-.84 0-1.2l4.5-4.5-4.5-4.5c-.24-.36-.24-.84 0-1.2.24-.36.66-.6 1.08-.6.45 0 .9.15 1.2.45l4.5 4.5 4.5-4.5c.3-.3.75-.45 1.2-.45.42 0 .84.24 1.08.6.24.36.24.84 0 1.2l-4.5 4.5 4.5 4.5c.24.36.24.84 0 1.2z" />
+              </svg>
+            ) : (
+              <svg
+                className="w-6 h-6 text-white"
+                fill="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z" />
+              </svg>
+            )}
+          </div>
+          <div className="min-w-0 flex-1">
+            <p
+              className={`font-medium text-sm truncate ${
+                isDarkTheme ? "text-white" : "text-gray-900"
+              }`}
+            >
+              {musicData?.title || "Music Track"}
+            </p>
+            <p
+              className={`text-xs ${
+                isDarkTheme ? "text-white/60" : "text-gray-500"
+              }`}
+            >
+              {urlInfo.domain}
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   const renderGenericEmbed = () => {
     return (
       <div className="flex items-center gap-3">
@@ -130,7 +273,11 @@ export function EmbedDisplay({
           : "border-gray-200 bg-gray-50 hover:bg-gray-100"
       } ${className}`}
     >
-      {urlInfo.type === "youtube" ? renderYouTubeEmbed() : renderGenericEmbed()}
+      {urlInfo.type === "youtube"
+        ? renderYouTubeEmbed()
+        : urlInfo.type === "music"
+        ? renderMusicEmbed()
+        : renderGenericEmbed()}
     </button>
   );
 }

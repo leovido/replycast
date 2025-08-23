@@ -2,9 +2,12 @@ import {
   extractUrls,
   isImageUrl,
   isVideoUrl,
+  isMusicUrl,
   getDomainFromUrl,
   getYouTubeTitle,
   getYouTubeThumbnail,
+  getSpotifyMetadata,
+  getSpotifyRichMetadata,
   classifyUrl,
 } from "./linkUtils";
 
@@ -66,6 +69,19 @@ describe("linkUtils", () => {
     });
   });
 
+  describe("isMusicUrl", () => {
+    it("identifies music URLs by domain", () => {
+      expect(isMusicUrl("https://open.spotify.com/track/123")).toBe(true);
+      expect(isMusicUrl("https://music.apple.com/album/123")).toBe(true);
+      expect(isMusicUrl("https://soundcloud.com/artist/track")).toBe(true);
+    });
+
+    it("identifies non-music URLs", () => {
+      expect(isMusicUrl("https://example.com/page.html")).toBe(false);
+      expect(isMusicUrl("https://youtube.com/watch?v=123")).toBe(false);
+    });
+  });
+
   describe("getDomainFromUrl", () => {
     it("extracts domain from URL", () => {
       expect(getDomainFromUrl("https://www.example.com/page")).toBe(
@@ -117,6 +133,54 @@ describe("linkUtils", () => {
     });
   });
 
+  describe("getSpotifyMetadata", () => {
+    it("returns metadata for Spotify track URLs", () => {
+      const metadata = getSpotifyMetadata("https://open.spotify.com/track/123");
+      expect(metadata).toEqual({
+        title: "Spotify Track",
+        type: "track",
+        trackId: "123",
+      });
+    });
+
+    it("returns metadata for Spotify album URLs", () => {
+      const metadata = getSpotifyMetadata("https://open.spotify.com/album/123");
+      expect(metadata).toEqual({
+        title: "Spotify Album",
+        type: "album",
+        trackId: "123",
+      });
+    });
+
+    it("returns metadata for Spotify playlist URLs", () => {
+      const metadata = getSpotifyMetadata(
+        "https://open.spotify.com/playlist/123"
+      );
+      expect(metadata).toEqual({
+        title: "Spotify Playlist",
+        type: "playlist",
+        trackId: "123",
+      });
+    });
+
+    it("returns null for non-Spotify URLs", () => {
+      expect(getSpotifyMetadata("https://example.com")).toBeNull();
+    });
+  });
+
+  describe("getSpotifyRichMetadata", () => {
+    it("returns null for now (placeholder for future implementation)", async () => {
+      const metadata = await getSpotifyRichMetadata(
+        "https://open.spotify.com/track/123"
+      );
+      expect(metadata).toBeNull();
+    });
+
+    it("returns null for non-Spotify URLs", async () => {
+      expect(await getSpotifyRichMetadata("https://example.com")).toBeNull();
+    });
+  });
+
   describe("classifyUrl", () => {
     it("classifies image URLs correctly", () => {
       const result = classifyUrl("https://example.com/image.jpg");
@@ -132,6 +196,20 @@ describe("linkUtils", () => {
       expect(result.thumbnail).toBe(
         "https://img.youtube.com/vi/avjI3_GIZBw/maxresdefault.jpg"
       );
+    });
+
+    it("classifies Spotify URLs correctly", () => {
+      const result = classifyUrl(
+        "https://open.spotify.com/track/5VP1yXviUwA0KA0ewit5pe?si=4ad99b84f89a461a"
+      );
+      expect(result.type).toBe("music");
+      expect(result.domain).toBe("open.spotify.com");
+      expect(result.title).toBe("Spotify Track");
+      expect(result.metadata).toEqual({
+        title: "Spotify Track",
+        type: "track",
+        trackId: "5VP1yXviUwA0KA0ewit5pe",
+      });
     });
 
     it("classifies other URLs correctly", () => {

@@ -249,7 +249,7 @@ export const shouldUseMocks = () => {
 };
 
 export const mockReplies: FarcasterRepliesResponse = {
-  unrepliedCount: 5,
+  unrepliedCount: 6,
   unrepliedDetails: [
     {
       avatarUrl: "https://randomuser.me/api/portraits/women/68.jpg",
@@ -316,6 +316,22 @@ export const mockReplies: FarcasterRepliesResponse = {
       replyCount: 3,
       likesCount: 6,
       recastsCount: 2,
+    },
+    {
+      avatarUrl: "https://randomuser.me/api/portraits/women/44.jpg",
+      username: "sarah",
+      text: "Check out this amazing song: https://open.spotify.com/track/5VP1yXviUwA0KA0ewit5pe?si=4ad99b84f89a461a It's absolutely beautiful!",
+      timeAgo: "20m",
+      timestamp: 1716666666,
+      authorFid: 128,
+      castUrl: "https://farcaster.xyz/cast/128",
+      castHash: "128",
+      originalCastText: "Original text",
+      originalCastHash: "128",
+      originalAuthorUsername: "original_author",
+      replyCount: 4,
+      likesCount: 9,
+      recastsCount: 3,
     },
     {
       avatarUrl: "https://randomuser.me/api/portraits/women/23.jpg",

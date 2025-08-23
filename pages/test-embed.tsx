@@ -95,6 +95,23 @@ const TestEmbed: NextPage = () => {
               </div>
             </div>
 
+            {/* Music Links */}
+            <div className="mb-8">
+              <h3 className="text-md font-medium mb-4 text-white/90">
+                Music Links:
+              </h3>
+              <div className="bg-white/5 rounded-lg p-4">
+                <p className="text-white/80 mb-3">
+                  Listen to this song:
+                  https://open.spotify.com/track/5VP1yXviUwA0KA0ewit5pe?si=4ad99b84f89a461a
+                </p>
+                <LinkContent
+                  text="Listen to this song: https://open.spotify.com/track/5VP1yXviUwA0KA0ewit5pe?si=4ad99b84f89a461a"
+                  isDarkTheme={true}
+                />
+              </div>
+            </div>
+
             {/* Regular Links */}
             <div>
               <h3 className="text-md font-medium mb-4 text-white/90">
