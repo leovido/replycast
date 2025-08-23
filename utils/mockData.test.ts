@@ -10,8 +10,8 @@ describe("mockData", () => {
     });
 
     it("contains the expected number of replies", () => {
-      expect(mockReplies.unrepliedCount).toBe(5);
-      expect(mockReplies.unrepliedDetails).toHaveLength(5);
+      expect(mockReplies.unrepliedCount).toBe(6);
+      expect(mockReplies.unrepliedDetails).toHaveLength(6);
     });
 
     it("includes the YouTube link in sophia's reply", () => {
@@ -66,6 +66,17 @@ describe("mockData", () => {
       expect(emmaReply?.text).not.toContain("http");
       expect(emmaReply?.userRecasted).toBe(true);
       expect(emmaReply?.hasUserInteraction).toBe(true);
+    });
+
+    it("includes Spotify link in sarah's reply", () => {
+      const sarahReply = mockReplies.unrepliedDetails.find(
+        (reply) => reply.username === "sarah"
+      );
+
+      expect(sarahReply).toBeDefined();
+      expect(sarahReply?.text).toContain(
+        "https://open.spotify.com/track/5VP1yXviUwA0KA0ewit5pe?si=4ad99b84f89a461a"
+      );
     });
 
     it("has unique FIDs for each reply", () => {

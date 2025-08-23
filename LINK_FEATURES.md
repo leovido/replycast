@@ -14,6 +14,7 @@ ReplyCast now supports automatic detection and display of links found in cast te
 ### 🔗 Rich Link Embeds
 
 - **YouTube Support**: Special handling for YouTube videos with thumbnails and play buttons
+- **Music Service Support**: Rich embeds for Spotify, Apple Music, SoundCloud, and other music platforms
 - **Domain Recognition**: Smart detection of link types based on domain and file extensions
 - **Interactive Elements**: Clickable embeds that open links in new tabs
 - **Theme Support**: Adapts to both light and dark themes
@@ -25,6 +26,7 @@ The system automatically categorizes links into:
 - **Images**: `.jpg`, `.png`, `.gif`, `.webp`, etc. + image hosting domains
 - **Videos**: `.mp4`, `.webm`, etc. + video platform domains
 - **YouTube**: Special handling for YouTube links with thumbnails
+- **Music**: Spotify, Apple Music, SoundCloud, Tidal, Bandcamp, Deezer
 - **Other**: Generic link embeds for websites and other content
 
 ## How It Works
@@ -55,6 +57,29 @@ The `LinkContent` component automatically:
 - Separates images from other links
 - Renders appropriate display components
 - Handles loading and error states
+
+### 4. Music Link Support
+
+Music service links are automatically detected and rendered with rich embeds:
+
+```typescript
+// Spotify track
+const spotifyUrl =
+  "https://open.spotify.com/track/5VP1yXviUwA0KA0ewit5pe?si=4ad99b84f89a461a";
+const urlInfo = classifyUrl(spotifyUrl);
+// Returns: { type: 'music', domain: 'open.spotify.com', title: 'Spotify Track', metadata: {...} }
+
+// Rich metadata extraction (future enhancement)
+const richMetadata = await getSpotifyRichMetadata(spotifyUrl);
+// Returns: { title: 'California and Me', artist: 'Laufey, Philharmonia Orchestra', album: 'Bewitched', year: '2023', coverArt: '...', description: '...' }
+```
+
+**Enhanced Spotify Support**:
+
+- **Rich Track Information**: Song title, artist, album, year
+- **Album Cover Art**: High-quality artwork from Spotify
+- **Professional Layout**: Music card design with play button overlay
+- **Fallback Handling**: Graceful degradation if metadata unavailable
 
 ## Components
 
