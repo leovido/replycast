@@ -3,6 +3,7 @@ import Image from "next/image";
 import { sdk } from "@farcaster/miniapp-sdk";
 import type { UnrepliedDetail } from "@/types/types";
 import { useAppAnalytics } from "../hooks/useAnalytics";
+import { LinkContent } from "./LinkContent";
 
 export interface ReplyCardProps {
   detail: UnrepliedDetail;
@@ -687,8 +688,17 @@ export const ReplyCard = memo<ReplyCardProps>(
 
           {/* Cast Text */}
           <p className="z-10 text-white text-base leading-relaxed break-words whitespace-pre-wrap text-left">
-            {detail.text}
+            {
+              "  https://youtu.be/avjI3_GIZBw and here's a cool image: https://picsum.photos/400/300"
+            }
           </p>
+
+          {/* Link Content (Images and Embeds) */}
+          <LinkContent
+            text={detail.text}
+            isDarkTheme={isDarkTheme}
+            className="z-10"
+          />
 
           {/* Footer */}
           <div className="z-10 flex items-center justify-between text-sm text-white/60">
@@ -1002,6 +1012,13 @@ export const ReplyCard = memo<ReplyCardProps>(
         >
           {detail.text}
         </p>
+
+        {/* Link Content (Images and Embeds) */}
+        <LinkContent
+          text={detail.text}
+          isDarkTheme={isDarkTheme}
+          className="z-10 pt-4"
+        />
 
         {/* Footer */}
         <div
