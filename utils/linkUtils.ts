@@ -190,8 +190,8 @@ export function classifyUrl(url: string): {
       return {
         type: "youtube",
         domain,
-        title: getYouTubeTitle(url),
-        thumbnail: getYouTubeThumbnail(url),
+        title: getYouTubeTitle(url) || undefined,
+        thumbnail: getYouTubeThumbnail(url) || undefined,
       };
     }
     return { type: "video", domain };
