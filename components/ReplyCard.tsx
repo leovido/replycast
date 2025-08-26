@@ -686,12 +686,12 @@ export const ReplyCard = memo<ReplyCardProps>(
             </div>
           </div>
 
-          {/* Cast Text */}
-          <p className="z-10 text-white text-base leading-relaxed break-words whitespace-pre-wrap text-left">
-            {
-              "  https://youtu.be/avjI3_GIZBw and here's a cool image: https://picsum.photos/400/300"
-            }
-          </p>
+          {/* Cast Text - only show if there's actual text */}
+          {detail.text.trim() && (
+            <p className="z-10 text-white text-base leading-relaxed break-words whitespace-pre-wrap text-left">
+              {detail.text}
+            </p>
+          )}
 
           {/* Link Content (Images and Embeds) */}
           <LinkContent
@@ -699,6 +699,13 @@ export const ReplyCard = memo<ReplyCardProps>(
             isDarkTheme={isDarkTheme}
             className="z-10"
           />
+
+          {/* Show indicator when there's no text but there are embeds */}
+          {!detail.text.trim() && (
+            <div className="z-10 text-xs text-white/60 italic">
+              📎 Cast contains embedded media
+            </div>
+          )}
 
           {/* Footer */}
           <div className="z-10 flex items-center justify-between text-sm text-white/60">
@@ -1004,14 +1011,16 @@ export const ReplyCard = memo<ReplyCardProps>(
           </div>
         </div>
 
-        {/* Cast Text */}
-        <p
-          className={`z-10 pt-4 text-base leading-relaxed break-words whitespace-pre-wrap text-left ${
-            isDarkTheme ? "text-white" : "text-gray-900"
-          }`}
-        >
-          {detail.text}
-        </p>
+        {/* Cast Text - only show if there's actual text */}
+        {detail.text.trim() && (
+          <p
+            className={`z-10 pt-4 text-base leading-relaxed break-words whitespace-pre-wrap text-left ${
+              isDarkTheme ? "text-white" : "text-gray-900"
+            }`}
+          >
+            {detail.text}
+          </p>
+        )}
 
         {/* Link Content (Images and Embeds) */}
         <LinkContent
@@ -1019,6 +1028,13 @@ export const ReplyCard = memo<ReplyCardProps>(
           isDarkTheme={isDarkTheme}
           className="z-10 pt-4"
         />
+
+        {/* Show indicator when there's no text but there are embeds */}
+        {!detail.text.trim() && (
+          <div className="z-10 pt-4 text-xs text-gray-500 dark:text-gray-400 italic">
+            📎 Cast contains embedded media
+          </div>
+        )}
 
         {/* Footer */}
         <div
