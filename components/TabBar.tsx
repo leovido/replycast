@@ -2,7 +2,7 @@ import React from "react";
 import { sdk } from "@farcaster/miniapp-sdk";
 import { useAppAnalytics } from "../hooks/useAnalytics";
 
-export type TabType = "inbox" | "focus" | "analytics";
+export type TabType = "inbox" | "focus" | "speed" | "analytics";
 
 interface TabBarProps {
   activeTab: TabType;
@@ -49,6 +49,22 @@ const tabs = [
         <path d="M3.6 3.6l4.2 4.2m8.4 8.4 4.2 4.2" />
         <path d="M1 12h6m6 0h6" />
         <path d="M3.6 20.4l4.2-4.2m8.4-8.4 4.2-4.2" />
+      </svg>
+    ),
+  },
+  {
+    id: "speed" as TabType,
+    label: "Speed",
+    icon: (
+      <svg
+        width={20}
+        height={20}
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth={2}
+      >
+        <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
       </svg>
     ),
   },

@@ -11,6 +11,7 @@ import { FarcasterSignIn } from "./FarcasterSignIn";
 import { SettingsMenu } from "./SettingsMenu";
 import { TabBar, type TabType } from "./TabBar";
 import { FocusTab } from "./FocusTab";
+import { SpeedModeTab } from "./SpeedModeTab";
 import { AnalyticsTab } from "./AnalyticsTab";
 import { ToastNotification } from "./ToastNotification";
 import { EmptyState } from "./EmptyState";
@@ -789,7 +790,7 @@ export default function FarcasterApp() {
                 : "bg-white/80 backdrop-blur-md border border-gray-200"
             }`}
           >
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
               <div className="flex-shrink-0">
                 {user.pfpUrl ? (
                   <Image
@@ -808,7 +809,7 @@ export default function FarcasterApp() {
                 )}
               </div>
               <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-1">
+                <div className="flex items-center mb-0">
                   <span
                     className={`font-semibold truncate ${
                       isDarkTheme ? "text-white" : "text-gray-900"
@@ -816,14 +817,15 @@ export default function FarcasterApp() {
                   >
                     {user.displayName || user.username}
                   </span>
-                  <span
-                    className={`text-sm ${
-                      isDarkTheme ? "text-white/60" : "text-gray-600"
-                    }`}
-                  >
-                    FID: {user.fid}
-                  </span>
                 </div>
+                <span
+                  className={`text-sm mb-0 ${
+                    isDarkTheme ? "text-white/60" : "text-gray-600"
+                  }`}
+                  style={{ marginTop: "-5px" }}
+                >
+                  FID: {user.fid}
+                </span>
                 {userOpenRank !== null && userOpenRank !== undefined && (
                   <div className="flex items-center gap-1">
                     <svg
@@ -950,6 +952,40 @@ export default function FarcasterApp() {
             <FocusTab
               markedAsReadConversations={markedAsReadConversations}
               viewMode={viewMode}
+              openRankRanks={openRankRanks}
+              loading={dataLoading}
+              isLoadingMore={isLoadingMore}
+              hasMore={hasMore}
+              observerRef={observerRef}
+              onReply={async (detail) => {
+                try {
+                  await sdk.actions.viewCast({ hash: detail.castHash });
+                  // Track cast viewed
+                  trackCastViewed(detail.castHash, {
+                    username: detail.username,
+                    activeTab,
+                    theme: themeMode,
+                  });
+                } catch (error) {
+                  console.error("Failed to open cast:", error);
+                  trackAppError(error as Error, {
+                    action: "view_cast",
+                    castHash: detail.castHash,
+                    activeTab,
+                  });
+                }
+              }}
+              isDarkTheme={isDarkTheme}
+              themeMode={themeMode}
+              onMarkAsRead={handleMarkAsRead}
+              onDiscard={handleDiscard}
+              dayFilter={dayFilter}
+            />
+          )}
+
+          {activeTab === "speed" && (
+            <SpeedModeTab
+              conversations={filteredConversations}
               openRankRanks={openRankRanks}
               loading={dataLoading}
               isLoadingMore={isLoadingMore}

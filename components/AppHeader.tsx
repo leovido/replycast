@@ -90,28 +90,20 @@ export function AppHeader({
                     className="rounded-full border-2 border-white/30"
                   />
                 )}
-                <div className="text-left items-start">
+                <div className="flex flex-col text-left items-start">
                   <button
                     onClick={handleProfileClick}
-                    className="text-white font-semibold text-lg hover:text-blue-300 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 rounded"
+                    className="text-white font-semibold text-lg hover:text-blue-300 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 rounded mb-1"
                     aria-label={`View @${user.username}'s profile`}
                   >
                     {user.displayName}
                   </button>
-                  <div className="flex flex-col items-start text-left">
-                    <button
-                      onClick={handleProfileClick}
-                      className="text-white/70 text-sm hover:text-blue-300/70 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 rounded"
-                      aria-label={`View FID ${user.fid}'s profile`}
-                    >
-                      FID: {user.fid}
-                    </button>
-                    {userOpenRank !== null && (
-                      <div className="text-white/70 text-sm">
-                        OpenRank: {userOpenRank.toLocaleString()}
-                      </div>
-                    )}
-                  </div>
+                  <div className="text-white/70 text-sm">FID: {user.fid}</div>
+                  {userOpenRank !== null && (
+                    <div className="text-white/70 text-sm mt-1">
+                      OpenRank: {userOpenRank.toLocaleString()}
+                    </div>
+                  )}
                 </div>
               </div>
             )}
@@ -224,9 +216,12 @@ export function AppHeader({
                   className={`text-sm hover:text-blue-300/70 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 rounded ${
                     isDarkTheme ? "text-white/70" : "text-gray-600"
                   }`}
+                  style={{
+                    marginBottom: "-5px",
+                  }}
                   aria-label={`View FID ${user?.fid}'s profile`}
                 >
-                  FID: {user?.fid}
+                  FID: {user?.fid}tarstast
                 </button>
                 {userOpenRank !== null && (
                   <div
