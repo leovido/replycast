@@ -487,7 +487,7 @@ export function SpeedModeTab({
       {/* Upcoming Preview */}
       {conversations.length > currentIndex + 1 && (
         <div className="mt-6">
-          <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-3">
+          <h4 className="text-sm font-medium text-white dark:text-white mb-3">
             Upcoming (
             {conversations.slice(currentIndex + 1, currentIndex + 4).length}{" "}
             next)
