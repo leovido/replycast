@@ -44,12 +44,12 @@ export const mockSpeedModeConversations: UnrepliedDetail[] = [
     avatarUrl: "https://api.dicebear.com/7.x/avataaars/svg?seed=defi_explorer",
     timeAgo: "6 hours ago",
     replyCount: 12,
-    text: "New yield farming opportunity just launched! APY looks promising but DYOR. Here's the contract address: 0x1234...",
+    text: "https://www.perplexity.ai/ New yield farming opportunity just launched! APY looks promising but DYOR. Here's the contract address: 0x1234...",
     timestamp: 1716666666,
     castUrl:
       "https://farcaster.xyz/cast/0x3456789012cdef3456789012cdef3456789012cdef3456789012cdef",
     originalCastText:
-      "New yield farming opportunity just launched! APY looks promising but DYOR. Here's the contract address: 0x1234...",
+      "https://www.perplexity.ai/ New yield farming opportunity just launched! APY looks promising but DYOR. Here's the contract address: 0x1234...",
     originalCastHash:
       "0x3456789012cdef3456789012cdef3456789012cdef3456789012cdef",
     originalAuthorUsername: "defi_explorer",

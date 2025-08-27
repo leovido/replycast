@@ -987,7 +987,7 @@ export default function FarcasterApp() {
 
           {activeTab === "speed" && (
             <SpeedModeAlt
-              conversations={mockSpeedModeConversations}
+              conversations={filteredConversations}
               openRankRanks={openRankRanks}
               loading={dataLoading}
               isLoadingMore={isLoadingMore}
