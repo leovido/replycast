@@ -22,7 +22,8 @@ export function SpeedModeAlt({
   const [observerRef, setObserverRef] = useState<HTMLDivElement | null>(null);
 
   // Determine the actual theme for styling
-  const isDarkTheme = themeMode === "dark" || (themeMode === "Farcaster" && isDarkThemeMode);
+  const isDarkTheme =
+    themeMode === "dark" || (themeMode === "Farcaster" && isDarkThemeMode);
   const isFarcasterTheme = themeMode === "Farcaster";
 
   // Helper function to get bubble background color
@@ -176,7 +177,7 @@ export function SpeedModeAlt({
           >
             {/* User Header - Always Visible */}
             <div
-              className={`p-2 cursor-pointer ${getHoverBgColor()} transition-colors`}
+              className={`bg-purple-900 p-2 cursor-pointer transition-colors`}
               onClick={() => toggleUserExpansion(userGroup.user.fid)}
             >
               <div className="flex items-center gap-2">
@@ -191,7 +192,7 @@ export function SpeedModeAlt({
                 />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
-                    <span className="font-medium text-gray-900 dark:text-white truncate text-sm">
+                    <span className="font-medium text-white dark:text-white truncate text-sm">
                       @{userGroup.user.username}
                     </span>
                     {openRankRanks[userGroup.user.fid] && (
@@ -200,7 +201,7 @@ export function SpeedModeAlt({
                       </span>
                     )}
                   </div>
-                  <div className="text-xs text-gray-500 dark:text-gray-400">
+                  <div className="text-xs text-gray-400 dark:text-gray-400">
                     {userGroup.conversations.length} unreplied cast
                     {userGroup.conversations.length !== 1 ? "s" : ""}
                   </div>
