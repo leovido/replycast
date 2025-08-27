@@ -990,6 +990,7 @@ export default function FarcasterApp() {
               conversations={filteredConversations}
               openRankRanks={openRankRanks}
               isDarkThemeMode={isDarkTheme}
+              themeMode={themeMode}
             />
           )}
 

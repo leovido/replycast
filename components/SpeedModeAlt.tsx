@@ -7,17 +7,47 @@ interface SpeedModeAltProps {
   conversations: UnrepliedDetail[];
   openRankRanks: Record<number, number | null>;
   isDarkThemeMode: boolean;
+  themeMode: "dark" | "light" | "Farcaster";
 }
 
 export function SpeedModeAlt({
   conversations,
   openRankRanks,
   isDarkThemeMode,
+  themeMode,
 }: SpeedModeAltProps) {
   const [expandedUser, setExpandedUser] = useState<number | null>(null);
   const [replyText, setReplyText] = useState("");
   const [replyError, setReplyError] = useState("");
   const [observerRef, setObserverRef] = useState<HTMLDivElement | null>(null);
+
+  // Determine the actual theme for styling
+  const isDarkTheme = themeMode === "dark" || (themeMode === "Farcaster" && isDarkThemeMode);
+  const isFarcasterTheme = themeMode === "Farcaster";
+
+  // Helper function to get bubble background color
+  const getBubbleBgColor = () => {
+    if (isFarcasterTheme) {
+      return "bg-purple-50 dark:bg-purple-900/20";
+    }
+    return "bg-white dark:bg-gray-800";
+  };
+
+  // Helper function to get border color
+  const getBorderColor = () => {
+    if (isFarcasterTheme) {
+      return "border-purple-200 dark:border-purple-700";
+    }
+    return "border-gray-200 dark:border-gray-700";
+  };
+
+  // Helper function to get hover background color
+  const getHoverBgColor = () => {
+    if (isFarcasterTheme) {
+      return "hover:bg-purple-100 dark:hover:bg-purple-800/30";
+    }
+    return "hover:bg-gray-50 dark:hover:bg-gray-700";
+  };
 
   // Group conversations by user
   const userGroups = conversations.reduce((groups, conversation) => {
@@ -142,11 +172,11 @@ export function SpeedModeAlt({
         {Object.values(userGroups).map((userGroup) => (
           <div
             key={userGroup.user.fid}
-            className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden"
+            className={`${getBubbleBgColor()} rounded-lg border ${getBorderColor()} overflow-hidden`}
           >
             {/* User Header - Always Visible */}
             <div
-              className="p-2 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+              className={`p-2 cursor-pointer ${getHoverBgColor()} transition-colors`}
               onClick={() => toggleUserExpansion(userGroup.user.fid)}
             >
               <div className="flex items-center gap-2">
@@ -171,7 +201,8 @@ export function SpeedModeAlt({
                     )}
                   </div>
                   <div className="text-xs text-gray-500 dark:text-gray-400">
-                    {userGroup.conversations.length} unreplied cast{userGroup.conversations.length !== 1 ? 's' : ''}
+                    {userGroup.conversations.length} unreplied cast
+                    {userGroup.conversations.length !== 1 ? "s" : ""}
                   </div>
                 </div>
                 <div className="text-xs text-gray-400">
@@ -196,7 +227,10 @@ export function SpeedModeAlt({
                     {conversation.text.trim() ? (
                       <div className="px-2 py-2">
                         <p className="text-xs text-gray-700 dark:text-gray-300 leading-relaxed">
-                          {conversation.text.replace(/(https?:\/\/[^\s]+)/g, "")}
+                          {conversation.text.replace(
+                            /(https?:\/\/[^\s]+)/g,
+                            ""
+                          )}
                         </p>
                       </div>
                     ) : (
@@ -211,7 +245,7 @@ export function SpeedModeAlt({
                     <div className="px-2 pb-2">
                       <LinkContent
                         text={conversation.originalCastText}
-                        isDarkTheme={isDarkThemeMode}
+                        isDarkTheme={isDarkTheme}
                         className="mb-0"
                       />
                     </div>
@@ -248,7 +282,7 @@ export function SpeedModeAlt({
                             ? "border-red-500 focus:border-red-500 focus:ring-red-500"
                             : "border-gray-300 dark:border-gray-600 focus:border-purple-500 focus:ring-purple-500"
                         } ${
-                          isDarkThemeMode
+                          isDarkTheme
                             ? "bg-gray-700 text-white placeholder-gray-400"
                             : "bg-white text-gray-900 placeholder-gray-500"
                         }`}
@@ -302,7 +336,8 @@ export function SpeedModeAlt({
                           View Cast
                         </button>
                         <div className="text-xs text-gray-500 dark:text-gray-400 px-2 py-1.5">
-                          {conversation.timeAgo} • {conversation.replyCount} replies
+                          {conversation.timeAgo} • {conversation.replyCount}{" "}
+                          replies
                         </div>
                       </div>
                     </div>
