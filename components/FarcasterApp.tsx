@@ -18,6 +18,8 @@ import { EmptyState } from "./EmptyState";
 import { sortDetails } from "../utils/farcaster";
 import Image from "next/image";
 import { isToday, isWithinLastDays } from "@/utils/farcaster";
+import { SpeedModeAlt } from "./SpeedModeAlt";
+import { mockSpeedModeConversations } from "@/utils/speedModeMockData";
 
 // Local storage keys
 const STORAGE_KEYS = {
@@ -984,8 +986,8 @@ export default function FarcasterApp() {
           )}
 
           {activeTab === "speed" && (
-            <SpeedModeTab
-              conversations={filteredConversations}
+            <SpeedModeAlt
+              conversations={mockSpeedModeConversations}
               openRankRanks={openRankRanks}
               loading={dataLoading}
               isLoadingMore={isLoadingMore}

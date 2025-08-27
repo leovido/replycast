@@ -36,6 +36,9 @@ const IMAGE_DOMAINS = [
   "via.placeholder.com",
   "placehold.co",
   "dummyimage.com",
+  "api.dicebear.com",
+  "encrypted-tbn0.gstatic.com",
+  "gstatic.com",
 ];
 
 // Known domains that typically serve videos
@@ -180,11 +183,11 @@ export function getYouTubeThumbnail(url: string): string | null {
     const urlObj = new URL(url);
     if (urlObj.hostname.includes("youtu.be")) {
       const videoId = urlObj.pathname.slice(1);
-      return `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
+      return `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
     } else if (urlObj.hostname.includes("youtube.com")) {
       const videoId = urlObj.searchParams.get("v");
       if (videoId) {
-        return `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
+        return `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
       }
     }
   } catch {
