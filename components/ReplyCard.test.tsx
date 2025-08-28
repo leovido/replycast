@@ -25,7 +25,6 @@ describe("ReplyCard", () => {
     onClick: jest.fn(),
     viewMode: "list" as const,
     isDarkTheme: true,
-    useOldDesign: false,
     onMarkAsRead: jest.fn(),
   };
 

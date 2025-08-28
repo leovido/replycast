@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from "react";
 import { sdk } from "@farcaster/miniapp-sdk";
 import { LinkContent } from "./LinkContent";
 import type { UnrepliedDetail } from "@/types/types";
+import { getBorderColor, getBubbleBgColor } from "@/utils/themeHelpers";
 
 interface SpeedModeAltProps {
   conversations: UnrepliedDetail[];
@@ -24,31 +25,6 @@ export function SpeedModeAlt({
   // Determine the actual theme for styling
   const isDarkTheme =
     themeMode === "dark" || (themeMode === "Farcaster" && isDarkThemeMode);
-  const isFarcasterTheme = themeMode === "Farcaster";
-
-  // Helper function to get bubble background color
-  const getBubbleBgColor = () => {
-    if (isFarcasterTheme) {
-      return "bg-purple-50 dark:bg-purple-900/20";
-    }
-    return "bg-white dark:bg-gray-800";
-  };
-
-  // Helper function to get border color
-  const getBorderColor = () => {
-    if (isFarcasterTheme) {
-      return "border-purple-200 dark:border-purple-700";
-    }
-    return "border-gray-200 dark:border-gray-700";
-  };
-
-  // Helper function to get hover background color
-  const getHoverBgColor = () => {
-    if (isFarcasterTheme) {
-      return "hover:bg-purple-100 dark:hover:bg-purple-800/30";
-    }
-    return "hover:bg-gray-50 dark:hover:bg-gray-700";
-  };
 
   // Group conversations by user
   const userGroups = conversations.reduce((groups, conversation) => {
@@ -195,11 +171,15 @@ export function SpeedModeAlt({
         {sortedUserGroups.map((userGroup) => (
           <div
             key={userGroup.user.fid}
-            className={`${getBubbleBgColor()} rounded-lg border ${getBorderColor()} overflow-hidden`}
+            className={`${getBubbleBgColor(
+              themeMode
+            )} rounded-lg border ${getBorderColor(themeMode)} overflow-hidden`}
           >
             {/* User Header - Always Visible */}
             <div
-              className={`bg-purple-900 p-2 cursor-pointer transition-colors`}
+              className={`${getBubbleBgColor(
+                themeMode
+              )} p-2 cursor-pointer transition-colors`}
               onClick={() => toggleUserExpansion(userGroup.user.fid)}
             >
               <div className="flex items-center gap-2">

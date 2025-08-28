@@ -173,7 +173,6 @@ export default function FarcasterApp() {
     hasMore,
     loadMoreConversations,
     isLoadingMore,
-    isRefreshing,
   } = useFarcasterData({
     user,
     fetchOpenRankRanks,
@@ -920,7 +919,6 @@ export default function FarcasterApp() {
                   loading={dataLoading}
                   observerRef={observerRef}
                   isDarkTheme={isDarkTheme}
-                  useOldDesign={false}
                   onMarkAsRead={handleMarkAsRead}
                   onDiscard={handleDiscard}
                   openRankRanks={openRankRanks}
