@@ -183,11 +183,11 @@ export function getYouTubeThumbnail(url: string): string | null {
     const urlObj = new URL(url);
     if (urlObj.hostname.includes("youtu.be")) {
       const videoId = urlObj.pathname.slice(1);
-      return `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
+      return `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
     } else if (urlObj.hostname.includes("youtube.com")) {
       const videoId = urlObj.searchParams.get("v");
       if (videoId) {
-        return `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
+        return `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
       }
     }
   } catch {
