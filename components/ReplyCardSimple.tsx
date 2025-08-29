@@ -2,12 +2,12 @@ import React from "react";
 import Image from "next/image";
 import {
   getPrimaryTextColor,
-  getSecondaryTextColor,
   getTertiaryTextColor,
   type ThemeMode,
 } from "@/utils/themeHelpers";
 import type { UnrepliedDetail } from "@/types/types";
 import { LinkContent } from "./LinkContent";
+import { sdk } from "@farcaster/miniapp-sdk";
 
 interface ReplyCardSimpleProps {
   conversation: UnrepliedDetail;
@@ -15,6 +15,7 @@ interface ReplyCardSimpleProps {
   isDarkTheme: boolean;
   onClick?: () => void;
   className?: string;
+  isLoading?: boolean;
 }
 
 export function ReplyCardSimple({
@@ -23,10 +24,26 @@ export function ReplyCardSimple({
   isDarkTheme,
   onClick,
   className = "",
+  isLoading = false,
 }: ReplyCardSimpleProps) {
-  const handleClick = () => {
-    if (onClick) {
-      onClick();
+  const handleClick = async () => {
+    if (isLoading) return; // Prevent multiple clicks
+
+    try {
+      // If a custom onClick is provided, use that
+      if (onClick) {
+        onClick();
+        return;
+      }
+
+      // Otherwise, open the cast using the Farcaster SDK
+      await sdk.actions.viewCast({ hash: conversation.castHash });
+    } catch (error) {
+      console.error("Error opening cast:", error);
+      // Fallback: try to open the cast URL directly
+      if (conversation.castUrl) {
+        window.open(conversation.castUrl, "_blank");
+      }
     }
   };
 
@@ -47,7 +64,9 @@ export function ReplyCardSimple({
 
   return (
     <div
-      className={`group relative w-full bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800/30 transition-colors duration-200 cursor-pointer ${className}`}
+      className={`group relative w-full bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800/30 transition-all duration-200 cursor-pointer ${
+        isLoading ? "opacity-75 pointer-events-none" : ""
+      } ${className}`}
       onClick={handleClick}
       role="button"
       tabIndex={0}
@@ -58,6 +77,13 @@ export function ReplyCardSimple({
         }
       }}
     >
+      {/* Loading overlay */}
+      {isLoading && (
+        <div className="absolute inset-0 bg-white/50 dark:bg-gray-900/50 flex items-center justify-center z-10">
+          <div className="w-6 h-6 border-2 border-purple-500 border-t-transparent rounded-full animate-spin"></div>
+        </div>
+      )}
+
       <div className="flex gap-3 p-4">
         {/* Profile Picture */}
         <div className="flex-shrink-0">
