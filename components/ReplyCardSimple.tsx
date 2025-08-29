@@ -167,49 +167,38 @@ export function ReplyCardSimple({
                 className="w-4 h-4"
                 fill="none"
                 stroke="currentColor"
+                strokeWidth="2"
                 viewBox="0 0 24 24"
               >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
-                />
+                <path d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
               </svg>
               <span className="font-medium">{conversation.replyCount}</span>
             </div>
 
             {/* Recasts */}
-            {conversation.recastsCount !== undefined &&
-              conversation.recastsCount > 0 && (
-                <div className="flex items-center gap-2 group/stat hover:text-green-600 dark:hover:text-green-400 transition-colors">
-                  <svg
-                    className="w-4 h-4"
-                    fill="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-                  </svg>
-                  <span className="font-medium">
-                    {conversation.recastsCount}
-                  </span>
-                </div>
-              )}
+            <div className="flex items-center gap-2 group/stat hover:text-green-600 dark:hover:text-green-400 transition-colors">
+              <svg
+                className="w-4 h-4"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                viewBox="0 0 24 24"
+              >
+                <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8" />
+                <path d="M21 3v5h-5" />
+                <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16" />
+                <path d="M3 21v-5h5" />
+              </svg>
+              <span className="font-medium">{conversation.recastsCount}</span>
+            </div>
 
             {/* Likes */}
-            {conversation.likesCount !== undefined &&
-              conversation.likesCount > 0 && (
-                <div className="flex items-center gap-2 group/stat hover:text-red-600 dark:hover:text-red-400 transition-colors">
-                  <svg
-                    className="w-4 h-4"
-                    fill="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-                  </svg>
-                  <span className="font-medium">{conversation.likesCount}</span>
-                </div>
-              )}
+            <div className="flex items-center gap-2 group/stat hover:text-red-600 dark:hover:text-red-400 transition-colors">
+              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+              </svg>
+              <span className="font-medium">{conversation.likesCount}</span>
+            </div>
           </div>
         </div>
       </div>
