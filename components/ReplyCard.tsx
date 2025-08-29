@@ -12,7 +12,7 @@ export interface ReplyCardProps {
   onClick: () => void;
   viewMode: "list" | "grid";
   isDarkTheme: boolean;
-  themeMode: ThemeMode; // Add this line
+  themeMode?: ThemeMode;
   onMarkAsRead?: (detail: UnrepliedDetail) => void;
   onDiscard?: (detail: UnrepliedDetail) => void;
 }
@@ -24,7 +24,7 @@ export const ReplyCard = memo<ReplyCardProps>(
     onClick,
     viewMode,
     isDarkTheme,
-    themeMode,
+    themeMode = isDarkTheme ? "dark" : "light",
     onMarkAsRead,
     onDiscard,
   }) => {
