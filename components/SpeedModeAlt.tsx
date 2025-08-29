@@ -9,7 +9,7 @@ import {
   getCardBackground,
   getTextColor,
 } from "@/utils/themeHelpers";
-import type { ThemeMode } from "@/types/theme";
+import type { ThemeMode } from "@/utils/themeHelpers";
 import { ReplyCardSimple } from "./ReplyCardSimple";
 
 interface SpeedModeAltProps {
