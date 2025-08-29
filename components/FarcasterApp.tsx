@@ -913,36 +913,11 @@ export default function FarcasterApp() {
                   }}
                 />
               ) : (
-                <ConversationList
+                <SpeedModeAlt
                   conversations={filteredConversations}
-                  viewMode={viewMode}
-                  loading={dataLoading}
-                  observerRef={observerRef}
-                  isDarkTheme={isDarkTheme}
-                  onMarkAsRead={handleMarkAsRead}
-                  onDiscard={handleDiscard}
                   openRankRanks={openRankRanks}
-                  isLoadingMore={isLoadingMore}
-                  hasMore={hasMore}
-                  onReply={async (detail) => {
-                    try {
-                      await sdk.actions.viewCast({ hash: detail.castHash });
-                      // Track cast viewed
-                      trackCastViewed(detail.castHash, {
-                        username: detail.username,
-                        activeTab,
-                        theme: themeMode,
-                      });
-                    } catch (error) {
-                      console.error("Failed to open cast:", error);
-                      trackAppError(error as Error, {
-                        action: "view_cast",
-                        castHash: detail.castHash,
-                        activeTab,
-                      });
-                    }
-                  }}
-                  dayFilter={dayFilter}
+                  isDarkThemeMode={isDarkTheme}
+                  themeMode={themeMode}
                 />
               )}
             </>
