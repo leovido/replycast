@@ -36,6 +36,7 @@ const nextConfig = {
       "randomuser.me",
       "imagedelivery.net",
       "i.imgur.com",
+      "tba-mobile.mypinata.cloud",
     ],
     formats: ["image/avif", "image/webp"],
     minimumCacheTTL: 86400, // 24 hours

@@ -36,6 +36,9 @@ const IMAGE_DOMAINS = [
   "via.placeholder.com",
   "placehold.co",
   "dummyimage.com",
+  "api.dicebear.com",
+  "encrypted-tbn0.gstatic.com",
+  "gstatic.com",
 ];
 
 // Known domains that typically serve videos
