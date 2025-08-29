@@ -4,6 +4,7 @@ import { sdk } from "@farcaster/miniapp-sdk";
 import type { UnrepliedDetail } from "@/types/types";
 import { useAppAnalytics } from "../hooks/useAnalytics";
 import { LinkContent } from "./LinkContent";
+import { getCardBackground, type ThemeMode } from "@/utils/themeHelpers";
 
 export interface ReplyCardProps {
   detail: UnrepliedDetail;
@@ -11,6 +12,7 @@ export interface ReplyCardProps {
   onClick: () => void;
   viewMode: "list" | "grid";
   isDarkTheme: boolean;
+  themeMode: ThemeMode; // Add this line
   onMarkAsRead?: (detail: UnrepliedDetail) => void;
   onDiscard?: (detail: UnrepliedDetail) => void;
 }
@@ -22,6 +24,7 @@ export const ReplyCard = memo<ReplyCardProps>(
     onClick,
     viewMode,
     isDarkTheme,
+    themeMode,
     onMarkAsRead,
     onDiscard,
   }) => {
@@ -485,17 +488,11 @@ export const ReplyCard = memo<ReplyCardProps>(
         tabIndex={0}
         className={`relative w-full text-left p-6 rounded-2xl transition-all duration-300 hover:scale-[1.02] focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 swipe-enabled ${
           isSwipeModeActive ? "swipe-mode-active" : ""
-        } ${
+        } ${getCardBackground(
+          themeMode,
+          hasUserInteraction,
           isSwipeModeActive
-            ? "ring-2 ring-yellow-400/60 shadow-2xl shadow-yellow-500/20 scale-[1.02] touch-none select-none"
-            : hasUserInteraction
-            ? isDarkTheme
-              ? "bg-gradient-to-br from-white/15 to-white/10 ring-2 ring-blue-400/40 shadow-xl shadow-blue-500/20 backdrop-blur-md border border-white/20"
-              : "bg-gradient-to-br from-blue-50 to-purple-50 ring-2 ring-blue-400/30 shadow-xl shadow-blue-500/20"
-            : isDarkTheme
-            ? "bg-gradient-to-br from-white/12 to-white/8 backdrop-blur-md border border-white/15 hover:bg-gradient-to-br hover:from-white/15 hover:to-white/10 hover:shadow-lg hover:shadow-white/5"
-            : "bg-white/80 backdrop-blur-sm border border-gray-200 hover:bg-white/90"
-        }`}
+        )}`}
         style={{
           transform,
           // Add this style when in long press mode to help with scroll blocking

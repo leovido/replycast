@@ -2,13 +2,21 @@ import React, { useState, useRef, useEffect } from "react";
 import { sdk } from "@farcaster/miniapp-sdk";
 import { LinkContent } from "./LinkContent";
 import type { UnrepliedDetail } from "@/types/types";
-import { getBorderColor, getBubbleBgColor } from "@/utils/themeHelpers";
+import {
+  getBackgroundClass,
+  getBorderColor,
+  getBubbleBgColor,
+  getCardBackground,
+  getTextColor,
+} from "@/utils/themeHelpers";
+import type { ThemeMode } from "@/types/theme";
+import { ReplyCardSimple } from "./ReplyCardSimple";
 
 interface SpeedModeAltProps {
   conversations: UnrepliedDetail[];
   openRankRanks: Record<number, number | null>;
   isDarkThemeMode: boolean;
-  themeMode: "dark" | "light" | "Farcaster";
+  themeMode: ThemeMode;
 }
 
 export function SpeedModeAlt({
@@ -18,6 +26,9 @@ export function SpeedModeAlt({
   themeMode,
 }: SpeedModeAltProps) {
   const [expandedUser, setExpandedUser] = useState<number | null>(null);
+  const [selectedConversation, setSelectedConversation] =
+    useState<UnrepliedDetail | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const [replyText, setReplyText] = useState("");
   const [replyError, setReplyError] = useState("");
   const [observerRef, setObserverRef] = useState<HTMLDivElement | null>(null);
@@ -171,14 +182,16 @@ export function SpeedModeAlt({
         {sortedUserGroups.map((userGroup) => (
           <div
             key={userGroup.user.fid}
-            className={`${getBubbleBgColor(
+            className={`rounded-lg border ${getBorderColor(
               themeMode
-            )} rounded-lg border ${getBorderColor(themeMode)} overflow-hidden`}
+            )} overflow-hidden`}
           >
             {/* User Header - Always Visible */}
             <div
-              className={`${getBubbleBgColor(
-                themeMode
+              className={`${getCardBackground(
+                themeMode,
+                true,
+                false
               )} p-2 cursor-pointer transition-colors`}
               onClick={() => toggleUserExpansion(userGroup.user.fid)}
             >
@@ -216,137 +229,18 @@ export function SpeedModeAlt({
 
             {/* Expanded User Content - Only visible when user is expanded */}
             {expandedUser === userGroup.user.fid && (
-              <div className="border-t border-gray-200 dark:border-gray-700">
-                {userGroup.conversations.map((conversation, index) => (
-                  <div
-                    key={conversation.castHash}
-                    className={`${
-                      index < userGroup.conversations.length - 1
-                        ? "border-b border-gray-100 dark:border-gray-700"
-                        : ""
-                    }`}
-                  >
-                    {/* Cast Content - Smaller bubbles */}
-                    {conversation.text.trim() ? (
-                      <div className="px-2 py-2">
-                        <p className="text-xs text-gray-700 dark:text-gray-300 leading-relaxed">
-                          {conversation.text.replace(
-                            /(https?:\/\/[^\s]+)/g,
-                            ""
-                          )}
-                        </p>
-                      </div>
-                    ) : (
-                      <div className="px-2 py-2">
-                        <div className="text-xs text-gray-500 dark:text-gray-400 italic">
-                          📎 Cast contains embedded media only
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Embedded Media - Smaller */}
-                    <div className="px-2 pb-2">
-                      <LinkContent
-                        text={conversation.originalCastText}
-                        isDarkTheme={isDarkTheme}
-                        className="mb-0"
-                      />
-                    </div>
-
-                    {/* Reply Text Field - Smaller */}
-                    <div className="px-2 pb-2">
-                      <div className="flex items-center justify-between mb-1">
-                        <label
-                          htmlFor={`reply-text-${conversation.castHash}`}
-                          className="text-xs font-medium text-gray-700 dark:text-gray-300"
-                        >
-                          Reply
-                        </label>
-                        <span
-                          className={`text-xs ${
-                            replyText.length > 280
-                              ? "text-red-500"
-                              : "text-gray-500 dark:text-gray-400"
-                          }`}
-                        >
-                          {replyText.length}/320
-                        </span>
-                      </div>
-                      <textarea
-                        id={`reply-text-${conversation.castHash}`}
-                        value={replyText}
-                        onChange={(e) => {
-                          setReplyText(e.target.value);
-                          setReplyError("");
-                        }}
-                        placeholder="Type your reply..."
-                        className={`w-full p-1.5 border rounded text-xs resize-none transition-colors ${
-                          replyError
-                            ? "border-red-500 focus:border-red-500 focus:ring-red-500"
-                            : "border-gray-300 dark:border-gray-600 focus:border-purple-500 focus:ring-purple-500"
-                        } ${
-                          isDarkTheme
-                            ? "bg-gray-700 text-white placeholder-gray-400"
-                            : "bg-white text-gray-900 placeholder-gray-500"
-                        }`}
-                        rows={2}
-                        maxLength={320}
-                        style={{ minHeight: "40px" }}
-                      />
-                      {replyError && (
-                        <p className="mt-1 text-xs text-red-600 dark:text-red-400">
-                          {replyError}
-                        </p>
-                      )}
-                    </div>
-
-                    {/* Action Buttons - Smaller */}
-                    <div className="px-2 pb-2">
-                      <div className="flex gap-1">
-                        <button
-                          onClick={() => handleMarkAsRead(conversation)}
-                          className="flex-1 bg-green-600 hover:bg-green-700 text-white px-2 py-1.5 rounded text-xs font-medium transition-colors"
-                        >
-                          Mark Read
-                        </button>
-                        <button
-                          onClick={() => handleDiscard(conversation)}
-                          className="flex-1 bg-gray-600 hover:bg-gray-700 text-white px-2 py-1.5 rounded text-xs font-medium transition-colors"
-                        >
-                          Skip
-                        </button>
-                        <button
-                          onClick={() => handleReply(conversation)}
-                          disabled={!replyText.trim()}
-                          className={`flex-1 px-2 py-1.5 rounded text-xs font-medium transition-colors ${
-                            replyText.trim()
-                              ? "bg-purple-600 hover:bg-purple-700 text-white"
-                              : "bg-gray-400 dark:bg-gray-600 text-gray-200 dark:text-gray-300 cursor-not-allowed"
-                          }`}
-                        >
-                          Send Reply
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* Cast Actions - Smaller */}
-                    <div className="px-2 pb-2">
-                      <div className="flex gap-1">
-                        <button
-                          onClick={() => handleViewCast(conversation.castHash)}
-                          className="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-2 py-1.5 rounded text-xs font-medium transition-colors"
-                        >
-                          View Cast
-                        </button>
-                        <div className="text-xs text-gray-500 dark:text-gray-400 px-2 py-1.5">
-                          {conversation.timeAgo} • {conversation.replyCount}{" "}
-                          replies
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
+              <button className="w-full items-start">
+                <div className="border-t border-gray-200 dark:border-gray-700">
+                  {userGroup.conversations.map((conversation, index) => (
+                    <ReplyCardSimple
+                      key={index}
+                      conversation={conversation}
+                      themeMode={themeMode}
+                      isDarkTheme={isDarkTheme}
+                    />
+                  ))}
+                </div>
+              </button>
             )}
           </div>
         ))}
@@ -354,6 +248,15 @@ export function SpeedModeAlt({
 
       {/* Infinite Scroll Observer */}
       <div ref={setObserverRef} className="h-4" />
+
+      {/* Cast Detail Modal - Ready for future use */}
+      {/* <CastDetailModal
+        isOpen={false} // TODO: Change to isModalOpen when ready to use
+        onClose={() => setIsModalOpen(false)}
+        conversation={null} // TODO: Change to selectedConversation when ready to use
+        themeMode={themeMode}
+        isDarkTheme={isDarkTheme}
+      /> */}
     </div>
   );
 }
