@@ -85,63 +85,45 @@ export function ReplyCardSimple({
         </div>
       )}
 
-      <div className={`flex gap-3 p-4`}>
-        {/* Profile Picture */}
-        <div className="flex-shrink-0">
-          <div className="relative">
-            <Image
-              src={conversation.avatarUrl}
-              alt={`@${conversation.username}'s avatar`}
-              width={30}
-              height={30}
-              className="rounded-full ring-2 ring-gray-200 dark:ring-gray-600 group-hover:ring-purple-300 dark:group-hover:ring-purple-600 transition-all duration-200"
-              onError={(e) => {
-                const target = e.target as HTMLImageElement;
-                target.src = `https://api.dicebear.com/7.x/avataaars/svg?seed=${conversation.username}`;
-              }}
-            />
-            {/* Optional: Add a subtle glow effect on hover */}
-            <div className="absolute inset-0 rounded-full bg-gradient-to-r from-purple-400/20 to-blue-400/20 opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
-          </div>
+      {/* Profile Picture */}
+      <div className="flex flex-row p-4 gap-2 items-center">
+        <div className="relative">
+          <Image
+            src={conversation.avatarUrl}
+            alt={`@${conversation.username}'s avatar`}
+            width={40}
+            height={40}
+            className="rounded-full ring-2 ring-gray-200 dark:ring-gray-600 group-hover:ring-purple-300 dark:group-hover:ring-purple-600 transition-all duration-200"
+            onError={(e) => {
+              const target = e.target as HTMLImageElement;
+              target.src = `https://api.dicebear.com/7.x/avataaars/svg?seed=${conversation.username}`;
+            }}
+          />
+          {/* Optional: Add a subtle glow effect on hover */}
+          <div className="absolute inset-0 rounded-full bg-gradient-to-r from-purple-400/20 to-blue-400/20 opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
         </div>
 
+        {/* Header Row */}
+        <div className="flex flex-col flex-1">
+          {/* Username */}
+          <span
+            className={`font-semibold text-left group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors`}
+          >
+            @{conversation.username}
+          </span>
+
+          <span className={`text-sm text-left`}>{conversation.authorFid}</span>
+        </div>
+
+        {/* Timestamp - positioned at the rightmost side */}
+        <span className={`text-sm text-right flex-shrink-0`}>
+          {conversation.timeAgo}
+        </span>
+      </div>
+
+      <div className={`flex gap-3 p-4`}>
         {/* Content Area */}
         <div className="flex-1 min-w-0">
-          {/* Header Row */}
-          <div className="flex items-center gap-2 mb-2">
-            <div className="flex flex-col items-start">
-              {/* Username */}
-              <span
-                className={`font-semibold text-base group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors`}
-              >
-                @{conversation.username}
-              </span>
-
-              <span className={`text-sm`}>{conversation.authorFid}</span>
-            </div>
-
-            {/* Timestamp */}
-            <span className={`text-sm ml-auto`}>{conversation.timeAgo}</span>
-
-            {/* More Options Icon */}
-            <button
-              className="p-1 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors opacity-0 group-hover:opacity-100"
-              onClick={(e) => {
-                e.stopPropagation();
-                // TODO: Show options menu
-                console.log("Show options for:", conversation.castHash);
-              }}
-            >
-              <svg
-                className="w-4 h-4 text-gray-500"
-                fill="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path d="M12 5v.01M12 12h.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
-              </svg>
-            </button>
-          </div>
-
           {/* Cast Text */}
           {displayText && (
             <div
