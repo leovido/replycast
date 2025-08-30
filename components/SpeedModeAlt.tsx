@@ -1,6 +1,5 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useEffect, type RefObject } from "react";
 import { sdk } from "@farcaster/miniapp-sdk";
-import { LinkContent } from "./LinkContent";
 import type { UnrepliedDetail } from "@/types/types";
 import {
   getBackgroundClass,
@@ -17,6 +16,12 @@ interface SpeedModeAltProps {
   openRankRanks: Record<number, number | null>;
   isDarkThemeMode: boolean;
   themeMode: ThemeMode;
+  loading: boolean;
+  isLoadingMore: boolean;
+  hasMore: boolean;
+  observerRef: RefObject<HTMLDivElement>;
+  onMarkAsRead?: (conversation: UnrepliedDetail) => void;
+  onDiscard?: (conversation: UnrepliedDetail) => void;
 }
 
 export function SpeedModeAlt({
@@ -24,6 +29,12 @@ export function SpeedModeAlt({
   openRankRanks,
   isDarkThemeMode,
   themeMode,
+  loading,
+  isLoadingMore,
+  hasMore,
+  observerRef,
+  onMarkAsRead,
+  onDiscard,
 }: SpeedModeAltProps) {
   const [expandedUser, setExpandedUser] = useState<number | null>(null);
   const [selectedConversation, setSelectedConversation] =
@@ -31,7 +42,6 @@ export function SpeedModeAlt({
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [replyText, setReplyText] = useState("");
   const [replyError, setReplyError] = useState("");
-  const [observerRef, setObserverRef] = useState<HTMLDivElement | null>(null);
 
   // Determine the actual theme for styling
   const isDarkTheme =
@@ -88,62 +98,7 @@ export function SpeedModeAlt({
     }
   };
 
-  const handleMarkAsRead = (conversation: UnrepliedDetail) => {
-    // TODO: Implement mark as read functionality
-    console.log("Marking as read:", conversation.castHash);
-    setReplyText("");
-    setReplyError("");
-  };
 
-  const handleDiscard = (conversation: UnrepliedDetail) => {
-    // TODO: Implement discard functionality
-    console.log("Discarding:", conversation.castHash);
-    setReplyText("");
-    setReplyError("");
-  };
-
-  const handleReply = (conversation: UnrepliedDetail) => {
-    if (!replyText.trim()) {
-      setReplyError("Reply cannot be empty");
-      return;
-    }
-    if (replyText.length > 320) {
-      setReplyError("Reply is too long");
-      return;
-    }
-
-    // TODO: Implement reply functionality
-    console.log("Sending reply:", replyText, "to:", conversation.castHash);
-    setReplyText("");
-    setReplyError("");
-  };
-
-  const handleViewCast = async (castHash: string) => {
-    try {
-      await sdk.actions.viewCast({ hash: castHash });
-    } catch (error) {
-      console.error("Error viewing cast:", error);
-    }
-  };
-
-  useEffect(() => {
-    if (observerRef) {
-      const observer = new IntersectionObserver(
-        (entries) => {
-          entries.forEach((entry) => {
-            if (entry.isIntersecting) {
-              // TODO: Implement infinite scroll to fetch more conversations
-              console.log("Loading more conversations...");
-            }
-          });
-        },
-        { threshold: 0.1 }
-      );
-
-      observer.observe(observerRef);
-      return () => observer.disconnect();
-    }
-  }, [observerRef]);
 
   if (conversations.length === 0) {
     return (
@@ -237,6 +192,8 @@ export function SpeedModeAlt({
                       conversation={conversation}
                       themeMode={themeMode}
                       isDarkTheme={isDarkTheme}
+                      onMarkAsRead={onMarkAsRead}
+                      onDiscard={onDiscard}
                     />
                   ))}
                 </div>
@@ -246,8 +203,36 @@ export function SpeedModeAlt({
         ))}
       </div>
 
-      {/* Infinite Scroll Observer */}
-      <div ref={setObserverRef} className="h-4" />
+      {/* Loading states */}
+      {loading && (
+        <div className="col-span-full flex justify-center py-8">
+          <div
+            className={`animate-spin rounded-full h-8 w-8 border-b-2 ${
+              isDarkTheme ? "border-white/60" : "border-gray-600"
+            }`}
+          ></div>
+        </div>
+      )}
+      {isLoadingMore && (
+        <div className="col-span-full flex justify-center py-4">
+          <div
+            className={`animate-spin rounded-full h-6 w-6 border-b-2 ${
+              isDarkTheme ? "border-white/60" : "border-gray-600"
+            }`}
+          ></div>
+        </div>
+      )}
+      {hasMore && (
+        <div
+          ref={observerRef}
+          className="h-8 w-full flex items-center justify-center"
+          style={{ minHeight: "32px" }}
+        >
+          {isLoadingMore && (
+            <div className="text-xs opacity-50">Loading more...</div>
+          )}
+        </div>
+      )}
 
       {/* Cast Detail Modal - Ready for future use */}
       {/* <CastDetailModal

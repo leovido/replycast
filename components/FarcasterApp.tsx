@@ -5,7 +5,6 @@ import { useOpenRank } from "../hooks/useOpenRank";
 import { useFarcasterData } from "../hooks/useFarcasterData";
 import { useInfiniteScroll } from "../hooks/useInfiniteScroll";
 import { useAppAnalytics, ANALYTICS_ACTIONS } from "../hooks/useAnalytics";
-import { ConversationList } from "./ConversationList";
 import { LoadingScreen } from "./LoadingScreen";
 import { FarcasterSignIn } from "./FarcasterSignIn";
 import { SettingsMenu } from "./SettingsMenu";
@@ -918,6 +917,12 @@ export default function FarcasterApp() {
                   openRankRanks={openRankRanks}
                   isDarkThemeMode={isDarkTheme}
                   themeMode={themeMode}
+                  loading={dataLoading}
+                  isLoadingMore={isLoadingMore}
+                  hasMore={hasMore}
+                  observerRef={observerRef}
+                  onMarkAsRead={handleMarkAsRead}
+                  onDiscard={handleDiscard}
                 />
               )}
             </>
@@ -955,15 +960,6 @@ export default function FarcasterApp() {
               onMarkAsRead={handleMarkAsRead}
               onDiscard={handleDiscard}
               dayFilter={dayFilter}
-            />
-          )}
-
-          {activeTab === "speed" && (
-            <SpeedModeAlt
-              conversations={filteredConversations}
-              openRankRanks={openRankRanks}
-              isDarkThemeMode={isDarkTheme}
-              themeMode={themeMode}
             />
           )}
 
