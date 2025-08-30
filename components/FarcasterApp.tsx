@@ -917,6 +917,10 @@ export default function FarcasterApp() {
                   openRankRanks={openRankRanks}
                   isDarkThemeMode={isDarkTheme}
                   themeMode={themeMode}
+                  loading={dataLoading}
+                  isLoadingMore={isLoadingMore}
+                  hasMore={hasMore}
+                  observerRef={observerRef}
                   onMarkAsRead={handleMarkAsRead}
                   onDiscard={handleDiscard}
                 />
