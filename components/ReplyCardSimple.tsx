@@ -524,7 +524,7 @@ export const ReplyCardSimple = memo<ReplyCardSimpleProps>(
         )}
 
         {/* Profile Picture */}
-        <div className="flex flex-row px-4 pt-4 gap-3 items-center">
+        <div className="flex flex-row p-4 gap-2 items-center">
           <div className="relative">
             <Image
               src={conversation.avatarUrl}
@@ -542,26 +542,26 @@ export const ReplyCardSimple = memo<ReplyCardSimpleProps>(
           </div>
 
           {/* Header Row */}
-          <div className="flex flex-col flex-1 min-w-0">
+          <div className="flex flex-col flex-1">
             {/* Username */}
             <span
-              className={`font-semibold text-left group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors text-sm truncate`}
+              className={`font-semibold text-left group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors`}
             >
               @{conversation.username}
             </span>
 
-            <span className={`text-xs text-left text-gray-500 dark:text-gray-400`}>
-              FID: {conversation.authorFid}
+            <span className={`text-sm text-left`}>
+              {conversation.authorFid}
             </span>
           </div>
 
           {/* Timestamp - positioned at the rightmost side */}
-          <span className={`text-xs text-right flex-shrink-0 text-gray-500 dark:text-gray-400`}>
+          <span className={`text-sm text-right flex-shrink-0`}>
             {conversation.timeAgo}
           </span>
         </div>
 
-        <div className={`flex gap-3 px-4 pb-4`}>
+        <div className={`flex gap-3 p-4`}>
           {/* Content Area */}
           <div className="flex-1 min-w-0">
             {/* Cast Text */}
@@ -597,28 +597,28 @@ export const ReplyCardSimple = memo<ReplyCardSimpleProps>(
 
             {/* Interaction Bar */}
             <div
-              className={`flex items-center gap-4 text-sm pt-2 border-t border-gray-100 dark:border-gray-800 ${getTertiaryTextColor(
+              className={`flex items-center gap-6 text-sm ${getTertiaryTextColor(
                 themeMode
               )}`}
             >
               {/* Replies */}
-              <div className="flex items-center gap-1.5 group/stat hover:text-blue-600 dark:hover:text-blue-400 transition-colors cursor-pointer">
+              <div className="flex items-center gap-2 group/stat hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
                 <svg
-                  className="w-3.5 h-3.5 opacity-70 group-hover:opacity-100 transition-opacity"
+                  className="w-4 h-4"
                   fill="none"
                   stroke="currentColor"
-                  strokeWidth="2"
+                  strokeWidth="1.5"
                   viewBox="0 0 24 24"
                 >
-                  <path d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
                 </svg>
-                <span className="text-xs font-medium tabular-nums">{conversation.replyCount}</span>
+                <span className="font-medium">{conversation.replyCount}</span>
               </div>
 
               {/* Recasts */}
-              <div className="flex items-center gap-1.5 group/stat hover:text-green-600 dark:hover:text-green-400 transition-colors cursor-pointer">
+              <div className="flex items-center gap-2 group/stat hover:text-green-600 dark:hover:text-green-400 transition-colors">
                 <svg
-                  className="w-3.5 h-3.5 opacity-70 group-hover:opacity-100 transition-opacity"
+                  className="w-4 h-4"
                   fill="none"
                   stroke="currentColor"
                   strokeWidth="2"
@@ -629,19 +629,19 @@ export const ReplyCardSimple = memo<ReplyCardSimpleProps>(
                   <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16" />
                   <path d="M3 21v-5h5" />
                 </svg>
-                <span className="text-xs font-medium tabular-nums">{conversation.recastsCount}</span>
+                <span className="font-medium">{conversation.recastsCount}</span>
               </div>
 
               {/* Likes */}
-              <div className="flex items-center gap-1.5 group/stat hover:text-red-600 dark:hover:text-red-400 transition-colors cursor-pointer">
+              <div className="flex items-center gap-2 group/stat hover:text-red-600 dark:hover:text-red-400 transition-colors">
                 <svg
-                  className="w-3.5 h-3.5 opacity-70 group-hover:opacity-100 transition-opacity"
+                  className="w-4 h-4"
                   fill="currentColor"
                   viewBox="0 0 24 24"
                 >
                   <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
                 </svg>
-                <span className="text-xs font-medium tabular-nums">{conversation.likesCount}</span>
+                <span className="font-medium">{conversation.likesCount}</span>
               </div>
             </div>
           </div>
