@@ -1,6 +1,5 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { sdk } from "@farcaster/miniapp-sdk";
-import { LinkContent } from "./LinkContent";
 import type { UnrepliedDetail } from "@/types/types";
 import {
   getBackgroundClass,
@@ -17,6 +16,8 @@ interface SpeedModeAltProps {
   openRankRanks: Record<number, number | null>;
   isDarkThemeMode: boolean;
   themeMode: ThemeMode;
+  onMarkAsRead?: (conversation: UnrepliedDetail) => void;
+  onDiscard?: (conversation: UnrepliedDetail) => void;
 }
 
 export function SpeedModeAlt({
@@ -24,6 +25,8 @@ export function SpeedModeAlt({
   openRankRanks,
   isDarkThemeMode,
   themeMode,
+  onMarkAsRead,
+  onDiscard,
 }: SpeedModeAltProps) {
   const [expandedUser, setExpandedUser] = useState<number | null>(null);
   const [selectedConversation, setSelectedConversation] =
@@ -85,44 +88,6 @@ export function SpeedModeAlt({
       setExpandedUser(userId);
       setReplyText("");
       setReplyError("");
-    }
-  };
-
-  const handleMarkAsRead = (conversation: UnrepliedDetail) => {
-    // TODO: Implement mark as read functionality
-    console.log("Marking as read:", conversation.castHash);
-    setReplyText("");
-    setReplyError("");
-  };
-
-  const handleDiscard = (conversation: UnrepliedDetail) => {
-    // TODO: Implement discard functionality
-    console.log("Discarding:", conversation.castHash);
-    setReplyText("");
-    setReplyError("");
-  };
-
-  const handleReply = (conversation: UnrepliedDetail) => {
-    if (!replyText.trim()) {
-      setReplyError("Reply cannot be empty");
-      return;
-    }
-    if (replyText.length > 320) {
-      setReplyError("Reply is too long");
-      return;
-    }
-
-    // TODO: Implement reply functionality
-    console.log("Sending reply:", replyText, "to:", conversation.castHash);
-    setReplyText("");
-    setReplyError("");
-  };
-
-  const handleViewCast = async (castHash: string) => {
-    try {
-      await sdk.actions.viewCast({ hash: castHash });
-    } catch (error) {
-      console.error("Error viewing cast:", error);
     }
   };
 
@@ -237,6 +202,8 @@ export function SpeedModeAlt({
                       conversation={conversation}
                       themeMode={themeMode}
                       isDarkTheme={isDarkTheme}
+                      onMarkAsRead={onMarkAsRead}
+                      onDiscard={onDiscard}
                     />
                   ))}
                 </div>
