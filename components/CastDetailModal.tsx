@@ -140,9 +140,11 @@ export function CastDetailModal({
 
           {/* Interaction Stats */}
           <div
-            className={`flex items-center gap-6 text-sm ${getTertiaryTextColor(
-              themeMode
-            )}`}
+            className={`flex items-center gap-6 text-sm ${
+              themeMode === "dark"
+                ? "text-white/80"
+                : getTertiaryTextColor(themeMode)
+            }`}
           >
             <div className="flex items-center gap-2">
               <svg
