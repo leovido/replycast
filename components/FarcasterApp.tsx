@@ -20,6 +20,26 @@ import { isToday, isWithinLastDays } from "@/utils/farcaster";
 import { SpeedModeAlt } from "./SpeedModeAlt";
 import { mockSpeedModeConversations } from "@/utils/speedModeMockData";
 
+// Add ethereum to window type
+declare global {
+  interface Window {
+    ethereum?: any;
+  }
+}
+
+// Contract ABI for ReplyCast Registry
+const REPLY_CAST_REGISTRY_ABI = [
+  "function registerUser(uint256 _fid) external",
+  "function recordReply(uint256 _fid, uint256 _responseTime, uint256 _engagementScore, string memory _castHash) external",
+  "function getUserStats(uint256 _fid) external view returns (tuple(uint256 totalReplies, uint256 averageResponseTime, uint256 lastActive, uint256 streakDays, uint256 totalEngagement, bool isRegistered))",
+  "function totalUsers() external view returns (uint256)",
+  "function totalReplies() external view returns (uint256)",
+  "function totalEngagement() external view returns (uint256)",
+  "event UserRegistered(address indexed user, uint256 fid)",
+  "event ReplyRecorded(uint256 indexed fid, uint256 responseTime, uint256 engagement)",
+  "event StreakUpdated(uint256 indexed fid, uint256 newStreak)",
+];
+
 // Local storage keys
 const STORAGE_KEYS = {
   THEME_MODE: "farcaster-widget-theme-mode",
@@ -319,6 +339,51 @@ export default function FarcasterApp() {
       type,
       isVisible: true,
     });
+  };
+
+  // On-chain state and functions
+  const [isRegistered, setIsRegistered] = useState(false);
+  const [userStats, setUserStats] = useState<any>(null);
+  const [contractAddress, setContractAddress] = useState(
+    "0x0000000000000000000000000000000000000000"
+  ); // Update this after deployment
+
+  // Handle user registration on-chain
+  const handleRegisterUser = async () => {
+    if (typeof window === "undefined" || !window.ethereum) {
+      showToast("Please install MetaMask or another wallet", "error");
+      return;
+    }
+
+    if (!user?.fid) {
+      showToast("Please sign in with Farcaster first", "error");
+      return;
+    }
+
+    showToast("Please deploy the contract first using Remix IDE", "info");
+    console.log(
+      "Contract deployment instructions are in SMART_CONTRACT_DEPLOYMENT_SIMPLE.md"
+    );
+  };
+
+  // Record replies on-chain
+  const recordReplyOnChain = async (
+    responseTime: number,
+    engagementScore: number,
+    castHash: string
+  ) => {
+    if (
+      !isRegistered ||
+      typeof window === "undefined" ||
+      !window.ethereum ||
+      !user?.fid
+    )
+      return;
+
+    showToast("Please deploy the contract first using Remix IDE", "info");
+    console.log(
+      "Contract deployment instructions are in SMART_CONTRACT_DEPLOYMENT_SIMPLE.md"
+    );
   };
 
   // Handle sharing the app via composeCast
@@ -971,6 +1036,73 @@ export default function FarcasterApp() {
               isDarkTheme={isDarkTheme}
               themeMode={themeMode}
             />
+          )}
+
+          {activeTab === "onchain" && (
+            <div className="pb-20">
+              <div className="max-w-4xl mx-auto p-6">
+                <h2 className="text-2xl font-bold mb-6">On-Chain Analytics</h2>
+
+                {!isRegistered ? (
+                  <div className="bg-gradient-to-r from-purple-500 to-blue-500 rounded-lg p-6 text-white">
+                    <h3 className="text-xl font-semibold mb-4">
+                      Register on Base
+                    </h3>
+                    <p className="mb-4">
+                      Connect your wallet and register to start tracking your
+                      reply analytics on-chain.
+                    </p>
+                    <button
+                      onClick={handleRegisterUser}
+                      className="bg-white text-purple-600 px-6 py-2 rounded-lg font-semibold hover:bg-gray-100 transition-colors"
+                    >
+                      Register on Base
+                    </button>
+                  </div>
+                ) : (
+                  <div className="space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
+                        <h4 className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                          Total Replies
+                        </h4>
+                        <p className="text-2xl font-bold">
+                          {userStats?.totalReplies || 0}
+                        </p>
+                      </div>
+                      <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
+                        <h4 className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                          Streak Days
+                        </h4>
+                        <p className="text-2xl font-bold">
+                          {userStats?.streakDays || 0}
+                        </p>
+                      </div>
+                      <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
+                        <h4 className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                          Total Engagement
+                        </h4>
+                        <p className="text-2xl font-bold">
+                          {userStats?.totalEngagement || 0}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
+                      <h3 className="text-lg font-semibold mb-4">
+                        On-Chain Benefits
+                      </h3>
+                      <ul className="space-y-2 text-sm">
+                        <li>✅ Your reply data is stored on Base blockchain</li>
+                        <li>✅ Build reputation through on-chain analytics</li>
+                        <li>✅ Earn rewards for consistent engagement</li>
+                        <li>✅ Transparent and verifiable data</li>
+                      </ul>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
           )}
         </div>
       </div>

@@ -1,160 +1,137 @@
-# ReplyCast - Farcaster Mini App
+# ReplyCast Smart Contract
 
-A Farcaster Mini App that helps you track and reply to unreplied conversations. Never miss a reply again!
+A gas-optimized smart contract for tracking Farcaster user reply analytics on the Base network.
 
-## Features
+## 🚀 Quick Start
 
-### 🎯 Core Functionality
-- **Unreplied Conversation Tracking**: Automatically detects conversations where you haven't replied
-- **Smart Reply Detection**: Identifies when others have replied to your casts but you haven't responded
-- **One-Click Reply**: Quick reply interface with character count and keyboard shortcuts
-- **Real-time Updates**: Refresh to get the latest conversation status
-
-### 💬 Reply Interface
-- **Modal Reply Window**: Clean, focused interface for composing replies
-- **Character Counter**: Real-time character count with Farcaster's 320 character limit
-- **Keyboard Shortcuts**: 
-  - `⌘+Enter` (Mac) or `Ctrl+Enter` (Windows/Linux) to send
-  - `Esc` to cancel
-- **Auto-focus**: Textarea automatically focuses when opening reply modal
-- **Context Display**: Shows original cast content for better context
-
-### 🎨 User Experience
-- **Beautiful UI**: Gradient backgrounds with glassmorphism effects
-- **Responsive Design**: Works perfectly on mobile and desktop
-- **Loading States**: Smooth loading animations and error handling
-- **Hover Effects**: Interactive elements with smooth transitions
-- **Accessibility**: Proper focus management and keyboard navigation
-
-### 🔧 Technical Features
-- **Farcaster SDK Integration**: Uses official Mini App SDK for casting
-- **Neynar API**: Fetches conversation data from Farcaster network
-- **Dynamic OG Images**: Server-generated OpenGraph images for sharing
-- **Error Handling**: Comprehensive error states and user feedback
-- **TypeScript**: Fully typed for better development experience
-
-## Tech Stack
-
-- **Frontend**: Next.js, React, TypeScript
-- **Styling**: Tailwind CSS
-- **Farcaster Integration**: @farcaster/miniapp-sdk
-- **API**: Neynar API for Farcaster data
-- **Image Generation**: Satori for dynamic OG images
-- **Fonts**: Instrument Sans (custom font)
-
-## Development
-
-### Prerequisites
-- Node.js 18+ 
-- pnpm (recommended) or npm
-- Neynar API key
-
-### Setup
-
-1. **Clone the repository**
-   ```bash
-   git clone <repository-url>
-   cd replycast-be-widget
-   ```
-
-2. **Install dependencies**
-   ```bash
-   pnpm install
-   ```
-
-3. **Environment Variables**
-   Create a `.env.local` file:
-   ```env
-   NEYNAR_API_KEY=your_neynar_api_key_here
-   ```
-
-4. **Run development server**
-   ```bash
-   pnpm dev
-   ```
-
-5. **Test the API**
-   ```bash
-   pnpm test:api
-   ```
-
-### Building for Production
+### 1. Install Dependencies
 
 ```bash
-pnpm build
-pnpm start
+npm install
 ```
 
-## API Endpoints
+### 2. Create Environment File
 
-### `/api/farcaster-replies`
-Fetches unreplied conversations for a given FID.
+Create a `.env` file with:
 
-**Query Parameters:**
-- `fid` (required): Farcaster ID to check
+```bash
+# Your wallet private key (keep this secret!)
+PRIVATE_KEY=your_private_key_here
 
-**Response:**
-```json
-{
-  "unrepliedCount": 5,
-  "unrepliedDetails": [
-    {
-      "username": "alice",
-      "timeAgo": "2h ago",
-      "castUrl": "https://farcaster.xyz/...",
-      "text": "Great point!",
-      "avatarUrl": "https://...",
-      "castHash": "0x...",
-      "authorFid": 123,
-      "originalCastText": "My original cast",
-      "originalCastHash": "0x...",
-      "originalAuthorUsername": "me",
-      "replyCount": 3
-    }
-  ],
-  "message": "You have 5 unreplied comments today."
-}
+# Base Sepolia RPC URL (for testing)
+BASE_SEPOLIA_RPC_URL=https://sepolia.base.org
+
+# Base Mainnet RPC URL (for production)
+BASE_MAINNET_RPC_URL=https://mainnet.base.org
+
+# Basescan API key for contract verification (optional)
+BASESCAN_API_KEY=your_basescan_api_key_here
 ```
 
-### `/api/og-image`
-Generates dynamic OpenGraph images for sharing.
+### 3. Get Testnet ETH
 
-## Mini App Configuration
+- [Base Sepolia Faucet](https://www.coinbase.com/faucets/base-ethereum-sepolia-faucet)
 
-The app is configured as a Farcaster Mini App with:
+### 4. Deploy to Testnet
 
-- **Manifest**: `/.well-known/farcaster.json`
-- **Capabilities**: `actions.composeCast` for replying
-- **Embed Metadata**: Dynamic OG images and proper frame configuration
-- **Splash Screen**: Custom branding with gradient background
+```bash
+npm run deploy:testnet
+```
 
-## Usage
+### 5. Deploy to Mainnet
 
-1. **Open the Mini App**: Launch from any Farcaster client
-2. **View Unreplied Conversations**: See all conversations that need your attention
-3. **Click Reply**: Open the reply interface for any conversation
-4. **Compose Your Reply**: Write your response with character count
-5. **Send**: Use the button or keyboard shortcut to send
-6. **Refresh**: Click refresh to update the conversation list
+```bash
+npm run deploy:mainnet
+```
 
-## Contributing
+## 📋 Available Scripts
 
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests if applicable
-5. Submit a pull request
+- `npm run compile` - Compile the smart contract
+- `npm run deploy:testnet` - Deploy to Base Sepolia testnet
+- `npm run deploy:mainnet` - Deploy to Base Mainnet
+- `npm run verify:testnet` - Verify contract on Basescan (testnet)
+- `npm run verify:mainnet` - Verify contract on Basescan (mainnet)
+- `npm run test` - Run tests
+- `npm run clean` - Clean build artifacts
 
-## License
+## 🔒 Security Features
 
-MIT License - see LICENSE file for details
+- ✅ Access control with `onlyOwner` modifier
+- ✅ Input validation for all parameters
+- ✅ Gas-optimized using uint48 for timestamps
+- ✅ Bit shifting for division by 2
+- ✅ Unchecked blocks for safe operations
+- ✅ Comprehensive event logging
+- ✅ Payable functions for gas optimization
 
-## Support
+## 📊 Contract Functions
 
-For issues or questions:
-- Create an issue on GitHub
-- Reach out on Farcaster @username
+### User Management
 
----
+- `registerUser(uint256 _fid)` - Register a new user
+- `getUserStats(uint256 _fid)` - Get user analytics
 
-Built with ❤️ for the Farcaster community
+### Analytics
+
+- `recordReply(uint256 _fid, uint256 _responseTime, uint256 _engagementScore, string _castHash)` - Record reply data
+- `getReplyHistory(uint256 _fid)` - Get user's reply history
+
+### Global Stats
+
+- `getGlobalStats()` - Get platform-wide statistics
+- `getTopUsersByEngagement()` - Get top users by engagement
+
+### Admin
+
+- `transferOwnership(address _newOwner)` - Transfer contract ownership
+
+## 🌐 Networks
+
+- **Base Sepolia Testnet**: Chain ID 84532
+- **Base Mainnet**: Chain ID 8453
+
+## 📱 Integration with Mini App
+
+After deployment, update your Mini App with the contract address:
+
+```typescript
+// In components/FarcasterApp.tsx
+const [contractAddress, setContractAddress] = useState(
+  "YOUR_DEPLOYED_CONTRACT_ADDRESS"
+);
+```
+
+## 🔍 Verification
+
+The deployment script automatically attempts to verify your contract on Basescan. If it fails, you can manually verify:
+
+1. Go to [Basescan](https://basescan.org/) (mainnet) or [Base Sepolia](https://sepolia.basescan.org/) (testnet)
+2. Search for your contract address
+3. Click "Contract" tab
+4. Click "Verify and Publish"
+
+## 📈 Gas Optimizations
+
+- **uint48 for timestamps**: Saves storage costs
+- **Bit shifting**: `>> 1` instead of `/ 2`
+- **Unchecked increments**: Safe loop optimizations
+- **Payable functions**: Reduces gas costs
+- **Named returns**: Eliminates local variables
+
+## 🏆 Onchain Summer Awards
+
+This contract is designed to meet the Onchain Summer Awards requirements:
+
+- ✅ Non-token smart contract address
+- ✅ Base network integration
+- ✅ User engagement tracking
+- ✅ Open source (MIT license)
+- ✅ Gas-optimized for efficiency
+
+## 📞 Support
+
+For questions about deployment or integration, refer to:
+
+- [Base Documentation](https://docs.base.org/)
+- [Hardhat Documentation](https://hardhat.org/docs)
+- [Onchain Summer Awards](https://onchain-summer-awards.devfolio.co/overview)
