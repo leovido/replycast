@@ -979,7 +979,7 @@ export default function FarcasterApp() {
               user={user}
               isDarkTheme={isDarkTheme}
               themeMode={themeMode}
-              useMockData={true} // Use mock data for testing
+              useMockData={false} // Use mock data for testing
             />
           )}
         </div>
