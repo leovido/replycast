@@ -59,7 +59,7 @@ export const getBorderColor = (themeMode: ThemeMode): string => {
     case "light":
       return "border-gray-200";
     case "Farcaster":
-      return "border-purple-800/50";
+      return "border-purple-300/60";
     default:
       return "border-gray-800";
   }
