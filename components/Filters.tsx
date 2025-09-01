@@ -162,8 +162,6 @@ export function Filters({
                       | "short"
                       | "medium"
                       | "long"
-                      | "openrank-asc"
-                      | "openrank-desc"
                   )
                 }
                 className={`px-3 py-1.5 rounded border transition-colors ${

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import { sdk } from "@farcaster/miniapp-sdk";
 import { useFarcasterAuth } from "../hooks/useFarcasterAuth";
 import { useOpenRank } from "../hooks/useOpenRank";
@@ -195,11 +195,14 @@ export default function FarcasterApp() {
   });
 
   // Sort conversations with interaction prioritization
-  const sortedConversations = sortDetails(
-    allConversations,
-    sortOption,
-    openRankRanks
-  );
+  // Use useMemo to prevent unnecessary re-sorting when OpenRank data is still loading
+  const sortedConversations = useMemo(() => {
+    return sortDetails(
+      allConversations,
+      sortOption,
+      openRankRanks
+    );
+  }, [allConversations, sortOption, openRankRanks]);
 
   // State for marked as read conversations
   const [markedAsReadConversations, setMarkedAsReadConversations] = useState<

@@ -4,7 +4,9 @@ import { useState, useCallback, useRef } from "react";
 const CACHE_TTL = 5 * 60 * 1000; // 5 minutes in milliseconds
 
 export function useOpenRank() {
-  const [openRankRanks, setOpenRankRanks] = useState<Record<number, number | null>>({});
+  const [openRankRanks, setOpenRankRanks] = useState<
+    Record<number, number | null>
+  >({});
 
   // Cache for OpenRank data with TTL (5 minutes)
   const openRankCache = useRef<{
@@ -59,9 +61,12 @@ export function useOpenRank() {
     if (fidsToFetch.length === 0) return;
 
     try {
-      const response = await fetch(`/api/openRank?fids=${fidsToFetch.join(",")}`, {
-        signal: AbortSignal.timeout(10000), // 10 second timeout
-      });
+      const response = await fetch(
+        `/api/openRank?fids=${fidsToFetch.join(",")}`,
+        {
+          signal: AbortSignal.timeout(10000), // 10 second timeout
+        }
+      );
 
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
