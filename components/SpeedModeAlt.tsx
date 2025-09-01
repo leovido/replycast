@@ -137,7 +137,7 @@ export function SpeedModeAlt({
             key={userGroup.user.fid}
             className={`rounded-lg border ${getBorderColor(
               themeMode
-            )} overflow-hidden border-purple-300/60 shadow-lg shadow-purple-900/20`}
+            )} overflow-hidden shadow-lg shadow-purple-900/20`}
           >
             {/* User Header - Always Visible */}
             <div
