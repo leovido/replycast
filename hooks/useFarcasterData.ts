@@ -214,7 +214,7 @@ export function useFarcasterData({
         window.location.origin
       );
       url.searchParams.set("fid", userFid.toString());
-      url.searchParams.set("limit", "25");
+      url.searchParams.set("limit", "50");
       if (dayFilter !== "all") {
         url.searchParams.set("dayFilter", dayFilter);
       }

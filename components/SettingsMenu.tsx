@@ -348,8 +348,6 @@ export function SettingsMenu({
             <option value="oldest">Oldest First</option>
             <option value="fid-asc">FID (Low to High)</option>
             <option value="fid-desc">FID (High to Low)</option>
-            <option value="openrank-asc">OpenRank (Low to High)</option>
-            <option value="openrank-desc">OpenRank (High to Low)</option>
           </select>
         </div>
 

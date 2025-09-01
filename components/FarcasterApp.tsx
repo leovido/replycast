@@ -14,7 +14,7 @@ import { SpeedModeTab } from "./SpeedModeTab";
 import { AnalyticsTab } from "./AnalyticsTab";
 import { ToastNotification } from "./ToastNotification";
 import { EmptyState } from "./EmptyState";
-import { sortDetails } from "../utils/farcaster";
+
 import Image from "next/image";
 import { isToday, isWithinLastDays } from "@/utils/farcaster";
 import { SpeedModeAlt } from "./SpeedModeAlt";
@@ -194,15 +194,7 @@ export default function FarcasterApp() {
     loadMoreConversations,
   });
 
-  // Sort conversations with interaction prioritization
-  // Use useMemo to prevent unnecessary re-sorting when OpenRank data is still loading
-  const sortedConversations = useMemo(() => {
-    return sortDetails(
-      allConversations,
-      sortOption,
-      openRankRanks
-    );
-  }, [allConversations, sortOption, openRankRanks]);
+
 
   // State for marked as read conversations
   const [markedAsReadConversations, setMarkedAsReadConversations] = useState<
@@ -359,7 +351,7 @@ export default function FarcasterApp() {
   };
 
   // Filter out discarded and marked as read conversations from the main list
-  const filteredConversations = sortedConversations.filter(
+  const filteredConversations = allConversations.filter(
     (conversation) =>
       !discardedConversations.some(
         (discarded) => discarded.castHash === conversation.castHash
@@ -924,6 +916,7 @@ export default function FarcasterApp() {
                   isLoadingMore={isLoadingMore}
                   hasMore={hasMore}
                   observerRef={observerRef}
+                  sortOption={sortOption}
                   onMarkAsRead={handleMarkAsRead}
                   onDiscard={handleDiscard}
                 />

@@ -177,8 +177,6 @@ export function Filters({
                 <option value="short">Short</option>
                 <option value="medium">Medium</option>
                 <option value="long">Long</option>
-                <option value="openrank-asc">OpenRank ↑</option>
-                <option value="openrank-desc">OpenRank ↓</option>
               </select>
             </div>
           </div>
