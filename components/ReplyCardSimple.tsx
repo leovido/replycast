@@ -527,14 +527,7 @@ export const ReplyCardSimple = memo<ReplyCardSimpleProps>(
         <div className="flex flex-row p-4 gap-2 items-center">
           <div className="relative">
             <Image
-<<<<<<< Updated upstream
               src={conversation.avatarUrl}
-=======
-              src={getCachedAvatarUrl(
-                conversation.username,
-                conversation.avatarUrl
-              )}
->>>>>>> Stashed changes
               alt={`@${conversation.username}'s avatar`}
               width={40}
               height={40}
