@@ -597,9 +597,11 @@ export const ReplyCardSimple = memo<ReplyCardSimpleProps>(
 
             {/* Interaction Bar */}
             <div
-              className={`flex items-center gap-6 text-sm ${getTertiaryTextColor(
-                themeMode
-              )}`}
+              className={`flex items-center gap-6 text-sm ${
+                themeMode === "dark"
+                  ? "text-black/80"
+                  : getTertiaryTextColor(themeMode)
+              }`}
             >
               {/* Replies */}
               <div className="flex items-center gap-2 group/stat hover:text-blue-600 dark:hover:text-blue-400 transition-colors">

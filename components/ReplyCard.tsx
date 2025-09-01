@@ -732,7 +732,7 @@ export const ReplyCard = memo<ReplyCardProps>(
         {/* Footer */}
         <div
           className={`z-10 flex items-center justify-between text-sm ${
-            isDarkTheme ? "text-white/60" : "text-gray-500"
+            isDarkTheme ? "text-white/80" : "text-gray-500"
           }`}
         >
           <div className="flex items-center gap-4">
