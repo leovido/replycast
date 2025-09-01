@@ -1,4 +1,4 @@
-import type { FarcasterRepliesResponse } from "@/types/types";
+import type { FarcasterRepliesResponse, ReplyTipsResponse } from "@/types/types";
 
 export const mockReplies: FarcasterRepliesResponse = {
   unrepliedCount: 6,
@@ -104,5 +104,92 @@ export const mockReplies: FarcasterRepliesResponse = {
       hasUserInteraction: true,
     },
   ],
-  message: "Success",
+  message: "Successfully fetched unreplied conversations",
+  nextCursor: null,
+};
+
+// Mock data for $REPLY tips
+export const mockReplyTips: ReplyTipsResponse = {
+  tipsReceived: [
+    {
+      amount: 5000,
+      timestamp: Math.floor(Date.now() / 1000) - 3600, // 1 hour ago
+      castHash: "0x1234567890abcdef",
+      castText: "Amazing work on this project! 5000 $REPLY",
+      castUrl: "https://farcaster.xyz/cast/0x1234567890abcdef",
+      authorFid: 123456,
+      authorUsername: "alice",
+      authorDisplayName: "Alice",
+      authorPfpUrl: "https://randomuser.me/api/portraits/women/68.jpg",
+      isTipGiven: false,
+    },
+    {
+      amount: 10000,
+      timestamp: Math.floor(Date.now() / 1000) - 7200, // 2 hours ago
+      castHash: "0xabcdef1234567890",
+      castText: "This is incredible! Here's 10000 $REPLY for your efforts",
+      castUrl: "https://farcaster.xyz/cast/0xabcdef1234567890",
+      authorFid: 789012,
+      authorUsername: "bob",
+      authorDisplayName: "Bob",
+      authorPfpUrl: "https://randomuser.me/api/portraits/men/32.jpg",
+      isTipGiven: false,
+    },
+    {
+      amount: 2500,
+      timestamp: Math.floor(Date.now() / 1000) - 86400, // 1 day ago
+      castHash: "0x9876543210fedcba",
+      castText: "Great insights! 2500 $REPLY",
+      castUrl: "https://farcaster.xyz/cast/0x9876543210fedcba",
+      authorFid: 345678,
+      authorUsername: "charlie",
+      authorDisplayName: "Charlie",
+      authorPfpUrl: "https://randomuser.me/api/portraits/men/45.jpg",
+      isTipGiven: false,
+    },
+  ],
+  tipsGiven: [
+    {
+      amount: 3000,
+      timestamp: Math.floor(Date.now() / 1000) - 1800, // 30 minutes ago
+      castHash: "0xfedcba0987654321",
+      castText: "Thanks for sharing this! 3000 $REPLY",
+      castUrl: "https://farcaster.xyz/cast/0xfedcba0987654321",
+      authorFid: 203666, // Current user
+      authorUsername: "user",
+      authorDisplayName: "Current User",
+      authorPfpUrl: "https://randomuser.me/api/portraits/men/1.jpg",
+      isTipGiven: true,
+    },
+    {
+      amount: 7500,
+      timestamp: Math.floor(Date.now() / 1000) - 5400, // 1.5 hours ago
+      castHash: "0x1122334455667788",
+      castText: "This is exactly what I needed! 7500 $REPLY",
+      castUrl: "https://farcaster.xyz/cast/0x1122334455667788",
+      authorFid: 203666, // Current user
+      authorUsername: "user",
+      authorDisplayName: "Current User",
+      authorPfpUrl: "https://randomuser.me/api/portraits/men/1.jpg",
+      isTipGiven: true,
+    },
+    {
+      amount: 1500,
+      timestamp: Math.floor(Date.now() / 1000) - 90000, // 1 day ago
+      castHash: "0x9988776655443322",
+      castText: "Nice work! 1500 $REPLY",
+      castUrl: "https://farcaster.xyz/cast/0x9988776655443322",
+      authorFid: 203666, // Current user
+      authorUsername: "user",
+      authorDisplayName: "Current User",
+      authorPfpUrl: "https://randomuser.me/api/portraits/men/1.jpg",
+      isTipGiven: true,
+    },
+  ],
+  totalReceived: 17500,
+  totalGiven: 12000,
+  totalReceivedToday: 15000, // 5000 + 10000 (from today)
+  totalGivenToday: 10500, // 3000 + 7500 (from today)
+  message: "Successfully fetched $REPLY tips",
+  nextCursor: null,
 };

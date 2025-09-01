@@ -98,8 +98,6 @@ export function SpeedModeAlt({
     }
   };
 
-
-
   if (conversations.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[400px] px-4">
@@ -152,14 +150,7 @@ export function SpeedModeAlt({
             >
               <div className="flex items-center gap-2">
                 <img
-<<<<<<< Updated upstream
                   src={userGroup.user.avatarUrl}
-=======
-                  src={getCachedAvatarUrl(
-                    userGroup.user.username,
-                    userGroup.user.avatarUrl
-                  )}
->>>>>>> Stashed changes
                   alt={`@${userGroup.user.username}`}
                   className="w-6 h-6 rounded-full"
                   onError={(e) => {
