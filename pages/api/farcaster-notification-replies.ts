@@ -1,10 +1,8 @@
 import type { NextApiRequest, NextApiResponse } from "next";
-import { FetchAllNotificationsTypeEnum } from "@neynar/nodejs-sdk/build/api/apis/notifications-api";
-import { ReactionType } from "@neynar/nodejs-sdk/build/api";
+import { readOnlyRepository } from "@/lib/db/repositories/readOnlyRepository";
 import type { FarcasterRepliesResponse, UnrepliedDetail } from "@/types/types";
-import { client } from "@/client";
 
-// Cache for user reply checks to avoid repeated API calls
+// Cache for user reply checks to avoid repeated database calls
 export const replyCheckCache = new Map<string, boolean>();
 
 // Add a function to clear cache for testing
@@ -12,7 +10,7 @@ export function clearReplyCheckCache() {
   replyCheckCache.clear();
 }
 
-// Helper function to check if user has replied to a conversation
+// Helper function to check if user has replied to a conversation using database
 async function hasUserReplied(
   userFid: number,
   castHash: string
@@ -25,25 +23,12 @@ async function hasUserReplied(
   }
 
   try {
-    // Fetch the conversation to check if user has replied
-    const conversation = await client.lookupCastConversation({
-      identifier: castHash,
-      type: "hash",
-      replyDepth: 1, // Only check direct replies for efficiency
-      limit: 5, // Reduced limit for faster response
-    });
-
-    if (!conversation.conversation?.cast?.direct_replies) {
-      replyCheckCache.set(cacheKey, false);
-      return false;
-    }
-
-    // Check if any of the direct replies are from the user
-    const userReplies = conversation.conversation.cast.direct_replies.filter(
-      (reply: any) => reply.author.fid === userFid
+    // Check if user has replied to this cast using database
+    const hasReplied = await readOnlyRepository.hasUserRepliedToConversation(
+      userFid,
+      castHash
     );
 
-    const hasReplied = userReplies.length > 0;
     replyCheckCache.set(cacheKey, hasReplied);
     return hasReplied;
   } catch (error) {
@@ -53,7 +38,7 @@ async function hasUserReplied(
   }
 }
 
-// Helper function to check if user has interacted with a cast
+// Helper function to get user interactions from database
 async function getUserInteractions(
   userFid: number,
   castHash: string
@@ -64,35 +49,26 @@ async function getUserInteractions(
   recastsCount: number;
 }> {
   try {
-    // Fetch cast reactions to check if user has liked or recasted
-    const reactions = await client.fetchCastReactions({
-      hash: castHash,
-      types: ["likes", "recasts"],
-      viewerFid: userFid,
-    });
+    // Get reactions for this cast from database
+    const reactions = await readOnlyRepository.getCastReactions(castHash, 100);
 
-    const userLiked =
-      reactions.reactions?.some(
-        (reaction: any) =>
-          reaction.reaction_type === "like" && reaction.user.fid === userFid
-      ) || false;
+    // Check if user has liked or recasted
+    const userLiked = reactions.some(
+      (reaction) => reaction.fid === userFid && reaction.type === "like"
+    );
 
-    const userRecasted =
-      reactions.reactions?.some(
-        (reaction: any) =>
-          reaction.reaction_type === "recast" && reaction.user.fid === userFid
-      ) || false;
+    const userRecasted = reactions.some(
+      (reaction) => reaction.fid === userFid && reaction.type === "recast"
+    );
 
     // Count total likes and recasts
-    const likesCount =
-      reactions.reactions?.filter(
-        (reaction: any) => reaction.reaction_type === "like"
-      ).length || 0;
+    const likesCount = reactions.filter(
+      (reaction) => reaction.type === "like"
+    ).length;
 
-    const recastsCount =
-      reactions.reactions?.filter(
-        (reaction: any) => reaction.reaction_type === "recast"
-      ).length || 0;
+    const recastsCount = reactions.filter(
+      (reaction) => reaction.type === "recast"
+    ).length;
 
     return { userLiked, userRecasted, likesCount, recastsCount };
   } catch (error) {
@@ -133,7 +109,7 @@ export default async function handler(
     limit = "25",
     cursor,
     type = "replies",
-    dayFilter = "today",
+    dayFilter = "7days", // Changed to "7days" to show recent activity
   } = req.query;
 
   if (!fid) {
@@ -144,44 +120,38 @@ export default async function handler(
 
   try {
     const userFid = parseInt(fid as string, 10);
-    const request = await client.fetchAllNotifications({
-      fid: userFid,
-      limit: parseInt(limit as string),
-      type: [type as FetchAllNotificationsTypeEnum],
-      cursor: cursor ? (cursor as string) : undefined,
-    });
-    const replies = request.notifications;
-    const nextCursor = request.next;
+    const limitNum = parseInt(limit as string, 10);
 
-    // Filter out conversations where the user has already replied
-    // First, filter out notifications with null/undefined cast data
-    const validReplies = replies.filter((reply) => reply.cast?.hash);
+    // Validate that FID is a valid number
+    if (isNaN(userFid)) {
+      return res.status(400).json({ error: "Invalid FID parameter" });
+    }
 
-    // Process in parallel for better performance
-    const replyChecks = await Promise.all(
-      validReplies.map(async (reply) => {
-        const userHasReplied = await hasUserReplied(
-          userFid,
-          reply.cast?.hash || ""
-        );
-        return { reply, hasReplied: userHasReplied };
-      })
+    // Get user's casts that have replies (using database instead of Neynar)
+    const dbResult = await readOnlyRepository.getUnrepliedConversations(
+      userFid,
+      limitNum
     );
 
-    const unrepliedReplies = replyChecks
-      .filter(({ hasReplied }) => !hasReplied)
-      .map(({ reply }) => reply);
+    if (!dbResult || dbResult.conversations.length === 0) {
+      return res.status(200).json({
+        unrepliedCount: 0,
+        unrepliedDetails: [],
+        message: "No unreplied conversations found.",
+        nextCursor: null,
+      });
+    }
 
     // Apply day filtering if specified
-    let filteredReplies = unrepliedReplies;
+    let filteredConversations = dbResult.conversations;
     if (dayFilter !== "all") {
       const now = Date.now();
       const oneDayMs = 24 * 60 * 60 * 1000;
 
-      filteredReplies = unrepliedReplies.filter((reply) => {
-        const replyTime = reply.cast?.timestamp
-          ? new Date(reply.cast.timestamp).getTime()
-          : 0;
+      filteredConversations = dbResult.conversations.filter((conv) => {
+        if (!conv.firstReplyTime) return false;
+
+        const replyTime = new Date(conv.firstReplyTime).getTime();
         const timeDiff = now - replyTime;
 
         switch (dayFilter) {
@@ -199,35 +169,45 @@ export default async function handler(
 
     // Get user interactions for each cast
     const interactionChecks = await Promise.all(
-      filteredReplies.map(async (reply) => {
-        const interactions = await getUserInteractions(
-          userFid,
-          reply.cast?.hash || ""
-        );
-        return { reply, interactions };
+      filteredConversations.map(async (conv) => {
+        const interactions = await getUserInteractions(userFid, conv.cast.hash);
+        return { conv, interactions };
       })
     );
 
+    // Transform database results to match API response format
     const unrepliedDetails: UnrepliedDetail[] = interactionChecks.map(
-      ({ reply, interactions }) => ({
-        username: reply.cast?.author?.username || "",
-        timeAgo: reply.cast?.timestamp ? timeAgo(reply.cast.timestamp) : "",
-        timestamp: reply.cast?.timestamp ? Number(reply.cast.timestamp) : 0,
-        castUrl: `https://farcaster.xyz/${reply.cast?.author?.username}/${reply.cast?.hash}`,
-        text: reply.cast?.text || "",
-        avatarUrl: reply.cast?.author?.pfp_url || "",
-        castHash: reply.cast?.hash || "",
-        authorFid: reply.cast?.author?.fid || 0,
-        originalCastText: reply.cast?.text || "",
-        originalCastHash: reply.cast?.hash || "",
-        originalAuthorUsername: reply.cast?.author?.username || "",
-        replyCount: reply.cast?.replies?.count || 0,
-        userLiked: interactions.userLiked,
-        userRecasted: interactions.userRecasted,
-        hasUserInteraction: interactions.userLiked || interactions.userRecasted,
-        likesCount: interactions.likesCount,
-        recastsCount: interactions.recastsCount,
-      })
+      ({ conv, interactions }) => {
+        // Get profile information for the first reply author
+        // Note: firstReplyAuthor is currently null due to missing database indexes
+        const firstReplyAuthorFid = conv.firstReplyAuthor;
+        const username = firstReplyAuthorFid
+          ? `User ${firstReplyAuthorFid}`
+          : "Unknown User (needs database indexes for reply info)";
+
+        return {
+          username,
+          timeAgo: conv.firstReplyTime
+            ? timeAgo(conv.firstReplyTime.toISOString())
+            : "Unknown",
+          timestamp: conv.firstReplyTime ? conv.firstReplyTime.getTime() : 0,
+          castUrl: `https://warpcast.com/~/conversations/${conv.cast.hash}`,
+          text: conv.cast.text || "",
+          avatarUrl: "", // Would need to fetch from profiles table if needed
+          castHash: conv.cast.hash,
+          authorFid: conv.cast.fid,
+          originalCastText: conv.cast.text || "",
+          originalCastHash: conv.cast.hash,
+          originalAuthorUsername: `User ${conv.cast.fid}`,
+          replyCount: conv.replyCount,
+          userLiked: interactions.userLiked,
+          userRecasted: interactions.userRecasted,
+          hasUserInteraction:
+            interactions.userLiked || interactions.userRecasted,
+          likesCount: interactions.likesCount,
+          recastsCount: interactions.recastsCount,
+        };
+      }
     );
 
     const response: FarcasterRepliesResponse = {
@@ -244,12 +224,12 @@ export default async function handler(
             }`
           : ""
       }.`,
-      nextCursor: nextCursor ? nextCursor.cursor : null,
+      nextCursor: null, // Database queries don't support cursors in this implementation
     };
 
     return res.status(200).json(response);
   } catch (error) {
-    console.error("Notification replies API error:", error);
+    console.error("Database-driven notification replies API error:", error);
     return res.status(500).json({
       error: "Internal server error: " + error,
       message: error instanceof Error ? error.message : String(error),

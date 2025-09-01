@@ -74,7 +74,10 @@ describe("/api/farcaster-notification-replies", () => {
 
       await handler(req, res);
 
-      expect(res._getStatusCode()).toBe(500);
+      expect(res._getStatusCode()).toBe(400);
+      expect(JSON.parse(res._getData())).toEqual({
+        error: "Invalid FID parameter",
+      });
     });
 
     it("should successfully fetch and process notifications", async () => {
