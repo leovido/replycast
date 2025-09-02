@@ -485,7 +485,7 @@ export const ReplyCardSimple = memo<ReplyCardSimpleProps>(
         onKeyDown={handleKeyDown}
         role="button"
         tabIndex={0}
-        className={`group relative w-full bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800/30 transition-all duration-300 cursor-pointer swipe-enabled ${
+        className={`group relative w-full bg-white border-b border-gray-200 hover:bg-gray-50 transition-all duration-300 cursor-pointer swipe-enabled ${
           isLoading ? "opacity-75 pointer-events-none" : ""
         } ${isSwipeModeActive ? "swipe-mode-active" : ""} ${className}`}
         style={{
@@ -518,7 +518,7 @@ export const ReplyCardSimple = memo<ReplyCardSimpleProps>(
 
         {/* Loading overlay */}
         {isLoading && (
-          <div className="absolute inset-0 bg-white/50 dark:bg-gray-900/50 flex items-center justify-center z-10">
+          <div className="absolute inset-0 bg-white/50 flex items-center justify-center z-10">
             <div className="w-6 h-6 border-2 border-purple-500 border-t-transparent rounded-full animate-spin"></div>
           </div>
         )}
@@ -531,7 +531,7 @@ export const ReplyCardSimple = memo<ReplyCardSimpleProps>(
               alt={`@${conversation.username}'s avatar`}
               width={40}
               height={40}
-              className="rounded-full ring-2 ring-gray-200 dark:ring-gray-600 group-hover:ring-purple-300 dark:group-hover:ring-purple-600 transition-all duration-200"
+              className="rounded-full ring-2 ring-gray-200 group-hover:ring-purple-300 transition-all duration-200"
               onError={(e) => {
                 const target = e.target as HTMLImageElement;
                 target.src = `https://api.dicebear.com/7.x/avataaars/svg?seed=${conversation.username}`;
@@ -545,7 +545,7 @@ export const ReplyCardSimple = memo<ReplyCardSimpleProps>(
           <div className="flex flex-col flex-1">
             {/* Username */}
             <span
-              className={`font-semibold text-left group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors`}
+              className={`font-semibold text-left group-hover:text-purple-600 transition-colors`}
             >
               @{conversation.username}
             </span>
@@ -604,7 +604,7 @@ export const ReplyCardSimple = memo<ReplyCardSimpleProps>(
               }`}
             >
               {/* Replies */}
-              <div className="flex items-center gap-2 group/stat hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+              <div className="flex items-center gap-2 group/stat hover:text-blue-600 transition-colors">
                 <svg
                   className="w-4 h-4"
                   fill="none"
@@ -618,7 +618,7 @@ export const ReplyCardSimple = memo<ReplyCardSimpleProps>(
               </div>
 
               {/* Recasts */}
-              <div className="flex items-center gap-2 group/stat hover:text-green-600 dark:hover:text-green-400 transition-colors">
+              <div className="flex items-center gap-2 group/stat hover:text-green-600 transition-colors">
                 <svg
                   className="w-4 h-4"
                   fill="none"
@@ -635,7 +635,7 @@ export const ReplyCardSimple = memo<ReplyCardSimpleProps>(
               </div>
 
               {/* Likes */}
-              <div className="flex items-center gap-2 group/stat hover:text-red-600 dark:hover:text-red-400 transition-colors">
+              <div className="flex items-center gap-2 group/stat hover:text-red-600 transition-colors">
                 <svg
                   className="w-4 h-4"
                   fill="currentColor"
