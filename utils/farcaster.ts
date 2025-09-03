@@ -33,7 +33,7 @@ export function isWithinLastDays(timestamp: number, days: number): boolean {
 // API function to fetch today's replies
 export async function fetchTodaysReplies(
   fid: number,
-  limit = 25,
+  limit = 100,
   cursor: Cursor
 ): Promise<FarcasterRepliesResponse> {
   let allReplies = [];

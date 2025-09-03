@@ -10,6 +10,7 @@ import {
 } from "@/utils/themeHelpers";
 import type { ThemeMode } from "@/utils/themeHelpers";
 import { ReplyCardSimple } from "./ReplyCardSimple";
+import { getMinutesAgo } from "@/utils/farcaster";
 
 interface SpeedModeAltProps {
   conversations: UnrepliedDetail[];
@@ -20,6 +21,7 @@ interface SpeedModeAltProps {
   isLoadingMore: boolean;
   hasMore: boolean;
   observerRef: RefObject<HTMLDivElement>;
+  sortOption: string;
   onMarkAsRead?: (conversation: UnrepliedDetail) => void;
   onDiscard?: (conversation: UnrepliedDetail) => void;
 }
@@ -33,6 +35,7 @@ export function SpeedModeAlt({
   isLoadingMore,
   hasMore,
   observerRef,
+  sortOption,
   onMarkAsRead,
   onDiscard,
 }: SpeedModeAltProps) {
@@ -64,8 +67,54 @@ export function SpeedModeAlt({
     return groups;
   }, {} as Record<number, { user: { fid: number; username: string; avatarUrl: string }; conversations: UnrepliedDetail[] }>);
 
-  // Sort users by OpenRank (highest rank first, since lower numbers are better ranks)
-  const sortedUserGroups = Object.values(userGroups);
+  // Sort user groups based on sortOption
+  const sortedUserGroups = Object.values(userGroups).sort((a, b) => {
+    switch (sortOption) {
+      case "newest":
+        // Sort by most recent conversation in each group
+        const newestA = Math.min(
+          ...a.conversations.map((c) => getMinutesAgo(c.timeAgo))
+        );
+        const newestB = Math.min(
+          ...b.conversations.map((c) => getMinutesAgo(c.timeAgo))
+        );
+        return newestA - newestB;
+      case "oldest":
+        // Sort by oldest conversation in each group
+        const oldestA = Math.max(
+          ...a.conversations.map((c) => getMinutesAgo(c.timeAgo))
+        );
+        const oldestB = Math.max(
+          ...b.conversations.map((c) => getMinutesAgo(c.timeAgo))
+        );
+        return oldestB - oldestA;
+      case "fid-asc":
+        return a.user.fid - b.user.fid;
+      case "fid-desc":
+        return b.user.fid - a.user.fid;
+      case "short":
+        // Sort by users who have the most short conversations
+        const shortA = a.conversations.filter((c) => c.text.length < 20).length;
+        const shortB = b.conversations.filter((c) => c.text.length < 20).length;
+        return shortB - shortA;
+      case "medium":
+        // Sort by users who have the most medium conversations
+        const mediumA = a.conversations.filter(
+          (c) => c.text.length >= 20 && c.text.length <= 50
+        ).length;
+        const mediumB = b.conversations.filter(
+          (c) => c.text.length >= 20 && c.text.length <= 50
+        ).length;
+        return mediumB - mediumA;
+      case "long":
+        // Sort by users who have the most long conversations
+        const longA = a.conversations.filter((c) => c.text.length > 50).length;
+        const longB = b.conversations.filter((c) => c.text.length > 50).length;
+        return longB - longA;
+      default:
+        return 0;
+    }
+  });
 
   const toggleUserExpansion = (userId: number) => {
     if (expandedUser === userId) {
