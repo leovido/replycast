@@ -203,7 +203,7 @@ export function SpeedModeAlt({
                     <div className="flex flex-row items-center gap-1">
                       {openRankRanks[userGroup.user.fid] && (
                         <span className="text-xs bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200 px-1.5 py-0.5 rounded-full">
-                          OR #
+                          E: #
                           {openRankRanks[userGroup.user.fid]?.toLocaleString()}
                         </span>
                       )}
