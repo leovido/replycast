@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import type { UnrepliedDetail } from "@/types/types";
+import type { UnrepliedDetail, OpenRankData } from "@/types/types";
 import { ConversationList } from "./ConversationList";
 import { FocusTutorial } from "./FocusTutorial";
 import { EmptyState } from "./EmptyState";
@@ -10,9 +10,8 @@ import type { ThemeMode } from "@/types/types";
 interface FocusTabProps {
   markedAsReadConversations: UnrepliedDetail[];
   viewMode: "list" | "grid";
-  openRankRanks: Record<number, number | null>;
   quotientScores: Record<number, { quotientScore: number } | null>;
-
+  openRankData: Record<number, OpenRankData>;
   loading: boolean;
   isLoadingMore: boolean;
   hasMore: boolean;
@@ -28,9 +27,8 @@ interface FocusTabProps {
 export function FocusTab({
   markedAsReadConversations,
   viewMode,
-  openRankRanks,
   quotientScores,
-
+  openRankData,
   loading,
   isLoadingMore,
   hasMore,
@@ -182,8 +180,8 @@ export function FocusTab({
           loading={loading}
           observerRef={observerRef}
           isDarkTheme={isDarkTheme}
-          openRankRanks={openRankRanks}
           quotientScores={quotientScores}
+          openRankData={openRankData}
           isLoadingMore={isLoadingMore}
           hasMore={hasMore}
           onReply={onReply}

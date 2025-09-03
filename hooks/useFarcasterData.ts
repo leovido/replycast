@@ -9,14 +9,14 @@ import { MockFarcasterService } from "@/utils/mockService";
 
 interface UseFarcasterDataProps {
   user: User | null;
-  fetchOpenRankRanks: (fids: number[]) => Promise<void>;
+  fetchOpenRankData: (fids: number[]) => Promise<void>;
   clearOpenRankCache: () => void;
   dayFilter?: string;
 }
 
 export function useFarcasterData({
   user,
-  fetchOpenRankRanks,
+  fetchOpenRankData,
   clearOpenRankCache,
   dayFilter = "today",
 }: UseFarcasterDataProps) {
@@ -26,6 +26,9 @@ export function useFarcasterData({
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [userOpenRank, setUserOpenRank] = useState<number | null>(null);
   const [userQuotientScore, setUserQuotientScore] = useState<number | null>(
+    null
+  );
+  const [userFollowingRank, setUserFollowingRank] = useState<number | null>(
     null
   );
 
@@ -83,6 +86,12 @@ export function useFarcasterData({
         if (quotientData.data && quotientData.data[0]) {
           setUserQuotientScore(quotientData.data[0].quotientScore);
         }
+      if (data.scores && data.scores[userFid]) {
+        // Use engagement rank as the primary rank for the user
+        const engagementRank = data.scores[userFid].engagement.rank;
+        const followingRank = data.scores[userFid].following.rank;
+        setUserOpenRank(engagementRank);
+        setUserFollowingRank(followingRank);
       }
     } catch (error) {
       console.error("Failed to fetch user reputation:", error);
@@ -159,7 +168,7 @@ export function useFarcasterData({
             const fids = responseData.unrepliedDetails.map(
               (detail: UnrepliedDetail) => detail.authorFid
             );
-            await fetchOpenRankRanks(fids);
+            await fetchOpenRankData(fids);
           }
         }
       } catch (err) {
@@ -172,7 +181,7 @@ export function useFarcasterData({
     };
 
     fetchData();
-  }, [user, fetchOpenRankRanks, fetchUserReputation, dayFilter]);
+  }, [user, fetchOpenRankData, fetchUserOpenRank, fetchUserReputation, dayFilter]);
 
   const loadMoreConversations = useCallback(async () => {
     if (!hasMore || isLoadingMore || loading) return;
@@ -232,7 +241,7 @@ export function useFarcasterData({
           (detail: UnrepliedDetail) => detail.authorFid
         );
         // Don't await this to prevent blocking the UI update
-        fetchOpenRankRanks(fids).catch((error) => {
+        fetchOpenRankData(fids).catch((error) => {
           console.error(
             "Failed to fetch OpenRank for new conversations:",
             error
@@ -255,7 +264,7 @@ export function useFarcasterData({
     user,
     cursor,
     dayFilter,
-    fetchOpenRankRanks,
+    fetchOpenRankData,
   ]);
 
   const handleRefresh = useCallback(async () => {
@@ -305,7 +314,7 @@ export function useFarcasterData({
           const fids = responseData.unrepliedDetails.map(
             (detail: UnrepliedDetail) => detail.authorFid
           );
-          await fetchOpenRankRanks(fids);
+          await fetchOpenRankData(fids);
         }
       } else {
         setError(responseData.error || "Failed to fetch data");
@@ -318,6 +327,8 @@ export function useFarcasterData({
     user?.fid,
     fetchOpenRankRanks,
     fetchUserReputation,
+    fetchOpenRankData,
+    fetchUserOpenRank,
     clearOpenRankCache,
     dayFilter,
   ]);
@@ -340,6 +351,7 @@ export function useFarcasterData({
     cursor,
     userOpenRank,
     userQuotientScore,
+    userFollowingRank,
     loadMoreConversations,
     handleRefresh,
     resetPagination,

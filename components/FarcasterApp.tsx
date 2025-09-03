@@ -15,6 +15,7 @@ import { AnalyticsTab } from "./AnalyticsTab";
 import { ToastNotification } from "./ToastNotification";
 import { EmptyState } from "./EmptyState";
 import type { ThemeMode } from "@/types/types";
+
 import Image from "next/image";
 import { isToday, isWithinLastDays } from "@/utils/farcaster";
 import { SpeedModeAlt } from "./SpeedModeAlt";
@@ -171,10 +172,13 @@ export default function FarcasterApp() {
     quotientScores,
   } = useReputation();
 
+  const { fetchOpenRankData, clearCache, openRankData } = useOpenRank();
+
   const {
     allConversations,
     userOpenRank,
     userQuotientScore,
+    userFollowingRank,
     loading: dataLoading,
     error,
     handleRefresh,
@@ -184,6 +188,7 @@ export default function FarcasterApp() {
   } = useFarcasterData({
     user,
     fetchOpenRankRanks: fetchReputationData,
+    fetchOpenRankData,
     clearOpenRankCache: clearCache,
     dayFilter,
   });
@@ -941,8 +946,8 @@ export default function FarcasterApp() {
               ) : (
                 <SpeedModeAlt
                   conversations={filteredConversations}
-                  openRankRanks={openRankRanks}
                   quotientScores={quotientScores}
+                  openRankData={openRankData}
                   isDarkThemeMode={isDarkTheme}
                   themeMode={themeMode}
                   loading={dataLoading}
@@ -961,8 +966,8 @@ export default function FarcasterApp() {
             <FocusTab
               markedAsReadConversations={markedAsReadConversations}
               viewMode={viewMode}
-              openRankRanks={openRankRanks}
               quotientScores={quotientScores}
+              openRankData={openRankData}
               loading={dataLoading}
               isLoadingMore={isLoadingMore}
               hasMore={hasMore}
@@ -999,6 +1004,8 @@ export default function FarcasterApp() {
               userOpenRank={userOpenRank}
               userQuotientScore={userQuotientScore}
               openRankRanks={openRankRanks}
+              userFollowingRank={userFollowingRank}
+              openRankData={openRankData}
               isDarkTheme={isDarkTheme}
               themeMode={themeMode}
             />

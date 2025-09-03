@@ -1,17 +1,18 @@
 import { useState, useCallback, useRef } from "react";
 import { MockOpenRankService } from "@/utils/mockService";
+import type { OpenRankData } from "@/types/types";
 
 // Constants
 const CACHE_TTL = 5 * 60 * 1000; // 5 minutes in milliseconds
 
 export function useOpenRank() {
-  const [openRankRanks, setOpenRankRanks] = useState<
-    Record<number, number | null>
+  const [openRankData, setOpenRankData] = useState<
+    Record<number, OpenRankData>
   >({});
 
   // Cache for OpenRank data with TTL (5 minutes)
   const openRankCache = useRef<{
-    data: Record<number, number | null>;
+    data: Record<number, OpenRankData>;
     timestamp: number;
   }>({ data: {}, timestamp: 0 });
 
@@ -29,8 +30,8 @@ export function useOpenRank() {
     };
   }, []);
 
-  // Helper to fetch OpenRank ranks with caching (optimized)
-  const fetchOpenRankRanks = useCallback(async (fids: number[]) => {
+  // Helper to fetch OpenRank data with caching (optimized)
+  const fetchOpenRankData = useCallback(async (fids: number[]) => {
     if (fids.length === 0) return;
 
     // Check if mocks are enabled
@@ -81,15 +82,15 @@ export function useOpenRank() {
 
     // If we have cached data, use it immediately
     if (isCacheValid) {
-      const cachedRanks: Record<number, number | null> = {};
+      const cachedData: Record<number, OpenRankData> = {};
       uniqueFids.forEach((fid) => {
         if (openRankCache.current.data.hasOwnProperty(fid)) {
-          cachedRanks[fid] = openRankCache.current.data[fid];
+          cachedData[fid] = openRankCache.current.data[fid];
         }
       });
 
-      if (Object.keys(cachedRanks).length > 0) {
-        setOpenRankRanks((prev) => ({ ...prev, ...cachedRanks }));
+      if (Object.keys(cachedData).length > 0) {
+        setOpenRankData((prev) => ({ ...prev, ...cachedData }));
       }
     }
 
@@ -108,37 +109,37 @@ export function useOpenRank() {
 
       const data = await response.json();
 
-      if (data.ranks) {
+      if (data.scores) {
         // Convert string keys to numbers for consistency
-        const newRankMap: Record<number, number | null> = {};
+        const newDataMap: Record<number, OpenRankData> = {};
 
-        Object.entries(data.ranks).forEach(([fid, rank]) => {
-          newRankMap[parseInt(fid)] = rank as number | null;
+        Object.entries(data.scores).forEach(([fid, scores]) => {
+          newDataMap[parseInt(fid)] = scores as OpenRankData;
         });
 
         // Update cache with new data
         openRankCache.current.data = {
           ...openRankCache.current.data,
-          ...newRankMap,
+          ...newDataMap,
         };
         openRankCache.current.timestamp = now;
 
         // Update state with new data
-        setOpenRankRanks((prev) => ({ ...prev, ...newRankMap }));
+        setOpenRankData((prev) => ({ ...prev, ...newDataMap }));
       }
     } catch (error) {
-      console.error("Failed to fetch OpenRank ranks:", error);
+      console.error("Failed to fetch OpenRank data:", error);
     }
   }, []);
 
   const clearCache = useCallback(() => {
     openRankCache.current = { data: {}, timestamp: 0 };
-    setOpenRankRanks({});
+    setOpenRankData({});
   }, []);
 
   return {
-    openRankRanks,
-    fetchOpenRankRanks,
+    openRankData,
+    fetchOpenRankData,
     getCacheStatus,
     clearCache,
   };

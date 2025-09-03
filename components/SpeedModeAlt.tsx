@@ -1,6 +1,6 @@
 import React, { useState, useEffect, type RefObject } from "react";
 import { sdk } from "@farcaster/miniapp-sdk";
-import type { UnrepliedDetail } from "@/types/types";
+import type { UnrepliedDetail, OpenRankData } from "@/types/types";
 import type { QuotientScore } from "@/hooks/useQuotient";
 import {
   getBackgroundClass,
@@ -9,14 +9,14 @@ import {
   getCardBackground,
   getTextColor,
 } from "@/utils/themeHelpers";
-import type { ThemeMode } from "@/types/types";
+import type { ThemeMode } from "@/utils/themeHelpers";
 import { ReplyCardSimple } from "./ReplyCardSimple";
 import { getMinutesAgo } from "@/utils/farcaster";
 
 interface SpeedModeAltProps {
   conversations: UnrepliedDetail[];
-  openRankRanks: Record<number, number | null>;
   quotientScores: Record<number, QuotientScore | null>;
+  openRankData: Record<number, OpenRankData>;
   isDarkThemeMode: boolean;
   themeMode: ThemeMode;
   loading: boolean;
@@ -30,8 +30,8 @@ interface SpeedModeAltProps {
 
 export function SpeedModeAlt({
   conversations,
-  openRankRanks,
   quotientScores,
+  openRankData,
   isDarkThemeMode,
   themeMode,
   loading,
@@ -201,10 +201,10 @@ export function SpeedModeAlt({
                       @{userGroup.user.username}
                     </span>
                     <div className="flex flex-row items-center gap-1">
-                      {openRankRanks[userGroup.user.fid] && (
+                      {openRankData[userGroup.user.fid] && (
                         <span className="text-xs bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200 px-1.5 py-0.5 rounded-full">
                           E: #
-                          {openRankRanks[userGroup.user.fid]?.toLocaleString()}
+                          {openRankData[userGroup.user.fid]?.toLocaleString()}
                         </span>
                       )}
                       {quotientScores[userGroup.user.fid] && (
