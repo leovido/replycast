@@ -77,7 +77,10 @@ export function useFarcasterData({
       if (openRankResponse.ok) {
         const openRankData = await openRankResponse.json();
         if (openRankData.ranks && openRankData.ranks[userFid]) {
-          setUserOpenRank(openRankData.ranks[userFid] as number);
+          const engagementRank = openRankData.ranks[userFid].engagement.rank;
+          const followingRank = openRankData.ranks[userFid].following.rank;
+          setUserOpenRank(engagementRank);
+          setUserFollowingRank(followingRank);
         }
       }
 
@@ -86,12 +89,6 @@ export function useFarcasterData({
         if (quotientData.data && quotientData.data[0]) {
           setUserQuotientScore(quotientData.data[0].quotientScore);
         }
-      if (data.scores && data.scores[userFid]) {
-        // Use engagement rank as the primary rank for the user
-        const engagementRank = data.scores[userFid].engagement.rank;
-        const followingRank = data.scores[userFid].following.rank;
-        setUserOpenRank(engagementRank);
-        setUserFollowingRank(followingRank);
       }
     } catch (error) {
       console.error("Failed to fetch user reputation:", error);
@@ -99,7 +96,6 @@ export function useFarcasterData({
     }
   }, []);
 
-  // Fetch data when user is set
   useEffect(() => {
     if (!user) return;
 
@@ -181,7 +177,7 @@ export function useFarcasterData({
     };
 
     fetchData();
-  }, [user, fetchOpenRankData, fetchUserOpenRank, fetchUserReputation, dayFilter]);
+  }, [user, fetchOpenRankData, userOpenRank, fetchUserReputation, dayFilter]);
 
   const loadMoreConversations = useCallback(async () => {
     if (!hasMore || isLoadingMore || loading) return;
@@ -325,10 +321,8 @@ export function useFarcasterData({
     setIsRefreshing(false);
   }, [
     user?.fid,
-    fetchOpenRankRanks,
-    fetchUserReputation,
     fetchOpenRankData,
-    fetchUserOpenRank,
+    fetchUserReputation,
     clearOpenRankCache,
     dayFilter,
   ]);

@@ -7,7 +7,7 @@ interface AnalyticsTabProps {
   allConversations: UnrepliedDetail[];
   userOpenRank: number | null;
   userQuotientScore: number | null;
-  openRankRanks: Record<number, number | null>;
+  openRankData: Record<number, OpenRankData>;
   isDarkTheme: boolean;
   themeMode: ThemeMode;
 }
@@ -16,8 +16,7 @@ export function AnalyticsTab({
   allConversations,
   userOpenRank,
   userQuotientScore,
-  openRankRanks,
-  userFollowingRank,
+  openRankData,
   isDarkTheme,
   themeMode,
 }: AnalyticsTabProps) {
@@ -233,26 +232,22 @@ export function AnalyticsTab({
             </div>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-2 gap-4">
-            <div className="text-center">
-              <div className={`text-3xl font-bold mb-1 ${getAccentClass()}`}>
-                #{userOpenRank.toLocaleString()}
-              </div>
-              <p className={`text-sm ${getSubtextClass()}`}>Engagement Rank</p>
-            </div>
-            <div className="text-center">
-              <div className={`text-3xl font-bold mb-1 ${getAccentClass()}`}>
-                {userFollowingRank
-                  ? `#${userFollowingRank.toLocaleString()}`
-                  : "#--"}
-              </div>
-              <p className={`text-sm ${getSubtextClass()}`}>Following Rank</p>
-            </div>
-            {userQuotientScore !== null && userQuotientScore !== undefined && (
-              <div>
-                <div className={`text-2xl font-bold mb-1 text-purple-400`}>
-                  Q {(userQuotientScore * 100).toFixed(0)}
+            {userOpenRank !== null && userOpenRank !== undefined && (
+              <div className="text-center">
+                <div className={`text-3xl font-bold mb-1 ${getAccentClass()}`}>
+                  #{userOpenRank.toLocaleString()}
                 </div>
-                <p className={`text-xs ${getSubtextClass()}`}>Quotient</p>
+                <p className={`text-sm ${getSubtextClass()}`}>
+                  Engagement Rank
+                </p>
+              </div>
+            )}
+            {userQuotientScore !== null && userQuotientScore !== undefined && (
+              <div className="text-center">
+                <div className={`text-3xl font-bold mb-1 text-purple-400`}>
+                  {(userQuotientScore * 100).toFixed(0)}
+                </div>
+                <p className={`text-sm ${getSubtextClass()}`}>Quotient Score</p>
               </div>
             )}
           </div>

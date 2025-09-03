@@ -164,15 +164,13 @@ export default function FarcasterApp() {
 
   const {
     fetchReputationData,
-    clearCache,
     getReputationValue,
     getReputationDisplay,
     getReputationColor,
-    openRankRanks,
+    openRankData,
     quotientScores,
+    clearCache,
   } = useReputation();
-
-  const { fetchOpenRankData, clearCache, openRankData } = useOpenRank();
 
   const {
     allConversations,
@@ -187,8 +185,7 @@ export default function FarcasterApp() {
     isLoadingMore,
   } = useFarcasterData({
     user,
-    fetchOpenRankRanks: fetchReputationData,
-    fetchOpenRankData,
+    fetchOpenRankData: fetchReputationData,
     clearOpenRankCache: clearCache,
     dayFilter,
   });
@@ -1003,8 +1000,6 @@ export default function FarcasterApp() {
               allConversations={allConversations}
               userOpenRank={userOpenRank}
               userQuotientScore={userQuotientScore}
-              openRankRanks={openRankRanks}
-              userFollowingRank={userFollowingRank}
               openRankData={openRankData}
               isDarkTheme={isDarkTheme}
               themeMode={themeMode}

@@ -200,11 +200,34 @@ export function SpeedModeAlt({
                     >
                       @{userGroup.user.username}
                     </span>
+                  </div>
+                  <div
+                    className={`text-xs ${
+                      isDarkTheme ? "text-gray-400" : "text-gray-600"
+                    }`}
+                  >
+                    {userGroup.conversations.length} unreplied cast
+                    {userGroup.conversations.length !== 1 ? "s" : ""}
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  {/* Reputation Scores - Only show when NOT expanded */}
+                  {expandedUser !== userGroup.user.fid && (
                     <div className="flex flex-row items-center gap-1">
-                      {openRankData[userGroup.user.fid] && (
+                      {openRankData[userGroup.user.fid]?.engagement?.rank && (
                         <span className="text-xs bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200 px-1.5 py-0.5 rounded-full">
                           E: #
-                          {openRankData[userGroup.user.fid]?.toLocaleString()}
+                          {openRankData[
+                            userGroup.user.fid
+                          ]?.engagement?.rank?.toLocaleString()}
+                        </span>
+                      )}
+                      {openRankData[userGroup.user.fid]?.following?.rank && (
+                        <span className="text-xs bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200 px-1.5 py-0.5 rounded-full">
+                          F: #
+                          {openRankData[
+                            userGroup.user.fid
+                          ]?.following?.rank?.toLocaleString()}
                         </span>
                       )}
                       {quotientScores[userGroup.user.fid] && (
@@ -216,22 +239,16 @@ export function SpeedModeAlt({
                         </span>
                       )}
                     </div>
-                  </div>
-                  <div
+                  )}
+
+                  {/* Expand/Collapse Arrow */}
+                  <span
                     className={`text-xs ${
                       isDarkTheme ? "text-gray-400" : "text-gray-600"
                     }`}
                   >
-                    {userGroup.conversations.length} unreplied cast
-                    {userGroup.conversations.length !== 1 ? "s" : ""}
-                  </div>
-                </div>
-                <div
-                  className={`text-xs ${
-                    isDarkTheme ? "text-gray-400" : "text-gray-600"
-                  }`}
-                >
-                  {expandedUser === userGroup.user.fid ? "▼" : "▶"}
+                    {expandedUser === userGroup.user.fid ? "▼" : "▶"}
+                  </span>
                 </div>
               </div>
             </div>

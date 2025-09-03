@@ -62,7 +62,7 @@ const mockOpenRankData = {
 const defaultProps = {
   allConversations: mockAllConversations,
   userOpenRank: 2000,
-  userFollowingRank: 2100,
+  userQuotientScore: 0.85,
   openRankData: mockOpenRankData,
   isDarkTheme: true,
   themeMode: "Farcaster" as const,
@@ -114,27 +114,33 @@ describe("AnalyticsTab", () => {
     expect(within(card).getByText(/#\s*2,500/)).toBeInTheDocument();
   });
 
-  it("displays user's OpenRank with both engagement and following scores", () => {
+  it("displays user's reputation with OpenRank and Quotient scores", () => {
     render(
       <AnalyticsTab
         {...defaultProps}
         userOpenRank={2000}
-        userFollowingRank={2100}
+        userQuotientScore={0.85}
       />
     );
 
     expect(screen.getByText("#2,000")).toBeInTheDocument();
-    expect(screen.getByText("#2,100")).toBeInTheDocument();
-    expect(screen.getByText("Your OpenRank")).toBeInTheDocument();
+    expect(screen.getByText("85")).toBeInTheDocument();
+    expect(screen.getByText("Your Reputation")).toBeInTheDocument();
     expect(screen.getByText("Engagement Rank")).toBeInTheDocument();
-    expect(screen.getByText("Following Rank")).toBeInTheDocument();
+    expect(screen.getByText("Quotient Score")).toBeInTheDocument();
   });
 
-  it("handles null user OpenRank", () => {
-    render(<AnalyticsTab {...defaultProps} userOpenRank={null} />);
+  it("handles null user reputation", () => {
+    render(
+      <AnalyticsTab
+        {...defaultProps}
+        userOpenRank={null}
+        userQuotientScore={null}
+      />
+    );
 
-    // When null, the entire "Your OpenRank" section is hidden
-    expect(screen.queryByText("Your OpenRank")).not.toBeInTheDocument();
+    // When both are null, the entire "Your Reputation" section is hidden
+    expect(screen.queryByText("Your Reputation")).not.toBeInTheDocument();
   });
 
   it("displays top authors by engagement rank", () => {

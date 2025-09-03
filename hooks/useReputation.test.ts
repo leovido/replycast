@@ -12,8 +12,11 @@ const mockUseQuotient = useQuotient as jest.MockedFunction<typeof useQuotient>;
 
 describe("useReputation", () => {
   const mockOpenRankData = {
-    openRankRanks: { 123: 1500, 456: 5000 },
-    fetchOpenRankRanks: jest.fn(),
+    openRankData: {
+      123: { following: { rank: 1500 }, engagement: { rank: 1400 } },
+      456: { following: { rank: 5000 }, engagement: { rank: 4800 } },
+    },
+    fetchOpenRankData: jest.fn(),
     clearCache: jest.fn(),
     getCacheStatus: jest.fn(),
   };
@@ -49,23 +52,7 @@ describe("useReputation", () => {
     mockUseQuotient.mockReturnValue(mockQuotientData);
   });
 
-  it("should initialize with quotient as default reputation type", () => {
-    const { result } = renderHook(() => useReputation());
-
-    expect(result.current.reputationType).toBe("quotient");
-  });
-
-  it("should change reputation type when setReputationType is called", () => {
-    const { result } = renderHook(() => useReputation());
-
-    act(() => {
-      result.current.setReputationType("openrank");
-    });
-
-    expect(result.current.reputationType).toBe("openrank");
-  });
-
-  it("should fetch quotient scores when reputation type is quotient", async () => {
+  it("should fetch both quotient and openrank data", async () => {
     const { result } = renderHook(() => useReputation());
 
     await act(async () => {
@@ -75,136 +62,86 @@ describe("useReputation", () => {
     expect(mockQuotientData.fetchQuotientScores).toHaveBeenCalledWith([
       123, 456,
     ]);
-    expect(mockOpenRankData.fetchOpenRankRanks).not.toHaveBeenCalled();
+    expect(mockOpenRankData.fetchOpenRankData).toHaveBeenCalledWith([123, 456]);
   });
 
-  it("should fetch openrank scores when reputation type is openrank", async () => {
-    const { result } = renderHook(() => useReputation());
-
-    act(() => {
-      result.current.setReputationType("openrank");
-    });
-
-    await act(async () => {
-      await result.current.fetchReputationData([123, 456]);
-    });
-
-    expect(mockOpenRankData.fetchOpenRankRanks).toHaveBeenCalledWith([
-      123, 456,
-    ]);
-    expect(mockQuotientData.fetchQuotientScores).not.toHaveBeenCalled();
-  });
-
-  it("should get correct reputation value for quotient", () => {
+  it("should get correct reputation values for both types", () => {
     const { result } = renderHook(() => useReputation());
 
     const value = result.current.getReputationValue(123);
-    expect(value).toBe(0.95);
-  });
-
-  it("should get correct reputation value for openrank", () => {
-    const { result } = renderHook(() => useReputation());
-
-    act(() => {
-      result.current.setReputationType("openrank");
+    expect(value).toEqual({
+      quotient: 0.95,
+      openRank: { following: { rank: 1500 }, engagement: { rank: 1400 } },
     });
-
-    const value = result.current.getReputationValue(123);
-    expect(value).toBe(1500);
   });
 
   it("should return null for non-existent FID", () => {
     const { result } = renderHook(() => useReputation());
 
     const value = result.current.getReputationValue(999);
-    expect(value).toBeNull();
+    expect(value).toEqual({
+      quotient: null,
+      openRank: null,
+    });
   });
 
-  it("should get correct reputation rank for quotient", () => {
+  it("should get correct reputation ranks for both types", () => {
     const { result } = renderHook(() => useReputation());
 
     const rank = result.current.getReputationRank(123);
-    expect(rank).toBe(50);
-  });
-
-  it("should get correct reputation rank for openrank", () => {
-    const { result } = renderHook(() => useReputation());
-
-    act(() => {
-      result.current.setReputationType("openrank");
+    expect(rank).toEqual({
+      quotient: 50,
+      openRank: { following: { rank: 1500 }, engagement: { rank: 1400 } },
     });
-
-    const rank = result.current.getReputationRank(123);
-    expect(rank).toBe(1500);
   });
 
-  it("should get correct reputation display for quotient tiers", () => {
+  it("should get correct reputation display for both types", () => {
     const { result } = renderHook(() => useReputation());
-
-    // Test different tiers
-    expect(result.current.getReputationDisplay(123)).toBe("Exceptional"); // 0.95
-    expect(result.current.getReputationDisplay(456)).toBe("Elite"); // 0.82
-  });
-
-  it("should get correct reputation display for openrank", () => {
-    const { result } = renderHook(() => useReputation());
-
-    act(() => {
-      result.current.setReputationType("openrank");
-    });
 
     const display = result.current.getReputationDisplay(123);
-    expect(display).toBe("#1,500");
-  });
-
-  it("should get correct reputation color for quotient tiers", () => {
-    const { result } = renderHook(() => useReputation());
-
-    // Test different tiers
-    expect(result.current.getReputationColor(123)).toBe("text-purple-600"); // 0.95 - Exceptional
-    expect(result.current.getReputationColor(456)).toBe("text-blue-600"); // 0.82 - Elite
-  });
-
-  it("should get correct reputation color for openrank", () => {
-    const { result } = renderHook(() => useReputation());
-
-    act(() => {
-      result.current.setReputationType("openrank");
+    expect(display).toEqual({
+      quotient: "Exceptional", // 0.95
+      openRank: "#1,400",
     });
 
-    const color = result.current.getReputationColor(123);
-    expect(color).toBe("text-blue-600"); // 1500 - between 1000 and 10000
+    const display2 = result.current.getReputationDisplay(456);
+    expect(display2).toEqual({
+      quotient: "Elite", // 0.82
+      openRank: "#4,800",
+    });
   });
 
-  it("should clear correct cache based on reputation type", () => {
+  it("should get correct reputation colors for both types", () => {
     const { result } = renderHook(() => useReputation());
 
-    // Clear cache for quotient
+    const color = result.current.getReputationColor(123);
+    expect(color).toEqual({
+      quotient: "text-purple-600", // 0.95 - Exceptional
+      openRank: "text-blue-600", // 1400 - between 1000 and 10000
+    });
+
+    const color2 = result.current.getReputationColor(456);
+    expect(color2).toEqual({
+      quotient: "text-blue-600", // 0.82 - Elite
+      openRank: "text-blue-600", // 4800 - between 1000 and 10000
+    });
+  });
+
+  it("should clear both caches", () => {
+    const { result } = renderHook(() => useReputation());
+
     act(() => {
       result.current.clearCache();
     });
 
     expect(mockQuotientData.clearCache).toHaveBeenCalled();
-    expect(mockOpenRankData.clearCache).not.toHaveBeenCalled();
-
-    // Change to openrank and clear cache
-    act(() => {
-      result.current.setReputationType("openrank");
-    });
-
-    act(() => {
-      result.current.clearCache();
-    });
-
     expect(mockOpenRankData.clearCache).toHaveBeenCalled();
   });
 
   it("should return raw data access", () => {
     const { result } = renderHook(() => useReputation());
 
-    expect(result.current.openRankRanks).toEqual(
-      mockOpenRankData.openRankRanks
-    );
+    expect(result.current.openRankData).toEqual(mockOpenRankData.openRankData);
     expect(result.current.quotientScores).toEqual(
       mockQuotientData.quotientScores
     );
@@ -213,8 +150,8 @@ describe("useReputation", () => {
   it("should return individual fetch functions", () => {
     const { result } = renderHook(() => useReputation());
 
-    expect(result.current.fetchOpenRankRanks).toBe(
-      mockOpenRankData.fetchOpenRankRanks
+    expect(result.current.fetchOpenRankData).toBe(
+      mockOpenRankData.fetchOpenRankData
     );
     expect(result.current.fetchQuotientScores).toBe(
       mockQuotientData.fetchQuotientScores

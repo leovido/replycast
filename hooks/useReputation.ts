@@ -6,8 +6,8 @@ export type ReputationType = "quotient" | "openrank";
 
 export function useReputation() {
   const {
-    openRankRanks,
-    fetchOpenRankRanks,
+    openRankData,
+    fetchOpenRankData,
     clearCache: clearOpenRankCache,
   } = useOpenRank();
 
@@ -20,9 +20,9 @@ export function useReputation() {
   const fetchReputationData = useCallback(
     async (fids: number[]) => {
       // Always fetch both types of data
-      await Promise.all([fetchQuotientScores(fids), fetchOpenRankRanks(fids)]);
+      await Promise.all([fetchQuotientScores(fids), fetchOpenRankData(fids)]);
     },
-    [fetchQuotientScores, fetchOpenRankRanks]
+    [fetchQuotientScores, fetchOpenRankData]
   );
 
   const clearCache = useCallback(() => {
@@ -37,10 +37,10 @@ export function useReputation() {
       const quotientScore = quotientScores[fid];
       return {
         quotient: quotientScore ? quotientScore.quotientScore : null,
-        openRank: openRankRanks[fid] || null,
+        openRank: openRankData[fid] || null,
       };
     },
-    [quotientScores, openRankRanks]
+    [quotientScores, openRankData]
   );
 
   const getReputationRank = useCallback(
@@ -49,16 +49,16 @@ export function useReputation() {
       const quotientScore = quotientScores[fid];
       return {
         quotient: quotientScore ? quotientScore.quotientRank : null,
-        openRank: openRankRanks[fid] || null,
+        openRank: openRankData[fid] || null,
       };
     },
-    [quotientScores, openRankRanks]
+    [quotientScores, openRankData]
   );
 
   const getReputationDisplay = useCallback(
     (fid: number) => {
       const quotientScore = quotientScores[fid];
-      const openRank = openRankRanks[fid];
+      const openRank = openRankData[fid];
 
       return {
         quotient: quotientScore
@@ -72,16 +72,18 @@ export function useReputation() {
               return "Inactive";
             })()
           : null,
-        openRank: openRank ? `#${openRank.toLocaleString()}` : null,
+        openRank: openRank
+          ? `#${openRank.engagement?.rank?.toLocaleString() || "--"}`
+          : null,
       };
     },
-    [quotientScores, openRankRanks]
+    [quotientScores, openRankData]
   );
 
   const getReputationColor = useCallback(
     (fid: number) => {
       const quotientScore = quotientScores[fid];
-      const openRank = openRankRanks[fid];
+      const openRank = openRankData[fid];
 
       return {
         quotient: quotientScore
@@ -96,16 +98,17 @@ export function useReputation() {
           : "text-gray-500",
         openRank: openRank
           ? (() => {
-              if (openRank <= 1000) return "text-purple-600";
-              if (openRank <= 10000) return "text-blue-600";
-              if (openRank <= 100000) return "text-green-600";
-              if (openRank <= 1000000) return "text-yellow-600";
+              const rank = openRank.engagement?.rank ?? 0;
+              if (rank <= 1000) return "text-purple-600";
+              if (rank <= 10000) return "text-blue-600";
+              if (rank <= 100000) return "text-green-600";
+              if (rank <= 1000000) return "text-yellow-600";
               return "text-orange-600";
             })()
           : "text-gray-500",
       };
     },
-    [quotientScores, openRankRanks]
+    [quotientScores, openRankData]
   );
 
   return {
@@ -116,10 +119,10 @@ export function useReputation() {
     getReputationDisplay,
     getReputationColor,
     // Raw data access
-    openRankRanks,
+    openRankData,
     quotientScores,
     // Individual fetch functions
-    fetchOpenRankRanks,
+    fetchOpenRankData,
     fetchQuotientScores,
   };
 }
