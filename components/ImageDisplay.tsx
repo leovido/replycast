@@ -106,6 +106,7 @@ export function ImageDisplay({
         className={`transition-opacity duration-300 ${
           isLoading ? "opacity-0" : "opacity-100"
         }`}
+        objectFit="contain"
         onLoad={handleLoad}
         onError={handleError}
         style={{

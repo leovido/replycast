@@ -178,7 +178,6 @@ export function FocusTab({
           loading={loading}
           observerRef={observerRef}
           isDarkTheme={isDarkTheme}
-          useOldDesign={false}
           openRankRanks={openRankRanks}
           isLoadingMore={isLoadingMore}
           hasMore={hasMore}

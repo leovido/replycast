@@ -11,6 +11,7 @@ import { FarcasterSignIn } from "./FarcasterSignIn";
 import { SettingsMenu } from "./SettingsMenu";
 import { TabBar, type TabType } from "./TabBar";
 import { FocusTab } from "./FocusTab";
+import { SpeedModeTab } from "./SpeedModeTab";
 import { AnalyticsTab } from "./AnalyticsTab";
 import { ToastNotification } from "./ToastNotification";
 import { EmptyState } from "./EmptyState";
@@ -18,6 +19,8 @@ import { sortDetails } from "../utils/farcaster";
 import Image from "next/image";
 import { isToday, isWithinLastDays } from "@/utils/farcaster";
 import type { ThemeMode } from "../types/types";
+import { SpeedModeAlt } from "./SpeedModeAlt";
+import { mockSpeedModeConversations } from "@/utils/speedModeMockData";
 
 // Local storage keys
 const STORAGE_KEYS = {
@@ -187,7 +190,6 @@ export default function FarcasterApp() {
     hasMore,
     loadMoreConversations,
     isLoadingMore,
-    isRefreshing,
   } = useFarcasterData({
     user,
     fetchOpenRankRanks: fetchReputationData,
@@ -808,7 +810,7 @@ export default function FarcasterApp() {
                 : "bg-white/80 backdrop-blur-md border border-gray-200"
             }`}
           >
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
               <div className="flex-shrink-0">
                 {user.pfpUrl ? (
                   <Image
@@ -827,7 +829,7 @@ export default function FarcasterApp() {
                 )}
               </div>
               <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-1">
+                <div className="flex items-center mb-0">
                   <span
                     className={`font-semibold truncate ${
                       isDarkTheme ? "text-white" : "text-gray-900"
@@ -835,14 +837,15 @@ export default function FarcasterApp() {
                   >
                     {user.displayName || user.username}
                   </span>
-                  <span
-                    className={`text-sm ${
-                      isDarkTheme ? "text-white/60" : "text-gray-600"
-                    }`}
-                  >
-                    FID: {user.fid}
-                  </span>
                 </div>
+                <span
+                  className={`text-sm mb-0 ${
+                    isDarkTheme ? "text-white/60" : "text-gray-600"
+                  }`}
+                  style={{ marginTop: "-5px" }}
+                >
+                  FID: {user.fid}
+                </span>
                 {userOpenRank !== null && userOpenRank !== undefined && (
                   <div className="flex items-center gap-1">
                     <svg
@@ -929,15 +932,8 @@ export default function FarcasterApp() {
                   }}
                 />
               ) : (
-                <ConversationList
+                <SpeedModeAlt
                   conversations={filteredConversations}
-                  viewMode={viewMode}
-                  loading={dataLoading}
-                  observerRef={observerRef}
-                  isDarkTheme={isDarkTheme}
-                  useOldDesign={false}
-                  onMarkAsRead={handleMarkAsRead}
-                  onDiscard={handleDiscard}
                   openRankRanks={openRankRanks}
                   quotientScores={quotientScores}
                   reputationType={reputationType}
@@ -962,6 +958,8 @@ export default function FarcasterApp() {
                     }
                   }}
                   dayFilter={dayFilter}
+                  isDarkThemeMode={isDarkTheme}
+                  themeMode={themeMode}
                 />
               )}
             </>
@@ -999,6 +997,15 @@ export default function FarcasterApp() {
               onMarkAsRead={handleMarkAsRead}
               onDiscard={handleDiscard}
               dayFilter={dayFilter}
+            />
+          )}
+
+          {activeTab === "speed" && (
+            <SpeedModeAlt
+              conversations={filteredConversations}
+              openRankRanks={openRankRanks}
+              isDarkThemeMode={isDarkTheme}
+              themeMode={themeMode}
             />
           )}
 

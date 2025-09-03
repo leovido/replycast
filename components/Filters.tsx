@@ -32,7 +32,6 @@ interface FiltersProps {
   reputationType: "quotient" | "openrank";
   onReputationTypeChange: (type: "quotient" | "openrank") => void;
   isDarkTheme: boolean;
-  useOldDesign: boolean;
 }
 
 export function Filters({
@@ -45,7 +44,6 @@ export function Filters({
   reputationType,
   onReputationTypeChange,
   isDarkTheme,
-  useOldDesign,
 }: FiltersProps) {
   // Render old design
   if (useOldDesign) {

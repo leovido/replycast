@@ -1,9 +1,14 @@
 import React from "react";
 import { sdk } from "@farcaster/miniapp-sdk";
 import { useAppAnalytics } from "../hooks/useAnalytics";
-import type { ThemeMode } from "../types/types";
+import {
+  getBackgroundClass,
+  getBorderColor,
+  getTextColor,
+} from "@/utils/themeHelpers";
+import type { ThemeMode } from "@/types/types";
 
-export type TabType = "inbox" | "focus" | "analytics";
+export type TabType = "inbox" | "focus" | "speed" | "analytics";
 
 interface TabBarProps {
   activeTab: TabType;
@@ -54,6 +59,22 @@ const tabs = [
     ),
   },
   {
+    id: "speed" as TabType,
+    label: "Speed",
+    icon: (
+      <svg
+        width={20}
+        height={20}
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth={2}
+      >
+        <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
+      </svg>
+    ),
+  },
+  {
     id: "analytics" as TabType,
     label: "Analytics",
     icon: (
@@ -93,63 +114,12 @@ export function TabBar({
     // Call the original onTabChange
     onTabChange(tab);
   };
-  const getBackgroundClass = () => {
-    switch (themeMode) {
-      case "dark":
-        return "bg-gray-900/95 backdrop-blur-md border-gray-800";
-      case "light":
-        return "bg-white/95 backdrop-blur-md border-gray-200";
-      case "neon":
-        return "bg-black/95 backdrop-blur-md border-pink-500/50 shadow-lg shadow-pink-500/25";
-      case "Farcaster":
-        return "bg-purple-900/95 backdrop-blur-md border-purple-800/50";
-      default:
-        return "bg-gray-900/95 backdrop-blur-md border-gray-800";
-    }
-  };
-
-  const getTextColor = (isActive: boolean) => {
-    if (isActive) {
-      switch (themeMode) {
-        case "light":
-          return "text-blue-600";
-        case "neon":
-          return "text-pink-400";
-        case "Farcaster":
-          return "text-purple-300";
-        default:
-          return "text-blue-400";
-      }
-    } else {
-      switch (themeMode) {
-        case "light":
-          return "text-gray-500";
-        case "neon":
-          return "text-cyan-400/60";
-        case "Farcaster":
-          return "text-white/60";
-        default:
-          return "text-gray-400";
-      }
-    }
-  };
-
-  const getBorderColor = () => {
-    switch (themeMode) {
-      case "light":
-        return "border-gray-200";
-      case "neon":
-        return "border-pink-500/50";
-      case "Farcaster":
-        return "border-purple-800/50";
-      default:
-        return "border-gray-800";
-    }
-  };
 
   return (
     <div
-      className={`sticky bottom-0 z-50 ${getBackgroundClass()} border-t ${getBorderColor()}`}
+      className={`sticky bottom-0 z-50 ${getBackgroundClass(
+        themeMode
+      )} border-t ${getBorderColor(themeMode)}`}
     >
       <div className="flex items-center justify-around py-2">
         {tabs.map((tab) => {
@@ -165,6 +135,7 @@ export function TabBar({
             >
               <div
                 className={`mb-1 transition-all duration-200 ${getTextColor(
+                  themeMode,
                   isActive
                 )}`}
               >
@@ -172,6 +143,7 @@ export function TabBar({
               </div>
               <span
                 className={`text-xs font-medium transition-all duration-200 ${getTextColor(
+                  themeMode,
                   isActive
                 )}`}
               >
