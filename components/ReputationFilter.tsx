@@ -1,4 +1,4 @@
-import { ReputationType } from "@/hooks/useReputation";
+import type { ReputationType } from "@/hooks/useReputation";
 
 interface ReputationFilterProps {
   reputationType: ReputationType;

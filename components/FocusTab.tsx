@@ -11,6 +11,8 @@ interface FocusTabProps {
   markedAsReadConversations: UnrepliedDetail[];
   viewMode: "list" | "grid";
   openRankRanks: Record<number, number | null>;
+  quotientScores: Record<number, { quotientScore: number } | null>;
+
   loading: boolean;
   isLoadingMore: boolean;
   hasMore: boolean;
@@ -27,6 +29,8 @@ export function FocusTab({
   markedAsReadConversations,
   viewMode,
   openRankRanks,
+  quotientScores,
+
   loading,
   isLoadingMore,
   hasMore,
@@ -179,6 +183,7 @@ export function FocusTab({
           observerRef={observerRef}
           isDarkTheme={isDarkTheme}
           openRankRanks={openRankRanks}
+          quotientScores={quotientScores}
           isLoadingMore={isLoadingMore}
           hasMore={hasMore}
           onReply={onReply}

@@ -10,7 +10,7 @@ export interface ReplyCardProps {
   detail: UnrepliedDetail;
   openRank: number | null;
   quotientScore: number | null;
-  reputationType: "quotient" | "openrank";
+
   onClick: () => void;
   viewMode: "list" | "grid";
   isDarkTheme: boolean;
@@ -24,7 +24,7 @@ export const ReplyCard = memo<ReplyCardProps>(
     detail,
     openRank,
     quotientScore,
-    reputationType,
+
     onClick,
     viewMode,
     isDarkTheme,
@@ -628,73 +628,67 @@ export const ReplyCard = memo<ReplyCardProps>(
               {detail.timeAgo}
             </div>
 
-            {/* Show Quotient score when reputation type is quotient */}
-            {reputationType === "quotient" &&
-              quotientScore !== null &&
-              quotientScore !== undefined && (
-                <div className="flex items-center gap-1">
-                  <svg
-                    width={16}
-                    height={16}
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth={2}
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    className={
-                      isDarkTheme ? "text-purple-400" : "text-purple-700"
-                    }
-                    aria-hidden="true"
-                  >
-                    <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26" />
-                  </svg>
-                  <span
-                    className={`font-bold text-lg ${
-                      isDarkTheme ? "text-purple-400" : "text-purple-700"
-                    }`}
-                  >
-                    {(quotientScore * 100).toFixed(0)}
-                  </span>
-                </div>
-              )}
+            {/* Show Quotient score */}
+            {quotientScore !== null && quotientScore !== undefined && (
+              <div className="flex items-center gap-1">
+                <svg
+                  width={16}
+                  height={16}
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className={
+                    isDarkTheme ? "text-purple-400" : "text-purple-700"
+                  }
+                  aria-hidden="true"
+                >
+                  <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26" />
+                </svg>
+                <span
+                  className={`font-bold text-lg ${
+                    isDarkTheme ? "text-purple-400" : "text-purple-700"
+                  }`}
+                >
+                  {(quotientScore * 100).toFixed(0)}
+                </span>
+              </div>
+            )}
 
-            {/* Show OpenRank when reputation type is openrank */}
-            {reputationType === "openrank" &&
-              openRank !== null &&
-              openRank !== undefined && (
-                <div className="flex items-center gap-1">
-                  <svg
-                    width={16}
-                    height={16}
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth={2}
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    className={
-                      isDarkTheme ? "text-yellow-400" : "text-purple-700"
-                    }
-                    aria-hidden="true"
-                  >
-                    <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26" />
-                  </svg>
-                  <span
-                    className={`font-bold text-lg ${
-                      isDarkTheme ? "text-yellow-400" : "text-purple-700"
-                    }`}
-                  >
-                    #{openRank.toLocaleString()}
-                  </span>
-                </div>
-              )}
+            {/* Show OpenRank */}
+            {openRank !== null && openRank !== undefined && (
+              <div className="flex items-center gap-1">
+                <svg
+                  width={16}
+                  height={16}
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className={
+                    isDarkTheme ? "text-yellow-400" : "text-purple-700"
+                  }
+                  aria-hidden="true"
+                >
+                  <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26" />
+                </svg>
+                <span
+                  className={`font-bold text-lg ${
+                    isDarkTheme ? "text-yellow-400" : "text-purple-700"
+                  }`}
+                >
+                  #{openRank.toLocaleString()}
+                </span>
+              </div>
+            )}
 
             {/* Show placeholder when no reputation data */}
-            {(reputationType === "quotient" &&
-              (quotientScore === null || quotientScore === undefined)) ||
-            (reputationType === "openrank" &&
-              (openRank === null || openRank === undefined)) ? (
+            {(quotientScore === null || quotientScore === undefined) &&
+            (openRank === null || openRank === undefined) ? (
               <div className="flex items-center gap-1">
                 <svg
                   width={16}

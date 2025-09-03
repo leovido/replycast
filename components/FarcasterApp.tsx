@@ -14,6 +14,7 @@ import { SpeedModeTab } from "./SpeedModeTab";
 import { AnalyticsTab } from "./AnalyticsTab";
 import { ToastNotification } from "./ToastNotification";
 import { EmptyState } from "./EmptyState";
+import type { ThemeMode } from "@/types/types";
 
 import Image from "next/image";
 import { isToday, isWithinLastDays } from "@/utils/farcaster";
@@ -94,10 +95,6 @@ export default function FarcasterApp() {
     "all" | "today" | "3days" | "7days"
   >(() => getStoredValue(STORAGE_KEYS.DAY_FILTER, "today"));
 
-  const [reputationType, setReputationType] = useState<"quotient" | "openrank">(
-    () => getStoredValue(STORAGE_KEYS.REPUTATION_TYPE, "quotient")
-  );
-
   // Track app opened
   useEffect(() => {
     trackAppOpened({
@@ -134,10 +131,6 @@ export default function FarcasterApp() {
   useEffect(() => {
     setStoredValue(STORAGE_KEYS.DAY_FILTER, dayFilter);
   }, [dayFilter]);
-
-  useEffect(() => {
-    setStoredValue(STORAGE_KEYS.REPUTATION_TYPE, reputationType);
-  }, [reputationType]);
 
   const isDarkTheme =
     themeMode === "dark" || themeMode === "Farcaster" || themeMode === "neon";
@@ -183,6 +176,7 @@ export default function FarcasterApp() {
   const {
     allConversations,
     userOpenRank,
+    userQuotientScore,
     loading: dataLoading,
     error,
     handleRefresh,
@@ -194,7 +188,6 @@ export default function FarcasterApp() {
     fetchOpenRankRanks: fetchReputationData,
     clearOpenRankCache: clearCache,
     dayFilter,
-    reputationType,
   });
 
   // Mock getCacheStatus function since it's not available in the hook
@@ -837,28 +830,53 @@ export default function FarcasterApp() {
                 >
                   FID: {user.fid}
                 </span>
-                {userOpenRank !== null && userOpenRank !== undefined && (
-                  <div className="flex items-center gap-1">
-                    <svg
-                      width={14}
-                      height={14}
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth={2}
-                      className="text-yellow-400"
-                    >
-                      <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26" />
-                    </svg>
-                    <span
-                      className={`font-bold ${
-                        isDarkTheme ? "text-yellow-400" : "text-purple-700"
-                      }`}
-                    >
-                      #{userOpenRank.toLocaleString()}
-                    </span>
-                  </div>
-                )}
+                <div className="flex items-center gap-2">
+                  {userOpenRank !== null && userOpenRank !== undefined && (
+                    <div className="flex items-center gap-1">
+                      <svg
+                        width={14}
+                        height={14}
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth={2}
+                        className="text-yellow-400"
+                      >
+                        <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26" />
+                      </svg>
+                      <span
+                        className={`font-bold ${
+                          isDarkTheme ? "text-yellow-400" : "text-purple-700"
+                        }`}
+                      >
+                        OR #{userOpenRank.toLocaleString()}
+                      </span>
+                    </div>
+                  )}
+                  {userQuotientScore !== null &&
+                    userQuotientScore !== undefined && (
+                      <div className="flex items-center gap-1">
+                        <svg
+                          width={14}
+                          height={14}
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth={2}
+                          className="text-purple-400"
+                        >
+                          <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26" />
+                        </svg>
+                        <span
+                          className={`font-bold ${
+                            isDarkTheme ? "text-purple-400" : "text-purple-700"
+                          }`}
+                        >
+                          Q {(userQuotientScore * 100).toFixed(0)}
+                        </span>
+                      </div>
+                    )}
+                </div>
               </div>
               <button
                 onClick={handleRefresh}
@@ -952,8 +970,6 @@ export default function FarcasterApp() {
                   isDarkThemeMode={isDarkTheme}
                   themeMode={themeMode}
                   loading={dataLoading}
-                  quotientScores={quotientScores}
-                  reputationType={reputationType}
                   isLoadingMore={isLoadingMore}
                   hasMore={hasMore}
                   observerRef={observerRef}
@@ -970,6 +986,7 @@ export default function FarcasterApp() {
               markedAsReadConversations={markedAsReadConversations}
               viewMode={viewMode}
               openRankRanks={openRankRanks}
+              quotientScores={quotientScores}
               loading={dataLoading}
               isLoadingMore={isLoadingMore}
               hasMore={hasMore}
@@ -1004,6 +1021,7 @@ export default function FarcasterApp() {
             <AnalyticsTab
               allConversations={allConversations}
               userOpenRank={userOpenRank}
+              userQuotientScore={userQuotientScore}
               openRankRanks={openRankRanks}
               isDarkTheme={isDarkTheme}
               themeMode={themeMode}
@@ -1020,15 +1038,6 @@ export default function FarcasterApp() {
         themeMode={themeMode}
       />
 
-      {/* Debug Info - Remove this after testing */}
-      {process.env.NODE_ENV === "development" && (
-        <div className="fixed top-4 right-4 z-50 bg-black/80 text-white p-3 rounded text-xs">
-          <div>Reputation: {reputationType}</div>
-          <div>Quotient Scores: {Object.keys(quotientScores).length}</div>
-          <div>OpenRank Scores: {Object.keys(openRankRanks).length}</div>
-        </div>
-      )}
-
       {/* Settings Menu */}
       <SettingsMenu
         isOpen={isSettingsOpen}
@@ -1043,8 +1052,6 @@ export default function FarcasterApp() {
         onSortChange={(option) => setSortOption(option as any)}
         dayFilter={dayFilter}
         onDayFilterChange={(filter) => setDayFilter(filter as any)}
-        reputationType={reputationType}
-        onReputationTypeChange={setReputationType}
         isDarkTheme={isDarkTheme}
       />
       {/* Toast Notification */}

@@ -12,7 +12,6 @@ interface UseFarcasterDataProps {
   fetchOpenRankRanks: (fids: number[]) => Promise<void>;
   clearOpenRankCache: () => void;
   dayFilter?: string;
-  reputationType?: "quotient" | "openrank";
 }
 
 export function useFarcasterData({
@@ -20,13 +19,15 @@ export function useFarcasterData({
   fetchOpenRankRanks,
   clearOpenRankCache,
   dayFilter = "today",
-  reputationType = "quotient",
 }: UseFarcasterDataProps) {
   const [data, setData] = useState<FarcasterRepliesResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [userOpenRank, setUserOpenRank] = useState<number | null>(null);
+  const [userQuotientScore, setUserQuotientScore] = useState<number | null>(
+    null
+  );
 
   // Pagination state
   const [cursor, setCursor] = useState<Cursor>(null);
@@ -37,61 +38,57 @@ export function useFarcasterData({
   );
 
   // Fetch user's reputation score
-  const fetchUserReputation = useCallback(
-    async (userFid: number) => {
-      try {
-        // Check if mocks are enabled
-        const useMocks =
-          process.env.NEXT_PUBLIC_USE_MOCKS === "true" ||
-          (typeof window !== "undefined" && (window as any).__FORCE_MOCKS__);
+  const fetchUserReputation = useCallback(async (userFid: number) => {
+    try {
+      // Check if mocks are enabled
+      const useMocks =
+        process.env.NEXT_PUBLIC_USE_MOCKS === "true" ||
+        (typeof window !== "undefined" && (window as any).__FORCE_MOCKS__);
 
-        if (useMocks) {
-          console.log("Mock: Using mock user reputation data in hook");
-          const mockScore = await MockFarcasterService.fetchUserReputation(
-            userFid,
-            reputationType
-          );
-          setUserOpenRank(mockScore);
-          return;
-        }
-
-        if (reputationType === "quotient") {
-          const response = await fetch(`/api/quotient`, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({ fids: [userFid] }),
-            signal: AbortSignal.timeout(10000), // 10 second timeout
-          });
-
-          if (!response.ok) throw new Error(`HTTP ${response.status}`);
-
-          const data = await response.json();
-
-          if (data.data && data.data[0]) {
-            setUserOpenRank(data.data[0].quotientScore);
-          }
-        } else {
-          const response = await fetch(`/api/openRank?fids=${userFid}`, {
-            signal: AbortSignal.timeout(10000), // 10 second timeout
-          });
-
-          if (!response.ok) throw new Error(`HTTP ${response.status}`);
-
-          const data = await response.json();
-
-          if (data.ranks && data.ranks[userFid]) {
-            setUserOpenRank(data.ranks[userFid] as number);
-          }
-        }
-      } catch (error) {
-        console.error("Failed to fetch user reputation:", error);
-        // Don't set error state for user reputation as it's not critical
+      if (useMocks) {
+        console.log("Mock: Using mock user reputation data in hook");
+        // For mocks, we'll use the default "quotient" type
+        const mockScore = await MockFarcasterService.fetchUserReputation(
+          userFid,
+          "quotient"
+        );
+        setUserOpenRank(mockScore);
+        return;
       }
-    },
-    [reputationType]
-  );
+
+      // Fetch both OpenRank and Quotient data for the user
+      const [openRankResponse, quotientResponse] = await Promise.all([
+        fetch(`/api/openRank?fids=${userFid}`, {
+          signal: AbortSignal.timeout(10000), // 10 second timeout
+        }),
+        fetch(`/api/quotient`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ fids: [userFid] }),
+          signal: AbortSignal.timeout(10000), // 10 second timeout
+        }),
+      ]);
+
+      if (openRankResponse.ok) {
+        const openRankData = await openRankResponse.json();
+        if (openRankData.ranks && openRankData.ranks[userFid]) {
+          setUserOpenRank(openRankData.ranks[userFid] as number);
+        }
+      }
+
+      if (quotientResponse.ok) {
+        const quotientData = await quotientResponse.json();
+        if (quotientData.data && quotientData.data[0]) {
+          setUserQuotientScore(quotientData.data[0].quotientScore);
+        }
+      }
+    } catch (error) {
+      console.error("Failed to fetch user reputation:", error);
+      // Don't set error state for user reputation as it's not critical
+    }
+  }, []);
 
   // Fetch data when user is set
   useEffect(() => {
@@ -342,6 +339,7 @@ export function useFarcasterData({
     isLoadingMore,
     cursor,
     userOpenRank,
+    userQuotientScore,
     loadMoreConversations,
     handleRefresh,
     resetPagination,

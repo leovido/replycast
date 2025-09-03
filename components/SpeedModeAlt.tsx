@@ -1,6 +1,6 @@
 import React, { useState, useEffect, type RefObject } from "react";
 import { sdk } from "@farcaster/miniapp-sdk";
-import type { UnrepliedDetail, OpenRankData } from "@/types/types";
+import type { UnrepliedDetail } from "@/types/types";
 import type { QuotientScore } from "@/hooks/useQuotient";
 import {
   getBackgroundClass,
@@ -15,7 +15,7 @@ import { getMinutesAgo } from "@/utils/farcaster";
 
 interface SpeedModeAltProps {
   conversations: UnrepliedDetail[];
-  openRankData: Record<number, OpenRankData>;
+  openRankRanks: Record<number, number | null>;
   quotientScores: Record<number, QuotientScore | null>;
   isDarkThemeMode: boolean;
   themeMode: ThemeMode;
@@ -30,7 +30,7 @@ interface SpeedModeAltProps {
 
 export function SpeedModeAlt({
   conversations,
-  openRankData,
+  openRankRanks,
   quotientScores,
   isDarkThemeMode,
   themeMode,
@@ -200,13 +200,11 @@ export function SpeedModeAlt({
                     >
                       @{userGroup.user.username}
                     </span>
-                    <div className="flex items-center gap-1">
-                      {openRankData[userGroup.user.fid]?.engagement?.rank && (
+                    <div className="flex flex-row items-center gap-1">
+                      {openRankRanks[userGroup.user.fid] && (
                         <span className="text-xs bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200 px-1.5 py-0.5 rounded-full">
-                          OR #
-                          {openRankData[
-                            userGroup.user.fid
-                          ]?.engagement?.rank?.toLocaleString()}
+                          E: #
+                          {openRankRanks[userGroup.user.fid]?.toLocaleString()}
                         </span>
                       )}
                       {quotientScores[userGroup.user.fid] && (

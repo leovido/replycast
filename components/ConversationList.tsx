@@ -18,7 +18,7 @@ interface ConversationListProps {
   viewMode: "list" | "grid";
   openRankRanks: Record<number, number | null>;
   quotientScores: Record<number, { quotientScore: number } | null>;
-  reputationType: "quotient" | "openrank";
+
   loading: boolean;
   isLoadingMore: boolean;
   hasMore: boolean;
@@ -35,7 +35,7 @@ export function ConversationList({
   viewMode,
   openRankRanks,
   quotientScores,
-  reputationType,
+
   loading,
   isLoadingMore,
   hasMore,
@@ -69,7 +69,6 @@ export function ConversationList({
               quotientScore={
                 quotientScores[detail.authorFid]?.quotientScore || null
               }
-              reputationType={reputationType}
               onClick={() => onReply(detail)}
               viewMode={viewMode}
               isDarkTheme={isDarkTheme}

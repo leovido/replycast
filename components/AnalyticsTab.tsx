@@ -6,6 +6,7 @@ import type { ThemeMode } from "@/types/types";
 interface AnalyticsTabProps {
   allConversations: UnrepliedDetail[];
   userOpenRank: number | null;
+  userQuotientScore: number | null;
   openRankRanks: Record<number, number | null>;
   isDarkTheme: boolean;
   themeMode: ThemeMode;
@@ -14,6 +15,7 @@ interface AnalyticsTabProps {
 export function AnalyticsTab({
   allConversations,
   userOpenRank,
+  userQuotientScore,
   openRankRanks,
   isDarkTheme,
   themeMode,
@@ -157,33 +159,59 @@ export function AnalyticsTab({
         </div>
       </div>
 
-      {/* Your OpenRank */}
-      {userOpenRank !== null && userOpenRank !== undefined && (
+      {/* Your Reputation Scores */}
+      {(userOpenRank !== null && userOpenRank !== undefined) ||
+      (userQuotientScore !== null && userQuotientScore !== undefined) ? (
         <div className={`p-6 rounded-xl ${getCardClass()} mb-8`}>
           <div className="flex items-center justify-between mb-4">
             <h3 className={`text-lg font-semibold ${getTextClass()}`}>
-              Your OpenRank
+              Your Reputation
             </h3>
-            <svg
-              width={24}
-              height={24}
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth={2}
-              className={getAccentClass()}
-            >
-              <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26" />
-            </svg>
+            <div className="flex items-center gap-2">
+              <svg
+                width={20}
+                height={20}
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth={2}
+                className="text-yellow-400"
+              >
+                <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26" />
+              </svg>
+              <svg
+                width={20}
+                height={20}
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth={2}
+                className="text-purple-400"
+              >
+                <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26" />
+              </svg>
+            </div>
           </div>
-          <div className={`text-4xl font-bold mb-2 ${getAccentClass()}`}>
-            #{userOpenRank.toLocaleString()}
+          <div className="grid grid-cols-2 gap-4">
+            {userOpenRank !== null && userOpenRank !== undefined && (
+              <div>
+                <div className={`text-2xl font-bold mb-1 text-yellow-400`}>
+                  OR #{userOpenRank.toLocaleString()}
+                </div>
+                <p className={`text-xs ${getSubtextClass()}`}>OpenRank</p>
+              </div>
+            )}
+            {userQuotientScore !== null && userQuotientScore !== undefined && (
+              <div>
+                <div className={`text-2xl font-bold mb-1 text-purple-400`}>
+                  Q {(userQuotientScore * 100).toFixed(0)}
+                </div>
+                <p className={`text-xs ${getSubtextClass()}`}>Quotient</p>
+              </div>
+            )}
           </div>
-          <p className={`text-sm ${getSubtextClass()}`}>
-            Your current OpenRank position
-          </p>
         </div>
-      )}
+      ) : null}
 
       {/* Top Authors by OpenRank */}
       <div className={`p-6 rounded-xl ${getCardClass()}`}>

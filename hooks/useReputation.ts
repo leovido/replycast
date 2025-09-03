@@ -5,9 +5,6 @@ import { useQuotient } from "./useQuotient";
 export type ReputationType = "quotient" | "openrank";
 
 export function useReputation() {
-  const [reputationType, setReputationType] =
-    useState<ReputationType>("quotient");
-
   const {
     openRankRanks,
     fetchOpenRankRanks,
@@ -22,97 +19,96 @@ export function useReputation() {
 
   const fetchReputationData = useCallback(
     async (fids: number[]) => {
-      if (reputationType === "quotient") {
-        await fetchQuotientScores(fids);
-      } else {
-        await fetchOpenRankRanks(fids);
-      }
+      // Always fetch both types of data
+      await Promise.all([fetchQuotientScores(fids), fetchOpenRankRanks(fids)]);
     },
-    [reputationType, fetchQuotientScores, fetchOpenRankRanks]
+    [fetchQuotientScores, fetchOpenRankRanks]
   );
 
   const clearCache = useCallback(() => {
-    if (reputationType === "quotient") {
-      clearQuotientCache();
-    } else {
-      clearOpenRankCache();
-    }
-  }, [reputationType, clearQuotientCache, clearOpenRankCache]);
+    // Always clear both caches
+    clearQuotientCache();
+    clearOpenRankCache();
+  }, [clearQuotientCache, clearOpenRankCache]);
 
   const getReputationValue = useCallback(
     (fid: number) => {
-      if (reputationType === "quotient") {
-        const score = quotientScores[fid];
-        return score ? score.quotientScore : null;
-      } else {
-        return openRankRanks[fid] || null;
-      }
+      // Return both values as an object
+      const quotientScore = quotientScores[fid];
+      return {
+        quotient: quotientScore ? quotientScore.quotientScore : null,
+        openRank: openRankRanks[fid] || null,
+      };
     },
-    [reputationType, quotientScores, openRankRanks]
+    [quotientScores, openRankRanks]
   );
 
   const getReputationRank = useCallback(
     (fid: number) => {
-      if (reputationType === "quotient") {
-        const score = quotientScores[fid];
-        return score ? score.quotientRank : null;
-      } else {
-        return openRankRanks[fid] || null;
-      }
+      // Return both ranks as an object
+      const quotientScore = quotientScores[fid];
+      return {
+        quotient: quotientScore ? quotientScore.quotientRank : null,
+        openRank: openRankRanks[fid] || null,
+      };
     },
-    [reputationType, quotientScores, openRankRanks]
+    [quotientScores, openRankRanks]
   );
 
   const getReputationDisplay = useCallback(
     (fid: number) => {
-      if (reputationType === "quotient") {
-        const score = quotientScores[fid];
-        if (!score) return null;
+      const quotientScore = quotientScores[fid];
+      const openRank = openRankRanks[fid];
 
-        // Format Quotient score based on tiers
-        if (score.quotientScore >= 0.9) return "Exceptional";
-        if (score.quotientScore >= 0.8) return "Elite";
-        if (score.quotientScore >= 0.75) return "Influential";
-        if (score.quotientScore >= 0.6) return "Active";
-        if (score.quotientScore >= 0.5) return "Casual";
-        return "Inactive";
-      } else {
-        const rank = openRankRanks[fid];
-        return rank ? `#${rank.toLocaleString()}` : null;
-      }
+      return {
+        quotient: quotientScore
+          ? (() => {
+              // Format Quotient score based on tiers
+              if (quotientScore.quotientScore >= 0.9) return "Exceptional";
+              if (quotientScore.quotientScore >= 0.8) return "Elite";
+              if (quotientScore.quotientScore >= 0.75) return "Influential";
+              if (quotientScore.quotientScore >= 0.6) return "Active";
+              if (quotientScore.quotientScore >= 0.5) return "Casual";
+              return "Inactive";
+            })()
+          : null,
+        openRank: openRank ? `#${openRank.toLocaleString()}` : null,
+      };
     },
-    [reputationType, quotientScores, openRankRanks]
+    [quotientScores, openRankRanks]
   );
 
   const getReputationColor = useCallback(
     (fid: number) => {
-      if (reputationType === "quotient") {
-        const score = quotientScores[fid];
-        if (!score) return "text-gray-500";
+      const quotientScore = quotientScores[fid];
+      const openRank = openRankRanks[fid];
 
-        if (score.quotientScore >= 0.9) return "text-purple-600";
-        if (score.quotientScore >= 0.8) return "text-blue-600";
-        if (score.quotientScore >= 0.75) return "text-green-600";
-        if (score.quotientScore >= 0.6) return "text-yellow-600";
-        if (score.quotientScore >= 0.5) return "text-orange-600";
-        return "text-red-600";
-      } else {
-        const rank = openRankRanks[fid];
-        if (!rank) return "text-gray-500";
-
-        if (rank <= 1000) return "text-purple-600";
-        if (rank <= 10000) return "text-blue-600";
-        if (rank <= 100000) return "text-green-600";
-        if (rank <= 1000000) return "text-yellow-600";
-        return "text-orange-600";
-      }
+      return {
+        quotient: quotientScore
+          ? (() => {
+              if (quotientScore.quotientScore >= 0.9) return "text-purple-600";
+              if (quotientScore.quotientScore >= 0.8) return "text-blue-600";
+              if (quotientScore.quotientScore >= 0.75) return "text-green-600";
+              if (quotientScore.quotientScore >= 0.6) return "text-yellow-600";
+              if (quotientScore.quotientScore >= 0.5) return "text-orange-600";
+              return "text-red-600";
+            })()
+          : "text-gray-500",
+        openRank: openRank
+          ? (() => {
+              if (openRank <= 1000) return "text-purple-600";
+              if (openRank <= 10000) return "text-blue-600";
+              if (openRank <= 100000) return "text-green-600";
+              if (openRank <= 1000000) return "text-yellow-600";
+              return "text-orange-600";
+            })()
+          : "text-gray-500",
+      };
     },
-    [reputationType, quotientScores, openRankRanks]
+    [quotientScores, openRankRanks]
   );
 
   return {
-    reputationType,
-    setReputationType,
     fetchReputationData,
     clearCache,
     getReputationValue,

@@ -67,7 +67,7 @@ export function MockDebugger({ isVisible = false }: MockDebuggerProps) {
             <div className="text-xs text-gray-400">
               <p>💡 Set NEXT_PUBLIC_USE_MOCKS=true in .env.local</p>
               <p>🔍 Check browser console for mock logs</p>
-              <p>📱 Look for "Mock:" prefixed messages</p>
+              <p>📱 Look for &quot;Mock:&quot; prefixed messages</p>
             </div>
           </div>
         )}

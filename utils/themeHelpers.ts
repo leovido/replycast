@@ -1,4 +1,4 @@
-export type ThemeMode = "dark" | "light" | "Farcaster";
+export type ThemeMode = "dark" | "light" | "Farcaster" | "neon";
 
 /**
  * Get background class based on theme mode
@@ -13,6 +13,8 @@ export const getBackgroundClass = (themeMode: ThemeMode): string => {
       return "bg-white/95 backdrop-blur-md border-gray-200";
     case "Farcaster":
       return "bg-purple-900/95 backdrop-blur-md border-purple-800/50";
+    case "neon":
+      return "bg-black/95 backdrop-blur-md border-cyan-500/50";
     default:
       return "bg-gray-900/95 backdrop-blur-md border-gray-800";
   }
@@ -60,6 +62,8 @@ export const getBorderColor = (themeMode: ThemeMode): string => {
       return "border-gray-200";
     case "Farcaster":
       return "border-purple-300/60";
+    case "neon":
+      return "border-cyan-500/60";
     default:
       return "border-gray-800";
   }
@@ -182,6 +186,8 @@ export const getCardBackground = (
         return "bg-gradient-to-br from-blue-50 to-purple-50 ring-2 ring-blue-400/30 shadow-xl shadow-blue-500/20";
       case "Farcaster":
         return "bg-gradient-to-br from-purple-50 to-purple-100 ring-2 ring-purple-400/30 shadow-xl shadow-purple-500/20";
+      case "neon":
+        return "bg-gradient-to-br from-cyan-500/20 to-cyan-400/10 ring-2 ring-cyan-400/40 shadow-xl shadow-cyan-500/20 backdrop-blur-md border border-cyan-500/20";
       default:
         return "bg-gradient-to-br from-white/15 to-white/10 ring-2 ring-blue-400/40 shadow-xl shadow-blue-500/20 backdrop-blur-md border border-white/20";
     }
@@ -193,6 +199,8 @@ export const getCardBackground = (
         return "bg-white/80 backdrop-blur-sm border border-gray-200 hover:bg-white/90";
       case "Farcaster":
         return "bg-purple-50/80 backdrop-blur-sm border border-purple-200 hover:bg-purple-50/90";
+      case "neon":
+        return "bg-gradient-to-br from-cyan-500/10 to-cyan-400/5 backdrop-blur-md border border-cyan-500/15 hover:bg-gradient-to-br hover:from-cyan-500/15 hover:to-cyan-400/10 hover:shadow-lg hover:shadow-cyan-500/5";
       default:
         return "bg-gradient-to-br from-white/12 to-white/8 backdrop-blur-md border border-white/15 hover:bg-gradient-to-br hover:from-white/15 hover:to-white/10 hover:shadow-lg hover:shadow-white/5";
     }

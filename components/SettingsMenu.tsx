@@ -147,8 +147,7 @@ interface SettingsMenuProps {
   onSortChange: (option: string) => void;
   dayFilter: string;
   onDayFilterChange: (filter: string) => void;
-  reputationType: "quotient" | "openrank";
-  onReputationTypeChange: (type: "quotient" | "openrank") => void;
+
   isDarkTheme: boolean;
 }
 
@@ -163,8 +162,7 @@ export function SettingsMenu({
   onSortChange,
   dayFilter,
   onDayFilterChange,
-  reputationType,
-  onReputationTypeChange,
+
   isDarkTheme,
 }: SettingsMenuProps) {
   const [privacyConfig, setPrivacyConfig] = useState<PrivacyConfig>(
@@ -239,8 +237,8 @@ export function SettingsMenu({
           >
             Theme
           </h3>
-          <div className="grid grid-cols-4 gap-2">
-            {(["Farcaster", "dark", "light", "neon"] as const).map((theme) => (
+          <div className="grid grid-cols-3 gap-2">
+            {(["Farcaster", "dark", "light"] as const).map((theme) => (
               <button
                 key={theme}
                 onClick={() => {
@@ -259,13 +257,7 @@ export function SettingsMenu({
               >
                 <div className="flex flex-col items-center gap-2">
                   <div className="text-lg">
-                    {theme === "dark"
-                      ? "🌙"
-                      : theme === "light"
-                      ? "☀️"
-                      : theme === "neon"
-                      ? "✨"
-                      : "💎"}
+                    {theme === "dark" ? "🌙" : theme === "light" ? "☀️" : "💎"}
                   </div>
                   <span
                     className={`text-xs font-medium ${
@@ -327,56 +319,6 @@ export function SettingsMenu({
                     }`}
                   >
                     {mode}
-                  </span>
-                </div>
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Reputation Type Selection */}
-        <div className="mb-6">
-          <h3
-            className={`text-sm font-semibold mb-3 ${
-              isDarkTheme ? "text-white/80" : "text-gray-700"
-            }`}
-          >
-            Reputation Type
-          </h3>
-          <div className="grid grid-cols-2 gap-2">
-            {(["quotient", "openrank"] as const).map((type) => (
-              <button
-                key={type}
-                onClick={() => {
-                  sdk.haptics?.impactOccurred?.("light");
-                  onReputationTypeChange(type);
-                }}
-                className={`p-3 rounded-xl transition-all duration-200 ${
-                  reputationType === type
-                    ? isDarkTheme
-                      ? "bg-white/20 ring-2 ring-white/40"
-                      : "bg-gray-200 ring-2 ring-gray-400"
-                    : isDarkTheme
-                    ? "bg-white/10 hover:bg-white/15"
-                    : "bg-gray-100 hover:bg-gray-150"
-                }`}
-              >
-                <div className="flex flex-col items-center gap-2">
-                  <div className="text-lg">
-                    {type === "quotient" ? "💎" : "⭐"}
-                  </div>
-                  <span
-                    className={`text-xs font-medium capitalize ${
-                      reputationType === type
-                        ? isDarkTheme
-                          ? "text-white"
-                          : "text-gray-900"
-                        : isDarkTheme
-                        ? "text-white/60"
-                        : "text-gray-600"
-                    }`}
-                  >
-                    {type === "quotient" ? "Quotient" : "OpenRank"}
                   </span>
                 </div>
               </button>
