@@ -23,8 +23,10 @@ async function checkOpenRank(fids: number[]): Promise<OpenRankResult[]> {
     const followingURL = OPENRANK_URL + "scores/global/following/fids";
     const engagementURL = OPENRANK_URL + "scores/global/engagement/fids";
 
-    // Filter out invalid FIDs but keep them as strings
-    const validFids = fids.filter((fid) => !isNaN(parseInt(fid)));
+    // Filter out invalid FIDs and convert to strings for API
+    const validFids = fids
+      .filter((fid) => !isNaN(fid))
+      .map((fid) => fid.toString());
 
     // Fetch both following and engagement scores
     const [followingResponse, engagementResponse] = await Promise.all([
