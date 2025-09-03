@@ -65,26 +65,7 @@ export function SpeedModeAlt({
   }, {} as Record<number, { user: { fid: number; username: string; avatarUrl: string }; conversations: UnrepliedDetail[] }>);
 
   // Sort users by OpenRank (highest rank first, since lower numbers are better ranks)
-  const sortedUserGroups = Object.values(userGroups).sort((a, b) => {
-    const rankA = openRankRanks[a.user.fid];
-    const rankB = openRankRanks[b.user.fid];
-
-    // If both have ranks, sort by rank (lower number = better rank)
-    if (rankA !== null && rankB !== null) {
-      return rankA - rankB;
-    }
-
-    // If only one has a rank, prioritize the one with rank
-    if (rankA !== null && rankB === null) {
-      return -1; // A has rank, B doesn't - A comes first
-    }
-    if (rankA === null && rankB !== null) {
-      return 1; // B has rank, A doesn't - B comes first
-    }
-
-    // If neither has rank, sort alphabetically by username
-    return a.user.username.localeCompare(b.user.username);
-  });
+  const sortedUserGroups = Object.values(userGroups);
 
   const toggleUserExpansion = (userId: number) => {
     if (expandedUser === userId) {

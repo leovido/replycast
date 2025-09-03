@@ -158,14 +158,22 @@ export function sortDetails(
         });
       case "openrank-asc":
         return group.sort((a, b) => {
-          const rankA = openRankRanks[a.authorFid] || Infinity;
-          const rankB = openRankRanks[b.authorFid] || Infinity;
+          const rankA = openRankRanks[a.authorFid] ?? Infinity;
+          const rankB = openRankRanks[b.authorFid] ?? Infinity;
+          // If both have the same rank (including both being Infinity), maintain original order
+          if (rankA === rankB) {
+            return a.castHash.localeCompare(b.castHash);
+          }
           return rankA - rankB;
         });
       case "openrank-desc":
         return group.sort((a, b) => {
-          const rankA = openRankRanks[a.authorFid] || 0;
-          const rankB = openRankRanks[b.authorFid] || 0;
+          const rankA = openRankRanks[a.authorFid] ?? 0;
+          const rankB = openRankRanks[b.authorFid] ?? 0;
+          // If both have the same rank, maintain original order
+          if (rankA === rankB) {
+            return a.castHash.localeCompare(b.castHash);
+          }
           return rankB - rankA;
         });
       case "short":

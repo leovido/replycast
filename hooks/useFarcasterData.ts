@@ -234,7 +234,13 @@ export function useFarcasterData({
         const fids = responseData.unrepliedDetails.map(
           (detail: UnrepliedDetail) => detail.authorFid
         );
-        await fetchOpenRankRanks(fids);
+        // Don't await this to prevent blocking the UI update
+        fetchOpenRankRanks(fids).catch((error) => {
+          console.error(
+            "Failed to fetch OpenRank for new conversations:",
+            error
+          );
+        });
       }
 
       // If no more data, stop loading more
