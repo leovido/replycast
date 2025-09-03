@@ -1,6 +1,7 @@
 import React, { useState, useEffect, type RefObject } from "react";
 import { sdk } from "@farcaster/miniapp-sdk";
-import type { UnrepliedDetail } from "@/types/types";
+import type { UnrepliedDetail, OpenRankData } from "@/types/types";
+import type { QuotientScore } from "@/hooks/useQuotient";
 import {
   getBackgroundClass,
   getBorderColor,
@@ -8,13 +9,14 @@ import {
   getCardBackground,
   getTextColor,
 } from "@/utils/themeHelpers";
-import type { ThemeMode } from "@/utils/themeHelpers";
+import type { ThemeMode } from "@/types/types";
 import { ReplyCardSimple } from "./ReplyCardSimple";
 import { getMinutesAgo } from "@/utils/farcaster";
 
 interface SpeedModeAltProps {
   conversations: UnrepliedDetail[];
-  openRankRanks: Record<number, number | null>;
+  openRankData: Record<number, OpenRankData>;
+  quotientScores: Record<number, QuotientScore | null>;
   isDarkThemeMode: boolean;
   themeMode: ThemeMode;
   loading: boolean;
@@ -28,7 +30,8 @@ interface SpeedModeAltProps {
 
 export function SpeedModeAlt({
   conversations,
-  openRankRanks,
+  openRankData,
+  quotientScores,
   isDarkThemeMode,
   themeMode,
   loading,
@@ -190,21 +193,46 @@ export function SpeedModeAlt({
                 />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
-                    <span className="font-medium text-white dark:text-white truncate text-sm">
+                    <span
+                      className={`font-medium truncate text-sm ${
+                        isDarkTheme ? "text-white" : "text-gray-900"
+                      }`}
+                    >
                       @{userGroup.user.username}
                     </span>
-                    {openRankRanks[userGroup.user.fid] && (
-                      <span className="text-xs bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200 px-1.5 py-0.5 rounded-full">
-                        #{openRankRanks[userGroup.user.fid]?.toLocaleString()}
-                      </span>
-                    )}
+                    <div className="flex items-center gap-1">
+                      {openRankData[userGroup.user.fid]?.engagement?.rank && (
+                        <span className="text-xs bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200 px-1.5 py-0.5 rounded-full">
+                          OR #
+                          {openRankData[
+                            userGroup.user.fid
+                          ]?.engagement?.rank?.toLocaleString()}
+                        </span>
+                      )}
+                      {quotientScores[userGroup.user.fid] && (
+                        <span className="text-xs bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 px-1.5 py-0.5 rounded-full">
+                          {(
+                            quotientScores[userGroup.user.fid]?.quotientScore ||
+                            0
+                          ).toFixed(2)}
+                        </span>
+                      )}
+                    </div>
                   </div>
-                  <div className="text-xs text-gray-400 dark:text-gray-400">
+                  <div
+                    className={`text-xs ${
+                      isDarkTheme ? "text-gray-400" : "text-gray-600"
+                    }`}
+                  >
                     {userGroup.conversations.length} unreplied cast
                     {userGroup.conversations.length !== 1 ? "s" : ""}
                   </div>
                 </div>
-                <div className="text-xs text-gray-400">
+                <div
+                  className={`text-xs ${
+                    isDarkTheme ? "text-gray-400" : "text-gray-600"
+                  }`}
+                >
                   {expandedUser === userGroup.user.fid ? "▼" : "▶"}
                 </div>
               </div>
