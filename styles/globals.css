@@ -127,7 +127,6 @@ body {
   font-display: swap;
   margin: 0;
   padding: 0;
-  background: var(--primary-gradient);
   min-height: 100vh;
   contain: layout style paint;
 }
