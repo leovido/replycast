@@ -59,6 +59,11 @@ export function AppHeader({
                 width={48}
                 height={48}
                 className="rounded-full border-2 border-white/20"
+                // Disable optimization to prevent multiple requests
+                unoptimized={true}
+                // Disable lazy loading for immediate display
+                priority={false}
+                loading="eager"
               />
             )}
             <div className="text-left">

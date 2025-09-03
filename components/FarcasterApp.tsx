@@ -803,6 +803,11 @@ export default function FarcasterApp() {
                     className="w-12 h-12 rounded-full border-2 border-white/20"
                     width={48}
                     height={48}
+                    // Disable optimization to prevent multiple requests
+                    unoptimized={true}
+                    // Disable lazy loading for immediate display
+                    priority={false}
+                    loading="eager"
                   />
                 ) : (
                   <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold text-lg">
@@ -831,51 +836,22 @@ export default function FarcasterApp() {
                   FID: {user.fid}
                 </span>
                 <div className="flex items-center gap-2">
-                  {userOpenRank !== null && userOpenRank !== undefined && (
-                    <div className="flex items-center gap-1">
-                      <svg
-                        width={14}
-                        height={14}
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth={2}
-                        className="text-yellow-400"
-                      >
-                        <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26" />
-                      </svg>
-                      <span
-                        className={`font-bold ${
-                          isDarkTheme ? "text-yellow-400" : "text-purple-700"
-                        }`}
-                      >
-                        OR #{userOpenRank.toLocaleString()}
+                  <div className="flex items-center gap-2">
+                    {openRankData && openRankData[user.fid] && (
+                      <span className="text-xs bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200 px-2 py-1 rounded-full font-medium">
+                        OR #
+                        {openRankData[
+                          user.fid
+                        ]?.engagement?.rank?.toLocaleString()}
                       </span>
-                    </div>
-                  )}
-                  {userQuotientScore !== null &&
-                    userQuotientScore !== undefined && (
-                      <div className="flex items-center gap-1">
-                        <svg
-                          width={14}
-                          height={14}
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth={2}
-                          className="text-purple-400"
-                        >
-                          <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26" />
-                        </svg>
-                        <span
-                          className={`font-bold ${
-                            isDarkTheme ? "text-purple-400" : "text-purple-700"
-                          }`}
-                        >
-                          Q {(userQuotientScore * 100).toFixed(0)}
-                        </span>
-                      </div>
                     )}
+                    {userQuotientScore !== null &&
+                      userQuotientScore !== undefined && (
+                        <span className="text-xs bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 px-2 py-1 rounded-full font-medium">
+                          Q {userQuotientScore.toFixed(2)}
+                        </span>
+                      )}
+                  </div>
                 </div>
               </div>
               <button

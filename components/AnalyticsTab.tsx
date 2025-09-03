@@ -297,6 +297,11 @@ export function AnalyticsTab({
                           width={48}
                           height={48}
                           className="w-10 h-10 rounded-full border-2 border-white/20"
+                          // Disable optimization to prevent multiple requests
+                          unoptimized={true}
+                          // Disable lazy loading for immediate display
+                          priority={false}
+                          loading="eager"
                         />
                       </div>
                       <div>

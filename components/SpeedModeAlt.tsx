@@ -1,4 +1,5 @@
 import React, { useState, useEffect, type RefObject } from "react";
+import Image from "next/image";
 import { sdk } from "@farcaster/miniapp-sdk";
 import type { UnrepliedDetail, OpenRankData } from "@/types/types";
 import type { QuotientScore } from "@/hooks/useQuotient";
@@ -182,10 +183,17 @@ export function SpeedModeAlt({
               onClick={() => toggleUserExpansion(userGroup.user.fid)}
             >
               <div className="flex items-center gap-2">
-                <img
+                <Image
                   src={userGroup.user.avatarUrl}
                   alt={`@${userGroup.user.username}`}
-                  className="w-6 h-6 rounded-full"
+                  className="w-10 h-10 rounded-full object-cover"
+                  width={40}
+                  height={40}
+                  // Disable optimization to prevent multiple requests
+                  unoptimized={true}
+                  // Disable lazy loading for immediate display
+                  priority={false}
+                  loading="eager"
                   onError={(e) => {
                     const target = e.target as HTMLImageElement;
                     target.src = `https://api.dicebear.com/7.x/avataaars/svg?seed=${userGroup.user.username}`;

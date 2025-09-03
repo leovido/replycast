@@ -525,20 +525,23 @@ export const ReplyCardSimple = memo<ReplyCardSimpleProps>(
 
         {/* Profile Picture */}
         <div className="flex flex-row p-4 gap-2 items-center">
-          <div className="relative">
+          <div className="rounded-full overflow-hidden ring-2 ring-gray-200 group-hover:ring-purple-300 transition-all duration-200">
             <Image
               src={conversation.avatarUrl}
               alt={`@${conversation.username}'s avatar`}
               width={40}
               height={40}
-              className="rounded-full ring-2 ring-gray-200 group-hover:ring-purple-300 transition-all duration-200"
+              className="w-10 h-10 object-cover"
               onError={(e) => {
                 const target = e.target as HTMLImageElement;
                 target.src = `https://api.dicebear.com/7.x/avataaars/svg?seed=${conversation.username}`;
               }}
+              // Disable optimization to prevent multiple requests
+              unoptimized={true}
+              // Disable lazy loading for immediate display
+              priority={false}
+              loading="eager"
             />
-            {/* Optional: Add a subtle glow effect on hover */}
-            <div className="absolute inset-0 rounded-full bg-gradient-to-r from-purple-400/20 to-blue-400/20 opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
           </div>
 
           {/* Header Row */}
