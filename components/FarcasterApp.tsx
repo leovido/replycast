@@ -161,11 +161,12 @@ export default function FarcasterApp() {
     isInMiniApp,
   } = useFarcasterAuth();
 
-  const { fetchOpenRankRanks, clearCache, openRankRanks } = useOpenRank();
+  const { fetchOpenRankData, clearCache, openRankData } = useOpenRank();
 
   const {
     allConversations,
     userOpenRank,
+    userFollowingRank,
     loading: dataLoading,
     error,
     handleRefresh,
@@ -174,7 +175,7 @@ export default function FarcasterApp() {
     isLoadingMore,
   } = useFarcasterData({
     user,
-    fetchOpenRankRanks,
+    fetchOpenRankData,
     clearOpenRankCache: clearCache,
     dayFilter,
   });
@@ -193,8 +194,6 @@ export default function FarcasterApp() {
     loading: dataLoading,
     loadMoreConversations,
   });
-
-
 
   // State for marked as read conversations
   const [markedAsReadConversations, setMarkedAsReadConversations] = useState<
@@ -909,7 +908,7 @@ export default function FarcasterApp() {
               ) : (
                 <SpeedModeAlt
                   conversations={filteredConversations}
-                  openRankRanks={openRankRanks}
+                  openRankData={openRankData}
                   isDarkThemeMode={isDarkTheme}
                   themeMode={themeMode}
                   loading={dataLoading}
@@ -928,7 +927,7 @@ export default function FarcasterApp() {
             <FocusTab
               markedAsReadConversations={markedAsReadConversations}
               viewMode={viewMode}
-              openRankRanks={openRankRanks}
+              openRankData={openRankData}
               loading={dataLoading}
               isLoadingMore={isLoadingMore}
               hasMore={hasMore}
@@ -963,7 +962,8 @@ export default function FarcasterApp() {
             <AnalyticsTab
               allConversations={allConversations}
               userOpenRank={userOpenRank}
-              openRankRanks={openRankRanks}
+              userFollowingRank={userFollowingRank}
+              openRankData={openRankData}
               isDarkTheme={isDarkTheme}
               themeMode={themeMode}
             />

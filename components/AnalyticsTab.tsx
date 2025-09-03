@@ -1,11 +1,12 @@
 import React from "react";
-import type { UnrepliedDetail } from "@/types/types";
+import type { UnrepliedDetail, OpenRankData } from "@/types/types";
 import Image from "next/image";
 
 interface AnalyticsTabProps {
   allConversations: UnrepliedDetail[];
   userOpenRank: number | null;
-  openRankRanks: Record<number, number | null>;
+  userFollowingRank: number | null;
+  openRankData: Record<number, OpenRankData>;
   isDarkTheme: boolean;
   themeMode: "dark" | "light" | "Farcaster";
 }
@@ -13,16 +14,25 @@ interface AnalyticsTabProps {
 export function AnalyticsTab({
   allConversations,
   userOpenRank,
-  openRankRanks,
+  userFollowingRank,
+  openRankData,
   isDarkTheme,
   themeMode,
 }: AnalyticsTabProps) {
   // Calculate analytics
   const totalConversations = allConversations.length;
   const uniqueAuthors = new Set(allConversations.map((c) => c.authorFid)).size;
-  const averageOpenRank =
+  const averageEngagementRank =
     allConversations.reduce((sum, conv) => {
-      const rank = openRankRanks[conv.authorFid];
+      const data = openRankData[conv.authorFid];
+      const rank = data?.engagement?.rank;
+      return sum + (rank || 0);
+    }, 0) / totalConversations || 0;
+
+  const averageFollowingRank =
+    allConversations.reduce((sum, conv) => {
+      const data = openRankData[conv.authorFid];
+      const rank = data?.following?.rank;
       return sum + (rank || 0);
     }, 0) / totalConversations || 0;
 
@@ -67,7 +77,7 @@ export function AnalyticsTab({
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         {/* Total Conversations */}
         <div className={`p-4 rounded-xl ${getCardClass()}`}>
           <div className="flex items-center justify-between mb-2">
@@ -127,10 +137,12 @@ export function AnalyticsTab({
           </p>
         </div>
 
-        {/* Average OpenRank */}
+        {/* Average Engagement Rank */}
         <div className={`p-4 rounded-xl ${getCardClass()}`}>
           <div className="flex items-center justify-between mb-2">
-            <h3 className={`font-semibold ${getTextClass()}`}>Avg OpenRank</h3>
+            <h3 className={`font-semibold ${getTextClass()}`}>
+              Avg Engagement Rank
+            </h3>
             <svg
               width={20}
               height={20}
@@ -144,10 +156,39 @@ export function AnalyticsTab({
             </svg>
           </div>
           <div className={`text-2xl font-bold ${getAccentClass()}`}>
-            #{Math.round(averageOpenRank).toLocaleString()}
+            #{Math.round(averageEngagementRank).toLocaleString()}
           </div>
           <p className={`text-sm ${getSubtextClass()}`}>
-            Average rank of authors
+            Average engagement rank
+          </p>
+        </div>
+
+        {/* Average Following Rank */}
+        <div className={`p-4 rounded-xl ${getCardClass()}`}>
+          <div className="flex items-center justify-between mb-2">
+            <h3 className={`font-semibold ${getTextClass()}`}>
+              Avg Following Rank
+            </h3>
+            <svg
+              width={20}
+              height={20}
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={2}
+              className={getAccentClass()}
+            >
+              <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+              <circle cx="9" cy="7" r="4" />
+              <path d="m22 21-2-2" />
+              <path d="M16 16l4 4" />
+            </svg>
+          </div>
+          <div className={`text-2xl font-bold ${getAccentClass()}`}>
+            #{Math.round(averageFollowingRank).toLocaleString()}
+          </div>
+          <p className={`text-sm ${getSubtextClass()}`}>
+            Average following rank
           </p>
         </div>
       </div>
@@ -171,31 +212,46 @@ export function AnalyticsTab({
               <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26" />
             </svg>
           </div>
-          <div className={`text-4xl font-bold mb-2 ${getAccentClass()}`}>
-            #{userOpenRank.toLocaleString()}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="text-center">
+              <div className={`text-3xl font-bold mb-1 ${getAccentClass()}`}>
+                #{userOpenRank.toLocaleString()}
+              </div>
+              <p className={`text-sm ${getSubtextClass()}`}>Engagement Rank</p>
+            </div>
+            <div className="text-center">
+              <div className={`text-3xl font-bold mb-1 ${getAccentClass()}`}>
+                {userFollowingRank
+                  ? `#${userFollowingRank.toLocaleString()}`
+                  : "#--"}
+              </div>
+              <p className={`text-sm ${getSubtextClass()}`}>Following Rank</p>
+            </div>
           </div>
-          <p className={`text-sm ${getSubtextClass()}`}>
-            Your current OpenRank position
-          </p>
         </div>
       )}
 
-      {/* Top Authors by OpenRank */}
+      {/* Top Authors by Engagement Rank */}
       <div className={`p-6 rounded-xl ${getCardClass()}`}>
         <h3 className={`text-lg font-semibold mb-4 ${getTextClass()}`}>
-          Top Authors by OpenRank
+          Top Authors by Engagement Rank
         </h3>
         <div className="space-y-3">
           {allConversations
             .sort((a, b) => {
-              const rankA = openRankRanks[a.authorFid] || 0;
-              const rankB = openRankRanks[b.authorFid] || 0;
+              const dataA = openRankData[a.authorFid];
+              const dataB = openRankData[b.authorFid];
+              const rankA = dataA?.engagement?.rank || 999999;
+              const rankB = dataB?.engagement?.rank || 999999;
               return rankA - rankB;
             })
             .slice(0, 5)
             .map((conversation, index) => {
-              const rank = openRankRanks[conversation.authorFid];
-              if (!rank) return null;
+              const data = openRankData[conversation.authorFid];
+              const engagementRank = data?.engagement?.rank;
+              const followingRank = data?.following?.rank;
+
+              if (!engagementRank) return null;
 
               return (
                 <div
@@ -230,8 +286,18 @@ export function AnalyticsTab({
                       </div>
                     </div>
                   </div>
-                  <div className={`font-bold ${getAccentClass()}`}>
-                    #{rank.toLocaleString()}
+                  <div className="text-right">
+                    <div className={`font-bold ${getAccentClass()}`}>
+                      #{engagementRank.toLocaleString()}
+                    </div>
+                    <div className={`text-xs ${getSubtextClass()}`}>
+                      Eng: #{engagementRank.toLocaleString()}
+                    </div>
+                    {followingRank && (
+                      <div className={`text-xs ${getSubtextClass()}`}>
+                        Fol: #{followingRank.toLocaleString()}
+                      </div>
+                    )}
                   </div>
                 </div>
               );

@@ -35,3 +35,14 @@ export interface FarcasterRepliesResponse {
   message: string;
   nextCursor?: string | null;
 }
+
+export interface OpenRankScore {
+  rank: number | null;
+  score: number | null;
+  percentile: number | null;
+}
+
+export interface OpenRankData {
+  following: OpenRankScore;
+  engagement: OpenRankScore;
+}

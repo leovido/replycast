@@ -1,6 +1,6 @@
 import React, { useState, useEffect, type RefObject } from "react";
 import { sdk } from "@farcaster/miniapp-sdk";
-import type { UnrepliedDetail } from "@/types/types";
+import type { UnrepliedDetail, OpenRankData } from "@/types/types";
 import {
   getBackgroundClass,
   getBorderColor,
@@ -14,7 +14,7 @@ import { getMinutesAgo } from "@/utils/farcaster";
 
 interface SpeedModeAltProps {
   conversations: UnrepliedDetail[];
-  openRankRanks: Record<number, number | null>;
+  openRankData: Record<number, OpenRankData>;
   isDarkThemeMode: boolean;
   themeMode: ThemeMode;
   loading: boolean;
@@ -28,7 +28,7 @@ interface SpeedModeAltProps {
 
 export function SpeedModeAlt({
   conversations,
-  openRankRanks,
+  openRankData,
   isDarkThemeMode,
   themeMode,
   loading,
@@ -193,9 +193,12 @@ export function SpeedModeAlt({
                     <span className="font-medium text-white dark:text-white truncate text-sm">
                       @{userGroup.user.username}
                     </span>
-                    {openRankRanks[userGroup.user.fid] && (
+                    {openRankData[userGroup.user.fid]?.engagement?.rank && (
                       <span className="text-xs bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200 px-1.5 py-0.5 rounded-full">
-                        #{openRankRanks[userGroup.user.fid]?.toLocaleString()}
+                        #
+                        {openRankData[
+                          userGroup.user.fid
+                        ]?.engagement?.rank?.toLocaleString()}
                       </span>
                     )}
                   </div>

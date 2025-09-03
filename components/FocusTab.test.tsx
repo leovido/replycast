@@ -55,7 +55,16 @@ const mockMarkedAsReadConversations = [
 const defaultProps = {
   markedAsReadConversations: mockMarkedAsReadConversations,
   viewMode: "list" as const,
-  openRankRanks: { 12345: 1500, 67890: 2500 },
+  openRankData: {
+    12345: {
+      following: { rank: 1500, score: 0.5, percentile: 80 },
+      engagement: { rank: 1200, score: 0.6, percentile: 85 },
+    },
+    67890: {
+      following: { rank: 2500, score: 0.3, percentile: 60 },
+      engagement: { rank: 2000, score: 0.4, percentile: 70 },
+    },
+  },
   loading: false,
   isLoadingMore: false,
   hasMore: false,

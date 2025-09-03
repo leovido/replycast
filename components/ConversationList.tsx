@@ -1,5 +1,5 @@
 import dynamic from "next/dynamic";
-import type { UnrepliedDetail } from "@/types/types";
+import type { UnrepliedDetail, OpenRankData } from "@/types/types";
 import type { RefObject } from "react";
 
 // Lazy load ReplyCard component
@@ -16,7 +16,7 @@ const ReplyCard = dynamic(
 interface ConversationListProps {
   conversations: UnrepliedDetail[];
   viewMode: "list" | "grid";
-  openRankRanks: Record<number, number | null>;
+  openRankData: Record<number, OpenRankData>;
   loading: boolean;
   isLoadingMore: boolean;
   hasMore: boolean;
@@ -31,7 +31,7 @@ interface ConversationListProps {
 export function ConversationList({
   conversations,
   viewMode,
-  openRankRanks,
+  openRankData,
   loading,
   isLoadingMore,
   hasMore,
@@ -61,7 +61,7 @@ export function ConversationList({
           >
             <ReplyCard
               detail={detail}
-              openRank={openRankRanks[detail.authorFid]}
+              openRank={openRankData[detail.authorFid]?.engagement?.rank}
               onClick={() => onReply(detail)}
               viewMode={viewMode}
               isDarkTheme={isDarkTheme}
