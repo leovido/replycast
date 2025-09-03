@@ -952,6 +952,8 @@ export default function FarcasterApp() {
                   isDarkThemeMode={isDarkTheme}
                   themeMode={themeMode}
                   loading={dataLoading}
+                  quotientScores={quotientScores}
+                  reputationType={reputationType}
                   isLoadingMore={isLoadingMore}
                   hasMore={hasMore}
                   observerRef={observerRef}
