@@ -5,7 +5,6 @@ import {
   getBackgroundClass,
   getBorderColor,
   getTextColor,
-  type ThemeMode,
 } from "@/utils/themeHelpers";
 import type { ThemeMode } from "@/types/types";
 

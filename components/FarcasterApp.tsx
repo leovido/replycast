@@ -15,10 +15,8 @@ import { AnalyticsTab } from "./AnalyticsTab";
 import { ToastNotification } from "./ToastNotification";
 import { EmptyState } from "./EmptyState";
 import type { ThemeMode } from "@/types/types";
-
 import Image from "next/image";
 import { isToday, isWithinLastDays } from "@/utils/farcaster";
-import type { ThemeMode } from "../types/types";
 import { SpeedModeAlt } from "./SpeedModeAlt";
 import { mockSpeedModeConversations } from "@/utils/speedModeMockData";
 
@@ -945,28 +943,6 @@ export default function FarcasterApp() {
                   conversations={filteredConversations}
                   openRankRanks={openRankRanks}
                   quotientScores={quotientScores}
-                  reputationType={reputationType}
-                  isLoadingMore={isLoadingMore}
-                  hasMore={hasMore}
-                  onReply={async (detail) => {
-                    try {
-                      await sdk.actions.viewCast({ hash: detail.castHash });
-                      // Track cast viewed
-                      trackCastViewed(detail.castHash, {
-                        username: detail.username,
-                        activeTab,
-                        theme: themeMode,
-                      });
-                    } catch (error) {
-                      console.error("Failed to open cast:", error);
-                      trackAppError(error as Error, {
-                        action: "view_cast",
-                        castHash: detail.castHash,
-                        activeTab,
-                      });
-                    }
-                  }}
-                  dayFilter={dayFilter}
                   isDarkThemeMode={isDarkTheme}
                   themeMode={themeMode}
                   loading={dataLoading}
