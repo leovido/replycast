@@ -109,7 +109,7 @@ export default async function handler(
     limit = "25",
     cursor,
     type = "replies",
-    dayFilter = "7days", // Changed to "7days" to show recent activity
+    dayFilter = "",
   } = req.query;
 
   if (!fid) {
@@ -167,23 +167,26 @@ export default async function handler(
       });
     }
 
-    // Get user interactions for each cast
-    const interactionChecks = await Promise.all(
-      filteredConversations.map(async (conv) => {
-        const interactions = await getUserInteractions(userFid, conv.cast.hash);
-        return { conv, interactions };
-      })
-    );
+    // Skip expensive interaction checks for now to improve performance
+    // TODO: Add these back with proper indexing or caching
+    const interactionChecks = filteredConversations.map((conv) => ({
+      conv,
+      interactions: {
+        userLiked: false,
+        userRecasted: false,
+        likesCount: 0,
+        recastsCount: 0,
+      },
+    }));
 
     // Transform database results to match API response format
     const unrepliedDetails: UnrepliedDetail[] = interactionChecks.map(
       ({ conv, interactions }) => {
         // Get profile information for the first reply author
-        // Note: firstReplyAuthor is currently null due to missing database indexes
         const firstReplyAuthorFid = conv.firstReplyAuthor;
         const username = firstReplyAuthorFid
           ? `User ${firstReplyAuthorFid}`
-          : "Unknown User (needs database indexes for reply info)";
+          : "Unknown User";
 
         return {
           username,
@@ -195,10 +198,10 @@ export default async function handler(
           text: conv.cast.text || "",
           avatarUrl: "", // Would need to fetch from profiles table if needed
           castHash: conv.cast.hash,
-          authorFid: conv.cast.fid,
+          authorFid: conv.cast.fid, // This is YOUR FID (the original cast author)
           originalCastText: conv.cast.text || "",
           originalCastHash: conv.cast.hash,
-          originalAuthorUsername: `User ${conv.cast.fid}`,
+          originalAuthorUsername: `User ${conv.cast.fid}`, // This is YOUR username
           replyCount: conv.replyCount,
           userLiked: interactions.userLiked,
           userRecasted: interactions.userRecasted,

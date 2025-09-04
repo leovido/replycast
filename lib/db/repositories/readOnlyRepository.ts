@@ -100,7 +100,7 @@ export class ReadOnlyRepository {
     return !!reply;
   }
 
-  // Get unreplied conversations for a user
+  // Get unreplied conversations for a user - OPTIMIZED VERSION
   async getUnrepliedConversations(
     userFid: number,
     limit: number = 25
@@ -113,39 +113,74 @@ export class ReadOnlyRepository {
     }>;
     totalCount: number;
   }> {
-    // OPTIMIZED VERSION - Uses existing (hash, fid) index more efficiently
     const queryLimit = Math.min(limit, 50);
 
     try {
-      // Strategy: Get user's recent casts first, then check for replies
-      // This leverages the existing (hash, fid) index better
-      const userCasts = await db
-        .select()
-        .from(casts)
-        .where(and(eq(casts.fid, userFid), isNull(casts.parentCastHash)))
-        .orderBy(desc(casts.timestamp))
-        .limit(queryLimit);
+      // OPTIMIZED: Use a single SQL query with JOINs instead of multiple queries
+      const ninetyDaysAgo = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000);
 
-      // For each cast, quickly check if it has replies using the hash index
-      const conversations = await Promise.all(
-        userCasts.map(async (cast) => {
-          // Use the hash index to quickly check for replies
-          const [replyCheck] = await db
-            .select({ count: sql<number>`count(*)` })
-            .from(casts)
-            .where(eq(casts.parentCastHash, cast.hash))
-            .limit(1);
+      console.log("Getting unreplied conversations with optimized query...");
 
-          const replyCount = replyCheck?.count || 0;
+      // Query to get actual replies from other users to your casts
+      const result = await db.execute(sql`
+        WITH user_casts AS (
+          SELECT c.hash as original_cast_hash
+          FROM casts c
+          WHERE c.fid = ${userFid}
+            AND c.parent_cast_hash IS NULL
+            AND c.timestamp >= ${ninetyDaysAgo}
+          ORDER BY c.timestamp DESC
+          LIMIT ${queryLimit}
+        ),
+        replies_to_user_casts AS (
+          SELECT 
+            r.hash,
+            r.fid,
+            r.timestamp,
+            r.text,
+            r.embeds,
+            r.parent_cast_url,
+            r.parent_cast_fid,
+            r.parent_cast_hash,
+            r.mentions,
+            r.mentions_positions,
+            r.deleted_at,
+            uc.original_cast_hash,
+            ROW_NUMBER() OVER (PARTITION BY uc.original_cast_hash ORDER BY r.timestamp ASC) as reply_order
+          FROM user_casts uc
+          INNER JOIN casts r ON r.parent_cast_hash = uc.original_cast_hash
+          WHERE r.fid != ${userFid}  -- Only replies from OTHER users
+        )
+        SELECT 
+          r.*,
+          uc.original_cast_hash
+        FROM replies_to_user_casts r
+        INNER JOIN user_casts uc ON r.original_cast_hash = uc.original_cast_hash
+        WHERE r.reply_order = 1  -- Only the first reply to each cast
+        ORDER BY r.timestamp DESC
+      `);
 
-          return {
-            cast,
-            replyCount,
-            firstReplyTime: null, // Would need additional query to get this
-            firstReplyAuthor: null, // Would need additional query to get this
-          };
-        })
-      );
+      console.log(`Found ${result.rows.length} first replies from other users`);
+
+      // Transform the result to match expected format
+      const conversations = result.rows.map((row: any) => ({
+        cast: {
+          fid: row.fid,
+          hash: row.hash,
+          timestamp: row.timestamp,
+          text: row.text,
+          embeds: row.embeds,
+          parentCastUrl: row.parent_cast_url,
+          parentCastFid: row.parent_cast_fid,
+          parentCastHash: row.parent_cast_hash,
+          mentions: row.mentions,
+          mentionsPositions: row.mentions_positions,
+          deletedAt: row.deleted_at,
+        },
+        replyCount: 1, // This is the first reply
+        firstReplyTime: row.timestamp ? new Date(row.timestamp) : null,
+        firstReplyAuthor: row.fid ? parseInt(row.fid) : null,
+      }));
 
       return {
         conversations,

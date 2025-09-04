@@ -92,7 +92,7 @@ export default function FarcasterApp() {
   >(() => getStoredValue(STORAGE_KEYS.SORT_OPTION, "newest"));
   const [dayFilter, setDayFilter] = useState<
     "all" | "today" | "3days" | "7days"
-  >(() => getStoredValue(STORAGE_KEYS.DAY_FILTER, "today"));
+  >(() => getStoredValue(STORAGE_KEYS.DAY_FILTER, "7days"));
 
   // Track app opened
   useEffect(() => {

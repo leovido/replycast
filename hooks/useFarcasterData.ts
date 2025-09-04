@@ -17,7 +17,7 @@ export function useFarcasterData({
   user,
   fetchOpenRankRanks,
   clearOpenRankCache,
-  dayFilter = "today",
+  dayFilter = "7days",
 }: UseFarcasterDataProps) {
   const [data, setData] = useState<FarcasterRepliesResponse | null>(null);
   const [loading, setLoading] = useState(true);
@@ -74,7 +74,9 @@ export function useFarcasterData({
           url.searchParams.set("dayFilter", dayFilter);
         }
 
-        const res = await fetch(url.toString());
+        const res = await fetch(url.toString(), {
+          cache: "no-store",
+        });
         const responseData = await res.json();
 
         if (responseData) {
@@ -141,7 +143,9 @@ export function useFarcasterData({
         url.searchParams.set("dayFilter", dayFilter);
       }
 
-      const res = await fetch(url.toString());
+      const res = await fetch(url.toString(), {
+        cache: "no-store",
+      });
       const responseData = await res.json();
 
       // Append new conversations with deduplication
@@ -161,7 +165,13 @@ export function useFarcasterData({
         const fids = responseData.unrepliedDetails.map(
           (detail: UnrepliedDetail) => detail.authorFid
         );
-        await fetchOpenRankRanks(fids);
+        // Don't await this to prevent blocking the UI update
+        fetchOpenRankRanks(fids).catch((error) => {
+          console.error(
+            "Failed to fetch OpenRank for new conversations:",
+            error
+          );
+        });
       }
 
       // If no more data, stop loading more
