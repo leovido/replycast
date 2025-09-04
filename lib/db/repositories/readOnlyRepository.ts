@@ -121,7 +121,7 @@ export class ReadOnlyRepository {
 
       console.log("Getting unreplied conversations with optimized query...");
 
-      // Query to get actual replies from other users to your casts
+      // Query to get actual replies from other users to your casts with profile data
       const result = await db.execute(sql`
         WITH user_casts AS (
           SELECT c.hash as original_cast_hash
@@ -153,9 +153,11 @@ export class ReadOnlyRepository {
         )
         SELECT 
           r.*,
-          uc.original_cast_hash
+          uc.original_cast_hash,
+          p.data as profile_data
         FROM replies_to_user_casts r
         INNER JOIN user_casts uc ON r.original_cast_hash = uc.original_cast_hash
+        LEFT JOIN profiles p ON p.fid = r.fid
         WHERE r.reply_order = 1  -- Only the first reply to each cast
         ORDER BY r.timestamp DESC
       `);
@@ -163,24 +165,36 @@ export class ReadOnlyRepository {
       console.log(`Found ${result.rows.length} first replies from other users`);
 
       // Transform the result to match expected format
-      const conversations = result.rows.map((row: any) => ({
-        cast: {
-          fid: row.fid,
-          hash: row.hash,
-          timestamp: row.timestamp,
-          text: row.text,
-          embeds: row.embeds,
-          parentCastUrl: row.parent_cast_url,
-          parentCastFid: row.parent_cast_fid,
-          parentCastHash: row.parent_cast_hash,
-          mentions: row.mentions,
-          mentionsPositions: row.mentions_positions,
-          deletedAt: row.deleted_at,
-        },
-        replyCount: 1, // This is the first reply
-        firstReplyTime: row.timestamp ? new Date(row.timestamp) : null,
-        firstReplyAuthor: row.fid ? parseInt(row.fid) : null,
-      }));
+      const conversations = result.rows.map((row: any) => {
+        // Extract profile data
+        const profileData = row.profile_data || {};
+        const username = profileData.username || `User ${row.fid}`;
+        const displayName = profileData.display || username;
+        const pfpUrl = profileData.pfp || "";
+
+        return {
+          cast: {
+            fid: row.fid,
+            hash: row.hash,
+            timestamp: row.timestamp,
+            text: row.text,
+            embeds: row.embeds,
+            parentCastUrl: row.parent_cast_url,
+            parentCastFid: row.parent_cast_fid,
+            parentCastHash: row.parent_cast_hash,
+            mentions: row.mentions,
+            mentionsPositions: row.mentions_positions,
+            deletedAt: row.deleted_at,
+          },
+          replyCount: 1, // This is the first reply
+          firstReplyTime: row.timestamp ? new Date(row.timestamp) : null,
+          firstReplyAuthor: row.fid ? parseInt(row.fid) : null,
+          // Add profile information
+          username,
+          displayName,
+          pfpUrl,
+        };
+      });
 
       return {
         conversations,

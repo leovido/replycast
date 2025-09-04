@@ -182,11 +182,10 @@ export default async function handler(
     // Transform database results to match API response format
     const unrepliedDetails: UnrepliedDetail[] = interactionChecks.map(
       ({ conv, interactions }) => {
-        // Get profile information for the first reply author
-        const firstReplyAuthorFid = conv.firstReplyAuthor;
-        const username = firstReplyAuthorFid
-          ? `User ${firstReplyAuthorFid}`
-          : "Unknown User";
+        // Get profile information for the first reply author from the repository data
+        const username =
+          (conv as any).username || `User ${conv.firstReplyAuthor}`;
+        const avatarUrl = (conv as any).pfpUrl || "";
 
         return {
           username,
@@ -196,7 +195,7 @@ export default async function handler(
           timestamp: conv.firstReplyTime ? conv.firstReplyTime.getTime() : 0,
           castUrl: `https://warpcast.com/~/conversations/${conv.cast.hash}`,
           text: conv.cast.text || "",
-          avatarUrl: "", // Would need to fetch from profiles table if needed
+          avatarUrl,
           castHash: conv.cast.hash,
           authorFid: conv.cast.fid, // This is YOUR FID (the original cast author)
           originalCastText: conv.cast.text || "",
