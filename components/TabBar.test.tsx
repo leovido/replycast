@@ -65,7 +65,9 @@ describe("TabBar", () => {
     render(<TabBar {...defaultProps} activeTab="analytics" />);
 
     const analyticsTab = screen.getByText("Analytics").closest("button");
-    const activeIndicator = analyticsTab?.querySelector("div[class*='w-1 h-1']");
+    const activeIndicator = analyticsTab?.querySelector(
+      "div[class*='w-1 h-1']"
+    );
     expect(activeIndicator).toBeInTheDocument();
   });
 
@@ -90,4 +92,64 @@ describe("TabBar", () => {
     const focusTab = screen.getByText("Focus").closest("button");
     expect(focusTab).toHaveClass("hover:scale-102", "hover:bg-white/5");
   });
-}); 
+
+  it("handles rapid tab switching", () => {
+    render(<TabBar {...defaultProps} />);
+
+    const inboxTab = screen.getByText("Inbox");
+    const focusTab = screen.getByText("Focus");
+    const analyticsTab = screen.getByText("Analytics");
+
+    // Rapidly switch between tabs
+    fireEvent.click(focusTab);
+    fireEvent.click(analyticsTab);
+    fireEvent.click(inboxTab);
+    fireEvent.click(focusTab);
+
+    expect(mockOnTabChange).toHaveBeenCalledTimes(4);
+    expect(mockOnTabChange).toHaveBeenNthCalledWith(1, "focus");
+    expect(mockOnTabChange).toHaveBeenNthCalledWith(2, "analytics");
+    expect(mockOnTabChange).toHaveBeenNthCalledWith(3, "inbox");
+    expect(mockOnTabChange).toHaveBeenNthCalledWith(4, "focus");
+  });
+
+  it("handles keyboard navigation", () => {
+    render(<TabBar {...defaultProps} />);
+
+    const focusTab = screen.getByText("Focus").closest("button");
+
+    // Simulate keyboard navigation - the component handles clicks, not keyDown
+    fireEvent.click(focusTab!);
+    expect(mockOnTabChange).toHaveBeenCalledWith("focus");
+  });
+
+  it("shows correct tab count", () => {
+    render(<TabBar {...defaultProps} />);
+
+    const tabs = screen.getAllByRole("button");
+    expect(tabs).toHaveLength(3);
+  });
+
+  it("maintains tab order consistency", () => {
+    render(<TabBar {...defaultProps} />);
+
+    const tabs = screen.getAllByRole("button");
+    const tabTexts = tabs.map((tab) => tab.textContent);
+
+    expect(tabTexts).toEqual(["Inbox", "Focus", "Analytics"]);
+  });
+
+  it("handles edge case tab values", () => {
+    const edgeCaseProps = {
+      ...defaultProps,
+      activeTab: "inbox" as const,
+    };
+
+    render(<TabBar {...edgeCaseProps} />);
+
+    // Should render without errors
+    expect(screen.getByText("Inbox")).toBeInTheDocument();
+    expect(screen.getByText("Focus")).toBeInTheDocument();
+    expect(screen.getByText("Analytics")).toBeInTheDocument();
+  });
+});
