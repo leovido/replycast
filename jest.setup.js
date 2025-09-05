@@ -1,5 +1,10 @@
 import "@testing-library/jest-dom";
 
+// Polyfill TextEncoder for Node.js environment
+import { TextEncoder, TextDecoder } from "util";
+global.TextEncoder = TextEncoder;
+global.TextDecoder = TextDecoder;
+
 // Silence console errors in tests to reduce noise
 const originalError = console.error;
 beforeAll(() => {

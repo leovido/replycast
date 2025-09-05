@@ -2,39 +2,29 @@ import { createMocks } from "node-mocks-http";
 import handler, {
   clearReplyCheckCache,
 } from "./farcaster-notification-replies";
-import { client } from "@/client";
 
-// Mock the Neynar client
-jest.mock("@/client", () => ({
-  client: {
-    fetchAllNotifications: jest.fn(),
-    lookupCastConversation: jest.fn(),
-    fetchCastReactions: jest.fn(),
+// Mock the database repository
+jest.mock("../../lib/db/repositories/readOnlyRepository", () => ({
+  readOnlyRepository: {
+    getUnrepliedConversations: jest.fn(),
   },
 }));
 
-// Mock the client
-const mockClient = client as jest.Mocked<typeof client>;
+// Import the mocked repository
+import { readOnlyRepository } from "../../lib/db/repositories/readOnlyRepository";
+const mockRepository = readOnlyRepository as jest.Mocked<
+  typeof readOnlyRepository
+>;
 
 describe("/api/farcaster-notification-replies", () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    // Reset mock implementations completely
-    mockClient.fetchAllNotifications.mockReset();
-    mockClient.lookupCastConversation.mockReset();
-
-    // Clear any cached data that might persist between tests
-    jest.clearAllTimers();
-    jest.clearAllMocks();
-
-    // Clear the reply check cache between tests
+    mockRepository.getUnrepliedConversations.mockReset();
     clearReplyCheckCache();
   });
 
   afterEach(() => {
-    // Ensure complete cleanup after each test
     jest.clearAllMocks();
-    jest.clearAllTimers();
   });
 
   describe("GET requests", () => {
@@ -81,55 +71,59 @@ describe("/api/farcaster-notification-replies", () => {
     });
 
     it("should successfully fetch and process notifications", async () => {
-      const mockNotifications: any[] = [
+      const mockConversations = [
         {
           cast: {
+            fid: 123,
             hash: "0x123",
-            author: {
-              username: "testuser",
-              fid: 456,
-              pfp_url: "https://example.com/avatar.jpg",
-            },
-            text: "Test reply",
-            timestamp: "2024-01-01T12:00:00Z",
-            replies: { count: 2 },
+            timestamp: new Date("2024-01-01T10:00:00Z"),
+            text: "Original cast",
+            embeds: [],
+            parentCastUrl: null,
+            parentCastFid: null,
+            parentCastHash: null,
+            mentions: [],
+            mentionsPositions: [],
+            deletedAt: null,
           },
+          replyCount: 1,
+          firstReplyTime: new Date("2024-01-01T10:30:00Z"),
+          firstReplyAuthor: 456,
+          username: "testuser",
+          displayName: "Test User",
+          pfpUrl: "https://example.com/avatar.jpg",
         },
         {
           cast: {
+            fid: 123,
             hash: "0x456",
-            author: {
-              username: "anotheruser",
-              fid: 789,
-              pfp_url: "https://example.com/avatar2.jpg",
-            },
-            text: "Another reply",
-            timestamp: "2024-01-01T11:00:00Z",
-            replies: { count: 1 },
+            timestamp: new Date("2024-01-01T11:00:00Z"),
+            text: "Another original cast",
+            embeds: [],
+            parentCastUrl: null,
+            parentCastFid: null,
+            parentCastHash: null,
+            mentions: [],
+            mentionsPositions: [],
+            deletedAt: null,
           },
+          replyCount: 1,
+          firstReplyTime: new Date("2024-01-01T11:30:00Z"),
+          firstReplyAuthor: 789,
+          username: "anotheruser",
+          displayName: "Another User",
+          pfpUrl: "https://example.com/avatar2.jpg",
         },
       ];
 
-      mockClient.fetchAllNotifications.mockResolvedValue({
-        notifications: mockNotifications,
-        next: { cursor: "next-cursor" },
-      } as any);
-
-      mockClient.lookupCastConversation.mockResolvedValue({
-        conversation: {
-          cast: {
-            direct_replies: [],
-          },
-        },
-      } as any);
-
-      mockClient.fetchCastReactions.mockResolvedValue({
-        reactions: [],
-      } as any);
+      mockRepository.getUnrepliedConversations.mockResolvedValue({
+        conversations: mockConversations,
+        totalCount: 2,
+      });
 
       const { req, res } = createMocks({
         method: "GET",
-        query: { fid: "123", limit: "25", dayFilter: "all" },
+        query: { fid: "123", limit: "25" },
       });
 
       await handler(req, res);
@@ -139,86 +133,28 @@ describe("/api/farcaster-notification-replies", () => {
 
       expect(data.unrepliedCount).toBe(2);
       expect(data.unrepliedDetails).toHaveLength(2);
-      expect(data.nextCursor).toBe("next-cursor");
-      expect(data.message).toBe("You have 2 unreplied comments.");
+      expect(data.message).toBe(
+        "You have 2 unreplied comments in the last 7 days."
+      );
 
       // Check first notification details
       const firstDetail = data.unrepliedDetails[0];
       expect(firstDetail.username).toBe("testuser");
-      expect(firstDetail.authorFid).toBe(456);
-      expect(firstDetail.text).toBe("Test reply");
-      expect(firstDetail.castHash).toBe("0x123");
-      expect(firstDetail.replyCount).toBe(2);
+      expect(firstDetail.authorFid).toBe(123);
+      expect(firstDetail.text).toBe("Original cast");
+      expect(firstDetail.avatarUrl).toBe("https://example.com/avatar.jpg");
+      expect(firstDetail.castUrl).toContain("0x123");
     });
 
-    it("should filter out conversations where user has already replied", async () => {
-      const mockNotifications: any[] = [
-        {
-          cast: {
-            hash: "0x123",
-            author: {
-              username: "testuser",
-              fid: 456,
-              pfp_url: "https://example.com/avatar.jpg",
-            },
-            text: "Test reply",
-            timestamp: "2024-01-01T12:00:00Z",
-            replies: { count: 2 },
-          },
-        },
-        {
-          cast: {
-            hash: "0x456",
-            author: {
-              username: "anotheruser",
-              fid: 789,
-              pfp_url: "https://example.com/avatar2.jpg",
-            },
-            text: "Another reply",
-            timestamp: "2024-01-01T11:00:00Z",
-            replies: { count: 1 },
-          },
-        },
-      ];
-
-      mockClient.fetchAllNotifications.mockResolvedValue({
-        notifications: mockNotifications,
-        next: null,
-      } as any);
-
-      // Use explicit mock implementation that doesn't rely on call order
-      mockClient.lookupCastConversation.mockImplementation((params: any) => {
-        if (params.identifier === "0x123") {
-          return Promise.resolve({
-            conversation: {
-              cast: {
-                direct_replies: [
-                  { author: { fid: 123 } }, // User (FID 123) has replied to this one
-                ],
-              },
-            },
-          } as any);
-        } else if (params.identifier === "0x456") {
-          return Promise.resolve({
-            conversation: {
-              cast: {
-                direct_replies: [], // User hasn't replied to this one
-              },
-            },
-          } as any);
-        }
-        return Promise.resolve({
-          conversation: {
-            cast: {
-              direct_replies: [],
-            },
-          },
-        } as any);
+    it("should handle empty results", async () => {
+      mockRepository.getUnrepliedConversations.mockResolvedValue({
+        conversations: [],
+        totalCount: 0,
       });
 
       const { req, res } = createMocks({
         method: "GET",
-        query: { fid: "123", dayFilter: "all" },
+        query: { fid: "123", limit: "25" },
       });
 
       await handler(req, res);
@@ -226,80 +162,19 @@ describe("/api/farcaster-notification-replies", () => {
       expect(res._getStatusCode()).toBe(200);
       const data = JSON.parse(res._getData());
 
-      // The filtering logic should exclude the first notification where user has replied
-      expect(data.unrepliedCount).toBe(1);
-      expect(data.unrepliedDetails).toHaveLength(1);
-      expect(data.unrepliedDetails[0].username).toBe("anotheruser");
+      expect(data.unrepliedCount).toBe(0);
+      expect(data.unrepliedDetails).toHaveLength(0);
+      expect(data.message).toBe("No unreplied conversations found.");
     });
 
-    it("should handle missing cast data gracefully", async () => {
-      const mockNotifications: any[] = [
-        {
-          cast: null, // Missing cast data - this should be filtered out
-        },
-        {
-          cast: {
-            hash: "0x123",
-            author: {
-              username: "testuser",
-              fid: 456,
-              pfp_url: "https://example.com/avatar.jpg",
-            },
-            text: "Test reply",
-            timestamp: "2024-01-01T12:00:00Z",
-            replies: { count: 2 },
-          },
-        },
-      ];
-
-      mockClient.fetchAllNotifications.mockResolvedValue({
-        notifications: mockNotifications,
-        next: null,
-      } as any);
-
-      // Use explicit mock implementation that doesn't rely on call order
-      mockClient.lookupCastConversation.mockImplementation((params: any) => {
-        if (params.identifier === "0x123") {
-          return Promise.resolve({
-            conversation: {
-              cast: {
-                direct_replies: [],
-              },
-            },
-          } as any);
-        }
-        return Promise.resolve({
-          conversation: {
-            cast: {
-              direct_replies: [],
-            },
-          },
-        } as any);
-      });
-
-      const { req, res } = createMocks({
-        method: "GET",
-        query: { fid: "123", dayFilter: "all" },
-      });
-
-      await handler(req, res);
-
-      expect(res._getStatusCode()).toBe(200);
-      const data = JSON.parse(res._getData());
-
-      // Should only process the notification with valid cast data
-      expect(data.unrepliedCount).toBe(1);
-      expect(data.unrepliedDetails).toHaveLength(1);
-    });
-
-    it("should handle API errors gracefully", async () => {
-      mockClient.fetchAllNotifications.mockRejectedValue(
-        new Error("API Error")
+    it("should handle database errors gracefully", async () => {
+      mockRepository.getUnrepliedConversations.mockRejectedValue(
+        new Error("Database connection failed")
       );
 
       const { req, res } = createMocks({
         method: "GET",
-        query: { fid: "123", dayFilter: "all" },
+        query: { fid: "123", limit: "25" },
       });
 
       await handler(req, res);
@@ -309,229 +184,42 @@ describe("/api/farcaster-notification-replies", () => {
       expect(data.error).toContain("Internal server error");
     });
 
-    it("should handle conversation lookup errors gracefully", async () => {
-      const mockNotifications: any[] = [
-        {
-          cast: {
-            hash: "0x123",
-            author: {
-              username: "testuser",
-              fid: 456,
-              pfp_url: "https://example.com/avatar.jpg",
-            },
-            text: "Test reply",
-            timestamp: "2024-01-01T12:00:00Z",
-            replies: { count: 2 },
-          },
-        },
-      ];
+    it("should handle limit parameter correctly", async () => {
+      mockRepository.getUnrepliedConversations.mockResolvedValue({
+        conversations: [],
+        totalCount: 0,
+      });
 
-      mockClient.fetchAllNotifications.mockResolvedValue({
-        notifications: mockNotifications,
-        next: null,
-      } as any);
+      const { req, res } = createMocks({
+        method: "GET",
+        query: { fid: "123", limit: "10" },
+      });
 
-      mockClient.lookupCastConversation.mockRejectedValue(
-        new Error("Conversation lookup failed")
+      await handler(req, res);
+
+      expect(mockRepository.getUnrepliedConversations).toHaveBeenCalledWith(
+        123,
+        10
       );
+    });
+
+    it("should use default limit when not provided", async () => {
+      mockRepository.getUnrepliedConversations.mockResolvedValue({
+        conversations: [],
+        totalCount: 0,
+      });
 
       const { req, res } = createMocks({
         method: "GET",
-        query: { fid: "123", dayFilter: "all" },
+        query: { fid: "123" },
       });
 
       await handler(req, res);
 
-      expect(res._getStatusCode()).toBe(200);
-      const data = JSON.parse(res._getData());
-
-      // Should still return the notification even if conversation lookup fails
-      expect(data.unrepliedCount).toBe(1);
-    });
-
-    it("should use default values for missing fields", async () => {
-      const mockNotifications: any[] = [
-        {
-          cast: {
-            hash: "0x123",
-            author: {
-              username: "testuser",
-              // Missing fid, pfp_url
-            },
-            text: "Test reply",
-            // Missing timestamp
-            replies: { count: 0 },
-          },
-        },
-      ];
-
-      mockClient.fetchAllNotifications.mockResolvedValue({
-        notifications: mockNotifications,
-        next: null,
-      } as any);
-
-      mockClient.lookupCastConversation.mockResolvedValue({
-        conversation: {
-          cast: {
-            direct_replies: [],
-          },
-        },
-      } as any);
-
-      const { req, res } = createMocks({
-        method: "GET",
-        query: { fid: "123", dayFilter: "all" },
-      });
-
-      await handler(req, res);
-
-      expect(res._getStatusCode()).toBe(200);
-      const data = JSON.parse(res._getData());
-
-      const detail = data.unrepliedDetails[0];
-      expect(detail.authorFid).toBe(0);
-      expect(detail.avatarUrl).toBe("");
-      expect(detail.timeAgo).toBe("");
-      expect(detail.timestamp).toBe(0);
-    });
-
-    it("should handle cursor parameter correctly", async () => {
-      const mockNotifications: any[] = [
-        {
-          cast: {
-            hash: "0x123",
-            author: {
-              username: "testuser",
-              fid: 456,
-              pfp_url: "https://example.com/avatar.jpg",
-            },
-            text: "Test reply",
-            timestamp: "2024-01-01T12:00:00Z",
-            replies: { count: 2 },
-          },
-        },
-      ];
-
-      mockClient.fetchAllNotifications.mockResolvedValue({
-        notifications: mockNotifications,
-        next: { cursor: "next-cursor" },
-      } as any);
-
-      mockClient.lookupCastConversation.mockResolvedValue({
-        conversation: {
-          cast: {
-            direct_replies: [],
-          },
-        },
-      } as any);
-
-      const { req, res } = createMocks({
-        method: "GET",
-        query: { fid: "123", cursor: "test-cursor", dayFilter: "all" },
-      });
-
-      await handler(req, res);
-
-      expect(mockClient.fetchAllNotifications).toHaveBeenCalledWith({
-        fid: 123,
-        limit: 25,
-        type: ["replies"],
-        cursor: "test-cursor",
-      });
-    });
-
-    it("should handle different notification types", async () => {
-      const mockNotifications: any[] = [
-        {
-          cast: {
-            hash: "0x123",
-            author: {
-              username: "testuser",
-              fid: 456,
-              pfp_url: "https://example.com/avatar.jpg",
-            },
-            text: "Test reply",
-            timestamp: "2024-01-01T12:00:00Z",
-            replies: { count: 2 },
-          },
-        },
-      ];
-
-      mockClient.fetchAllNotifications.mockResolvedValue({
-        notifications: mockNotifications,
-        next: null,
-      } as any);
-
-      mockClient.lookupCastConversation.mockResolvedValue({
-        conversation: {
-          cast: {
-            direct_replies: [],
-          },
-        },
-      } as any);
-
-      const { req, res } = createMocks({
-        method: "GET",
-        query: { fid: "123", type: "mentions", dayFilter: "all" },
-      });
-
-      await handler(req, res);
-
-      expect(mockClient.fetchAllNotifications).toHaveBeenCalledWith({
-        fid: 123,
-        limit: 25,
-        type: ["mentions"],
-        cursor: undefined,
-      });
-    });
-  });
-
-  describe("timeAgo function", () => {
-    it("should format seconds correctly", () => {
-      const now = new Date();
-      const thirtySecondsAgo = new Date(now.getTime() - 30 * 1000);
-
-      const result = timeAgo(thirtySecondsAgo.toISOString());
-      expect(result).toBe("30s ago");
-    });
-
-    it("should format minutes correctly", () => {
-      const now = new Date();
-      const fiveMinutesAgo = new Date(now.getTime() - 5 * 60 * 1000);
-
-      const result = timeAgo(fiveMinutesAgo.toISOString());
-      expect(result).toBe("5min ago");
-    });
-
-    it("should format hours correctly", () => {
-      const now = new Date();
-      const twoHoursAgo = new Date(now.getTime() - 2 * 60 * 60 * 1000);
-
-      const result = timeAgo(twoHoursAgo.toISOString());
-      expect(result).toBe("2h ago");
-    });
-
-    it("should format days correctly", () => {
-      const now = new Date();
-      const threeDaysAgo = new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000);
-
-      const result = timeAgo(threeDaysAgo.toISOString());
-      expect(result).toBe("3d ago");
+      expect(mockRepository.getUnrepliedConversations).toHaveBeenCalledWith(
+        123,
+        25
+      );
     });
   });
 });
-
-// Helper function to test timeAgo (extracted from the main file for testing)
-const timeAgo = (dateString: string): string => {
-  const now = new Date();
-  const then = new Date(dateString);
-  const diffMs = now.getTime() - then.getTime();
-  const diffSec = Math.floor(diffMs / 1000);
-  if (diffSec < 60) return `${diffSec}s ago`;
-  const diffMin = Math.floor(diffSec / 60);
-  if (diffMin < 60) return `${diffMin}min ago`;
-  const diffHr = Math.floor(diffMin / 60);
-  if (diffHr < 24) return `${diffHr}h ago`;
-  const diffDay = Math.floor(diffHr / 24);
-  return `${diffDay}d ago`;
-};
