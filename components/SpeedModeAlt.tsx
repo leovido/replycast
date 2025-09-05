@@ -12,6 +12,7 @@ import {
 } from "@/utils/themeHelpers";
 import type { ThemeMode } from "@/utils/themeHelpers";
 import { ReplyCardSimple } from "./ReplyCardSimple";
+import { ReputationBadges } from "./ReputationBadges";
 import { getMinutesAgo } from "@/utils/farcaster";
 
 interface SpeedModeAltProps {
@@ -219,35 +220,13 @@ export function SpeedModeAlt({
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  {/* Reputation Scores - Only show when NOT expanded */}
-                  {expandedUser !== userGroup.user.fid && (
-                    <div className="flex flex-row items-center gap-1">
-                      {openRankData[userGroup.user.fid]?.engagement?.rank && (
-                        <span className="text-xs bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200 px-1.5 py-0.5 rounded-full">
-                          E: #
-                          {openRankData[
-                            userGroup.user.fid
-                          ]?.engagement?.rank?.toLocaleString()}
-                        </span>
-                      )}
-                      {openRankData[userGroup.user.fid]?.following?.rank && (
-                        <span className="text-xs bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200 px-1.5 py-0.5 rounded-full">
-                          F: #
-                          {openRankData[
-                            userGroup.user.fid
-                          ]?.following?.rank?.toLocaleString()}
-                        </span>
-                      )}
-                      {quotientScores[userGroup.user.fid] && (
-                        <span className="text-xs bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 px-1.5 py-0.5 rounded-full">
-                          {(
-                            quotientScores[userGroup.user.fid]?.quotientScore ||
-                            0
-                          ).toFixed(2)}
-                        </span>
-                      )}
-                    </div>
-                  )}
+                  <ReputationBadges
+                    fid={userGroup.user.fid}
+                    openRankData={openRankData}
+                    quotientScores={quotientScores}
+                    showLabels={true}
+                    size="sm"
+                  />
 
                   {/* Expand/Collapse Arrow */}
                   <span
