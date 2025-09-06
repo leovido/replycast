@@ -107,7 +107,9 @@ export function getMinutesAgo(timeAgo: string): number {
 // Sort function for unreplied details
 export function sortDetails(
   details: UnrepliedDetail[],
-  sortOption: string
+  sortOption: string,
+  openRankRanks: Record<number, number | null>,
+  quotientScores: Record<number, { quotientScore: number } | null> = {}
 ): UnrepliedDetail[] {
   const arr = [...details]; // Create copy to avoid mutation
 
@@ -142,7 +144,38 @@ export function sortDetails(
         return group.sort((a, b) => a.authorFid - b.authorFid);
       case "fid-desc":
         return group.sort((a, b) => b.authorFid - a.authorFid);
-
+      case "quotient-asc":
+        return group.sort((a, b) => {
+          const scoreA = quotientScores[a.authorFid]?.quotientScore || 0;
+          const scoreB = quotientScores[b.authorFid]?.quotientScore || 0;
+          return scoreA - scoreB;
+        });
+      case "quotient-desc":
+        return group.sort((a, b) => {
+          const scoreA = quotientScores[a.authorFid]?.quotientScore || 0;
+          const scoreB = quotientScores[b.authorFid]?.quotientScore || 0;
+          return scoreB - scoreA;
+        });
+      case "openrank-asc":
+        return group.sort((a, b) => {
+          const rankA = openRankRanks[a.authorFid] ?? Infinity;
+          const rankB = openRankRanks[b.authorFid] ?? Infinity;
+          // If both have the same rank (including both being Infinity), maintain original order
+          if (rankA === rankB) {
+            return a.castHash.localeCompare(b.castHash);
+          }
+          return rankA - rankB;
+        });
+      case "openrank-desc":
+        return group.sort((a, b) => {
+          const rankA = openRankRanks[a.authorFid] ?? 0;
+          const rankB = openRankRanks[b.authorFid] ?? 0;
+          // If both have the same rank, maintain original order
+          if (rankA === rankB) {
+            return a.castHash.localeCompare(b.castHash);
+          }
+          return rankB - rankA;
+        });
       case "short":
         return group.filter((d) => d.text.length < 20);
       case "medium":

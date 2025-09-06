@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo } from "react";
 import { sdk } from "@farcaster/miniapp-sdk";
 import { useFarcasterAuth } from "../hooks/useFarcasterAuth";
-import { useOpenRank } from "../hooks/useOpenRank";
+import { useReputation } from "../hooks/useReputation";
 import { useFarcasterData } from "../hooks/useFarcasterData";
 import { useInfiniteScroll } from "../hooks/useInfiniteScroll";
 import { useAppAnalytics, ANALYTICS_ACTIONS } from "../hooks/useAnalytics";
@@ -14,10 +14,14 @@ import { SpeedModeTab } from "./SpeedModeTab";
 import { AnalyticsTab } from "./AnalyticsTab";
 import { ToastNotification } from "./ToastNotification";
 import { EmptyState } from "./EmptyState";
+import { Badge } from "./Badge";
+import { ScoreExplanationModal } from "./ScoreExplanationModal";
+import type { ThemeMode } from "@/types/types";
 
 import Image from "next/image";
 import { isToday, isWithinLastDays } from "@/utils/farcaster";
 import { SpeedModeAlt } from "./SpeedModeAlt";
+import { ReputationBadges } from "./ReputationBadges";
 import { mockSpeedModeConversations } from "@/utils/speedModeMockData";
 
 // Local storage keys
@@ -27,6 +31,8 @@ const STORAGE_KEYS = {
   SORT_OPTION: "farcaster-widget-sort-option",
   DAY_FILTER: "farcaster-widget-day-filter",
   ACTIVE_TAB: "farcaster-widget-active-tab",
+  REPUTATION_TYPE: "farcaster-widget-reputation-type",
+  SCORE_MODAL_SEEN: "farcaster-widget-score-modal-seen",
 } as const;
 
 // Helper functions for local storage
@@ -64,21 +70,20 @@ export default function FarcasterApp() {
   } = useAppAnalytics();
 
   // Initialize state from local storage
-  const [themeMode, setThemeMode] = useState<"dark" | "light" | "Farcaster">(
-    () => {
-      const storedValue = getStoredValue(STORAGE_KEYS.THEME_MODE, "Farcaster");
-      // Migration: Convert "glass" to "Farcaster"
-      if (storedValue === ("glass" as any)) {
-        setStoredValue(STORAGE_KEYS.THEME_MODE, "Farcaster");
-        return "Farcaster";
-      }
-      return storedValue;
+  const [themeMode, setThemeMode] = useState<ThemeMode>(() => {
+    const storedValue = getStoredValue(STORAGE_KEYS.THEME_MODE, "Farcaster");
+    // Migration: Convert "glass" to "Farcaster"
+    if (storedValue === ("glass" as any)) {
+      setStoredValue(STORAGE_KEYS.THEME_MODE, "Farcaster");
+      return "Farcaster";
     }
-  );
+    return storedValue;
+  });
   const [activeTab, setActiveTab] = useState<TabType>(() =>
     getStoredValue(STORAGE_KEYS.ACTIVE_TAB, "inbox")
   );
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isScoreModalOpen, setIsScoreModalOpen] = useState(false);
   const [viewMode, setViewMode] = useState<"list" | "grid">(() =>
     getStoredValue(STORAGE_KEYS.VIEW_MODE, "list")
   );
@@ -103,6 +108,14 @@ export default function FarcasterApp() {
         typeof window !== "undefined" &&
         window.location.href.includes("farcaster"),
     });
+  }, []); // Only run once on mount
+
+  // Show score explanation modal on first visit
+  useEffect(() => {
+    const hasSeenModal = getStoredValue(STORAGE_KEYS.SCORE_MODAL_SEEN, false);
+    if (!hasSeenModal) {
+      setIsScoreModalOpen(true);
+    }
   }, []); // Only run once on mount
 
   // Update local storage when settings change
@@ -131,14 +144,20 @@ export default function FarcasterApp() {
     setStoredValue(STORAGE_KEYS.DAY_FILTER, dayFilter);
   }, [dayFilter]);
 
-  const isDarkTheme = themeMode === "dark" || themeMode === "Farcaster";
+  const isDarkTheme =
+    themeMode === "dark" || themeMode === "Farcaster" || themeMode === "neon";
 
-  const handleThemeChange = (newTheme: "dark" | "light" | "Farcaster") => {
+  const handleThemeChange = (newTheme: ThemeMode) => {
     setThemeMode(newTheme);
     trackThemeChanged(newTheme, {
       previousTheme: themeMode,
       activeTab,
     });
+  };
+
+  const handleCloseScoreModal = () => {
+    setIsScoreModalOpen(false);
+    setStoredValue(STORAGE_KEYS.SCORE_MODAL_SEEN, true);
   };
 
   const getBackgroundClass = () => {
@@ -161,11 +180,20 @@ export default function FarcasterApp() {
     isInMiniApp,
   } = useFarcasterAuth();
 
-  const { fetchOpenRankData, clearCache, openRankData } = useOpenRank();
+  const {
+    fetchReputationData,
+    getReputationValue,
+    getReputationDisplay,
+    getReputationColor,
+    openRankData,
+    quotientScores,
+    clearCache,
+  } = useReputation();
 
   const {
     allConversations,
     userOpenRank,
+    userQuotientScore,
     userFollowingRank,
     loading: dataLoading,
     error,
@@ -175,7 +203,7 @@ export default function FarcasterApp() {
     isLoadingMore,
   } = useFarcasterData({
     user,
-    fetchOpenRankData,
+    fetchOpenRankData: fetchReputationData,
     clearOpenRankCache: clearCache,
     dayFilter,
   });
@@ -525,6 +553,13 @@ export default function FarcasterApp() {
     touchStartTime.current = 0;
   };
 
+  // Fetch reputation data for current user
+  useEffect(() => {
+    if (user?.fid) {
+      fetchReputationData([user.fid]);
+    }
+  }, [user?.fid, fetchReputationData]);
+
   // Call ready when app is loaded and data is ready
   useEffect(() => {
     // Only call ready when we have user and data is not loading
@@ -793,6 +828,11 @@ export default function FarcasterApp() {
                     className="w-12 h-12 rounded-full border-2 border-white/20"
                     width={48}
                     height={48}
+                    // Disable optimization to prevent multiple requests
+                    unoptimized={true}
+                    // Disable lazy loading for immediate display
+                    priority={false}
+                    loading="eager"
                   />
                 ) : (
                   <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold text-lg">
@@ -803,45 +843,35 @@ export default function FarcasterApp() {
                 )}
               </div>
               <div className="flex-1 min-w-0">
-                <div className="flex items-center mb-0">
-                  <span
-                    className={`font-semibold truncate ${
-                      isDarkTheme ? "text-white" : "text-gray-900"
-                    }`}
-                  >
-                    {user.displayName || user.username}
-                  </span>
-                </div>
-                <span
-                  className={`text-sm mb-0 ${
-                    isDarkTheme ? "text-white/60" : "text-gray-600"
-                  }`}
-                  style={{ marginTop: "-5px" }}
-                >
-                  FID: {user.fid}
-                </span>
-                {userOpenRank !== null && userOpenRank !== undefined && (
-                  <div className="flex items-center gap-1">
-                    <svg
-                      width={14}
-                      height={14}
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth={2}
-                      className="text-yellow-400"
-                    >
-                      <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26" />
-                    </svg>
+                <div className="flex items-center justify-between mb-0">
+                  <div className="flex flex-col min-w-0">
                     <span
-                      className={`font-bold ${
-                        isDarkTheme ? "text-yellow-400" : "text-purple-700"
+                      className={`font-semibold truncate ${
+                        isDarkTheme ? "text-white" : "text-gray-900"
                       }`}
                     >
-                      #{userOpenRank.toLocaleString()}
+                      {user.displayName || user.username}
+                    </span>
+                    <span
+                      className={`text-sm ${
+                        isDarkTheme ? "text-white/60" : "text-gray-600"
+                      }`}
+                    >
+                      FID: {user.fid}
                     </span>
                   </div>
-                )}
+
+                  {/* Reputation Badges */}
+                  <ReputationBadges
+                    fid={user.fid}
+                    openRankData={openRankData}
+                    quotientScores={quotientScores}
+                    userOpenRank={userOpenRank}
+                    userQuotientScore={userQuotientScore}
+                    showLabels={false}
+                    size="md"
+                  />
+                </div>
               </div>
               <button
                 onClick={handleRefresh}
@@ -908,6 +938,7 @@ export default function FarcasterApp() {
               ) : (
                 <SpeedModeAlt
                   conversations={filteredConversations}
+                  quotientScores={quotientScores}
                   openRankData={openRankData}
                   isDarkThemeMode={isDarkTheme}
                   themeMode={themeMode}
@@ -927,6 +958,7 @@ export default function FarcasterApp() {
             <FocusTab
               markedAsReadConversations={markedAsReadConversations}
               viewMode={viewMode}
+              quotientScores={quotientScores}
               openRankData={openRankData}
               loading={dataLoading}
               isLoadingMore={isLoadingMore}
@@ -962,7 +994,7 @@ export default function FarcasterApp() {
             <AnalyticsTab
               allConversations={allConversations}
               userOpenRank={userOpenRank}
-              userFollowingRank={userFollowingRank}
+              userQuotientScore={userQuotientScore}
               openRankData={openRankData}
               isDarkTheme={isDarkTheme}
               themeMode={themeMode}
@@ -1002,6 +1034,13 @@ export default function FarcasterApp() {
         isVisible={toast.isVisible}
         onHide={hideToast}
         themeMode={themeMode}
+      />
+
+      {/* Score Explanation Modal */}
+      <ScoreExplanationModal
+        isOpen={isScoreModalOpen}
+        onClose={handleCloseScoreModal}
+        isDarkTheme={isDarkTheme}
       />
     </div>
   );

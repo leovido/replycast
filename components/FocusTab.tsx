@@ -5,10 +5,12 @@ import { FocusTutorial } from "./FocusTutorial";
 import { EmptyState } from "./EmptyState";
 import type { RefObject } from "react";
 import { isToday, isWithinLastDays } from "@/utils/farcaster";
+import type { ThemeMode } from "@/types/types";
 
 interface FocusTabProps {
   markedAsReadConversations: UnrepliedDetail[];
   viewMode: "list" | "grid";
+  quotientScores: Record<number, { quotientScore: number } | null>;
   openRankData: Record<number, OpenRankData>;
   loading: boolean;
   isLoadingMore: boolean;
@@ -16,7 +18,7 @@ interface FocusTabProps {
   observerRef: RefObject<HTMLDivElement>;
   onReply: (detail: UnrepliedDetail) => void;
   isDarkTheme: boolean;
-  themeMode?: "dark" | "light" | "Farcaster";
+  themeMode?: ThemeMode;
   onMarkAsRead?: (detail: UnrepliedDetail) => void;
   onDiscard?: (detail: UnrepliedDetail) => void;
   dayFilter?: string;
@@ -25,6 +27,7 @@ interface FocusTabProps {
 export function FocusTab({
   markedAsReadConversations,
   viewMode,
+  quotientScores,
   openRankData,
   loading,
   isLoadingMore,
@@ -94,7 +97,7 @@ export function FocusTab({
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-12">
+      <div className="flex items-center justify-center py-6">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-current mx-auto mb-4"></div>
           <p className={isDarkTheme ? "text-white/60" : "text-gray-600"}>
@@ -137,7 +140,7 @@ export function FocusTab({
   }
 
   return (
-    <div className="min-h-[calc(100vh-200px)] flex flex-col pb-20">
+    <div className="min-h-[calc(100vh-200px)] flex flex-col">
       <div className="mb-4">
         <div className="flex items-center gap-3 mb-2">
           <h2
@@ -177,6 +180,7 @@ export function FocusTab({
           loading={loading}
           observerRef={observerRef}
           isDarkTheme={isDarkTheme}
+          quotientScores={quotientScores}
           openRankData={openRankData}
           isLoadingMore={isLoadingMore}
           hasMore={hasMore}

@@ -1,4 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from "next";
+import { MockOpenRankService } from "@/utils/mockService";
 
 const followingURL = process.env.OPENRANK_URL + "scores/global/following/fids";
 const engagementURL =
@@ -28,6 +29,38 @@ export default async function handler(
     return res.status(400).json({ error: "FIDs parameter is required" });
   }
 
+  // Handle both single FID and comma-separated FIDs
+  let fidArray: string[];
+  if (Array.isArray(fids)) {
+    fidArray = fids;
+  } else {
+    // Split by comma if it's a string
+    fidArray = fids.split(",").map((fid) => fid.trim());
+  }
+
+  const numericFids = fidArray
+    .map((fid) => parseInt(fid))
+    .filter((fid) => !isNaN(fid));
+
+  if (numericFids.length === 0) {
+    return res.status(400).json({ error: "No valid FIDs provided" });
+  }
+
+  // Check if mocks are enabled
+  const useMocks = process.env.NEXT_PUBLIC_USE_MOCKS === "true";
+
+  if (useMocks) {
+    try {
+      console.log("Mock: Using mock OpenRank data");
+      const mockData = await MockOpenRankService.fetchRanks(numericFids);
+      return res.status(200).json(mockData);
+    } catch (error) {
+      console.error("Mock service error:", error);
+      return res.status(500).json({ error: "Mock service failed" });
+    }
+  }
+
+  // Real API call
   try {
     // Handle both single FID and comma-separated FIDs
     let fidArray: string[];
@@ -133,7 +166,6 @@ export default async function handler(
       }
     });
 
-    console.log(result, "here result");
     res.status(200).json({
       scores: result,
     });

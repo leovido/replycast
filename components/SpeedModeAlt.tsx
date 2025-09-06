@@ -1,6 +1,8 @@
 import React, { useState, useEffect, type RefObject } from "react";
+import Image from "next/image";
 import { sdk } from "@farcaster/miniapp-sdk";
 import type { UnrepliedDetail, OpenRankData } from "@/types/types";
+import type { QuotientScore } from "@/hooks/useQuotient";
 import {
   getBackgroundClass,
   getBorderColor,
@@ -10,10 +12,12 @@ import {
 } from "@/utils/themeHelpers";
 import type { ThemeMode } from "@/utils/themeHelpers";
 import { ReplyCardSimple } from "./ReplyCardSimple";
+import { ReputationBadges } from "./ReputationBadges";
 import { getMinutesAgo } from "@/utils/farcaster";
 
 interface SpeedModeAltProps {
   conversations: UnrepliedDetail[];
+  quotientScores: Record<number, QuotientScore | null>;
   openRankData: Record<number, OpenRankData>;
   isDarkThemeMode: boolean;
   themeMode: ThemeMode;
@@ -28,6 +32,7 @@ interface SpeedModeAltProps {
 
 export function SpeedModeAlt({
   conversations,
+  quotientScores,
   openRankData,
   isDarkThemeMode,
   themeMode,
@@ -179,10 +184,17 @@ export function SpeedModeAlt({
               onClick={() => toggleUserExpansion(userGroup.user.fid)}
             >
               <div className="flex items-center gap-2">
-                <img
+                <Image
                   src={userGroup.user.avatarUrl}
                   alt={`@${userGroup.user.username}`}
-                  className="w-6 h-6 rounded-full"
+                  className="w-10 h-10 rounded-full object-cover"
+                  width={40}
+                  height={40}
+                  // Disable optimization to prevent multiple requests
+                  unoptimized={true}
+                  // Disable lazy loading for immediate display
+                  priority={false}
+                  loading="eager"
                   onError={(e) => {
                     const target = e.target as HTMLImageElement;
                     target.src = `https://api.dicebear.com/7.x/avataaars/svg?seed=${userGroup.user.username}`;
@@ -190,25 +202,40 @@ export function SpeedModeAlt({
                 />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
-                    <span className="font-medium text-white dark:text-white truncate text-sm">
+                    <span
+                      className={`font-medium truncate text-sm ${
+                        isDarkTheme ? "text-white" : "text-gray-900"
+                      }`}
+                    >
                       @{userGroup.user.username}
                     </span>
-                    {openRankData[userGroup.user.fid]?.engagement?.rank && (
-                      <span className="text-xs bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200 px-1.5 py-0.5 rounded-full">
-                        #
-                        {openRankData[
-                          userGroup.user.fid
-                        ]?.engagement?.rank?.toLocaleString()}
-                      </span>
-                    )}
                   </div>
-                  <div className="text-xs text-gray-400 dark:text-gray-400">
+                  <div
+                    className={`text-xs ${
+                      isDarkTheme ? "text-gray-400" : "text-gray-600"
+                    }`}
+                  >
                     {userGroup.conversations.length} unreplied cast
                     {userGroup.conversations.length !== 1 ? "s" : ""}
                   </div>
                 </div>
-                <div className="text-xs text-gray-400">
-                  {expandedUser === userGroup.user.fid ? "▼" : "▶"}
+                <div className="flex items-center gap-2">
+                  <ReputationBadges
+                    fid={userGroup.user.fid}
+                    openRankData={openRankData}
+                    quotientScores={quotientScores}
+                    showLabels={true}
+                    size="sm"
+                  />
+
+                  {/* Expand/Collapse Arrow */}
+                  <span
+                    className={`text-xs ${
+                      isDarkTheme ? "text-gray-400" : "text-gray-600"
+                    }`}
+                  >
+                    {expandedUser === userGroup.user.fid ? "▼" : "▶"}
+                  </span>
                 </div>
               </div>
             </div>

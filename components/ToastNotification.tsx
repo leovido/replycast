@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import type { ThemeMode } from "../types/types";
 
 export interface ToastNotificationProps {
   message: string;
@@ -6,7 +7,7 @@ export interface ToastNotificationProps {
   isVisible: boolean;
   onHide: () => void;
   duration?: number;
-  themeMode?: "dark" | "light" | "Farcaster";
+  themeMode?: ThemeMode;
 }
 
 export function ToastNotification({
@@ -52,6 +53,17 @@ export function ToastNotification({
             success: "text-green-600",
             error: "text-red-600",
             info: "text-blue-600",
+          },
+        };
+      case "neon":
+        return {
+          container:
+            "bg-gradient-to-br from-pink-500/20 to-cyan-500/20 backdrop-blur-lg shadow-xl ring-1 ring-pink-500/30 shadow-lg shadow-pink-500/25",
+          text: "text-pink-400",
+          icon: {
+            success: "text-green-400",
+            error: "text-red-400",
+            info: "text-cyan-400",
           },
         };
       case "Farcaster":

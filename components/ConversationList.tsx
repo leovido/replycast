@@ -16,6 +16,7 @@ const ReplyCard = dynamic(
 interface ConversationListProps {
   conversations: UnrepliedDetail[];
   viewMode: "list" | "grid";
+  quotientScores: Record<number, { quotientScore: number } | null>;
   openRankData: Record<number, OpenRankData>;
   loading: boolean;
   isLoadingMore: boolean;
@@ -31,6 +32,7 @@ interface ConversationListProps {
 export function ConversationList({
   conversations,
   viewMode,
+  quotientScores,
   openRankData,
   loading,
   isLoadingMore,
@@ -43,24 +45,27 @@ export function ConversationList({
   dayFilter,
 }: ConversationListProps) {
   return (
-    <div className="px-6 pb-20">
+    <div className="px-6">
       <div
         className={`
           max-w-6xl mx-auto
           ${
             viewMode === "grid"
-              ? "columns-1 md:columns-2 lg:columns-3 gap-6"
-              : "space-y-6"
+              ? "columns-1 md:columns-2 lg:columns-3 gap-4"
+              : "space-y-4"
           }
         `}
       >
         {conversations.map((detail) => (
           <div
             key={detail.castHash}
-            className={viewMode === "grid" ? "mb-6 break-inside-avoid" : ""}
+            className={viewMode === "grid" ? "mb-4 break-inside-avoid" : ""}
           >
             <ReplyCard
               detail={detail}
+              quotientScore={
+                quotientScores[detail.authorFid]?.quotientScore || null
+              }
               openRank={openRankData[detail.authorFid]?.engagement?.rank}
               onClick={() => onReply(detail)}
               viewMode={viewMode}
@@ -71,7 +76,7 @@ export function ConversationList({
           </div>
         ))}
         {loading && (
-          <div className="col-span-full flex justify-center py-8">
+          <div className="col-span-full flex justify-center py-4">
             <div
               className={`animate-spin rounded-full h-8 w-8 border-b-2 ${
                 isDarkTheme ? "border-white/60" : "border-gray-600"
@@ -102,7 +107,7 @@ export function ConversationList({
 
         {/* Today filter message */}
         {!hasMore && conversations.length > 0 && dayFilter === "today" && (
-          <div className="col-span-full flex justify-center py-6 pb-20">
+          <div className="col-span-full flex justify-center py-4 pb-20">
             <div
               className={`text-center max-w-md ${
                 isDarkTheme ? "text-white/60" : "text-gray-600"

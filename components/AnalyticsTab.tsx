@@ -1,20 +1,21 @@
 import React from "react";
 import type { UnrepliedDetail, OpenRankData } from "@/types/types";
 import Image from "next/image";
+import type { ThemeMode } from "@/types/types";
 
 interface AnalyticsTabProps {
   allConversations: UnrepliedDetail[];
   userOpenRank: number | null;
-  userFollowingRank: number | null;
+  userQuotientScore: number | null;
   openRankData: Record<number, OpenRankData>;
   isDarkTheme: boolean;
-  themeMode: "dark" | "light" | "Farcaster";
+  themeMode: ThemeMode;
 }
 
 export function AnalyticsTab({
   allConversations,
   userOpenRank,
-  userFollowingRank,
+  userQuotientScore,
   openRankData,
   isDarkTheme,
   themeMode,
@@ -40,6 +41,8 @@ export function AnalyticsTab({
     switch (themeMode) {
       case "light":
         return "bg-white/80 backdrop-blur-md border border-gray-200";
+      case "neon":
+        return "bg-pink-500/20 backdrop-blur-md border border-pink-500/40 shadow-lg shadow-pink-500/25";
       case "Farcaster":
         return "bg-purple-900/20 backdrop-blur-md border border-purple-800/30";
       default:
@@ -59,6 +62,8 @@ export function AnalyticsTab({
     switch (themeMode) {
       case "light":
         return "text-blue-600";
+      case "neon":
+        return "text-pink-400";
       case "Farcaster":
         return "text-purple-300";
       default:
@@ -67,7 +72,7 @@ export function AnalyticsTab({
   };
 
   return (
-    <div className="pb-20">
+    <div>
       <div className="mb-6">
         <h2 className={`text-lg font-semibold mb-2 ${getTextClass()}`}>
           Analytics
@@ -193,43 +198,61 @@ export function AnalyticsTab({
         </div>
       </div>
 
-      {/* Your OpenRank */}
-      {userOpenRank !== null && userOpenRank !== undefined && (
+      {/* Your Reputation Scores */}
+      {(userOpenRank !== null && userOpenRank !== undefined) ||
+      (userQuotientScore !== null && userQuotientScore !== undefined) ? (
         <div className={`p-6 rounded-xl ${getCardClass()} mb-8`}>
           <div className="flex items-center justify-between mb-4">
             <h3 className={`text-lg font-semibold ${getTextClass()}`}>
-              Your OpenRank
+              Your Reputation
             </h3>
-            <svg
-              width={24}
-              height={24}
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth={2}
-              className={getAccentClass()}
-            >
-              <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26" />
-            </svg>
+            <div className="flex items-center gap-2">
+              <svg
+                width={20}
+                height={20}
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth={2}
+                className="text-yellow-400"
+              >
+                <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26" />
+              </svg>
+              <svg
+                width={20}
+                height={20}
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth={2}
+                className="text-purple-400"
+              >
+                <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26" />
+              </svg>
+            </div>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="text-center">
-              <div className={`text-3xl font-bold mb-1 ${getAccentClass()}`}>
-                #{userOpenRank.toLocaleString()}
+          <div className="grid grid-cols-2 md:grid-cols-2 gap-4">
+            {userOpenRank !== null && userOpenRank !== undefined && (
+              <div className="text-center">
+                <div className={`text-3xl font-bold mb-1 ${getAccentClass()}`}>
+                  #{userOpenRank.toLocaleString()}
+                </div>
+                <p className={`text-sm ${getSubtextClass()}`}>
+                  Engagement Rank
+                </p>
               </div>
-              <p className={`text-sm ${getSubtextClass()}`}>Engagement Rank</p>
-            </div>
-            <div className="text-center">
-              <div className={`text-3xl font-bold mb-1 ${getAccentClass()}`}>
-                {userFollowingRank
-                  ? `#${userFollowingRank.toLocaleString()}`
-                  : "#--"}
+            )}
+            {userQuotientScore !== null && userQuotientScore !== undefined && (
+              <div className="text-center">
+                <div className={`text-3xl font-bold mb-1 text-purple-400`}>
+                  {(userQuotientScore * 100).toFixed(0)}
+                </div>
+                <p className={`text-sm ${getSubtextClass()}`}>Quotient Score</p>
               </div>
-              <p className={`text-sm ${getSubtextClass()}`}>Following Rank</p>
-            </div>
+            )}
           </div>
         </div>
-      )}
+      ) : null}
 
       {/* Top Authors by Engagement Rank */}
       <div className={`p-6 rounded-xl ${getCardClass()}`}>
@@ -274,6 +297,11 @@ export function AnalyticsTab({
                           width={48}
                           height={48}
                           className="w-10 h-10 rounded-full border-2 border-white/20"
+                          // Disable optimization to prevent multiple requests
+                          unoptimized={true}
+                          // Disable lazy loading for immediate display
+                          priority={false}
+                          loading="eager"
                         />
                       </div>
                       <div>

@@ -321,10 +321,17 @@ export function SpeedModeTab({
         {/* Author Info */}
         <div className="p-3 border-b border-gray-200 dark:border-gray-700">
           <div className="flex items-center gap-3">
-            <img
+            <Image
               src={currentConversation.avatarUrl}
               alt={`@${currentConversation.username}`}
               className="w-8 h-8 rounded-full"
+              width={32}
+              height={32}
+              // Disable optimization to prevent multiple requests
+              unoptimized={true}
+              // Disable lazy loading for immediate display
+              priority={false}
+              loading="eager"
               onError={(e) => {
                 const target = e.target as HTMLImageElement;
                 target.src = `https://api.dicebear.com/7.x/avataaars/svg?seed=${currentConversation.username}`;

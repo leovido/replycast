@@ -107,6 +107,11 @@ export function ImageDisplay({
           isLoading ? "opacity-0" : "opacity-100"
         }`}
         objectFit="contain"
+        // Disable optimization to prevent multiple requests
+        unoptimized={true}
+        // Disable lazy loading for immediate display
+        priority={false}
+        loading="eager"
         onLoad={handleLoad}
         onError={handleError}
         style={{
