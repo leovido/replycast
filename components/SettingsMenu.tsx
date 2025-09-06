@@ -285,7 +285,7 @@ export function SettingsMenu({
               isDarkTheme ? "text-white/80" : "text-gray-700"
             }`}
           >
-            View Mode
+            View Mode (desktop only, Focus section only)
           </h3>
           <div className="flex gap-2">
             {(["list", "grid"] as const).map((mode) => (

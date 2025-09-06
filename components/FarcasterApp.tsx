@@ -14,6 +14,8 @@ import { SpeedModeTab } from "./SpeedModeTab";
 import { AnalyticsTab } from "./AnalyticsTab";
 import { ToastNotification } from "./ToastNotification";
 import { EmptyState } from "./EmptyState";
+import { Badge } from "./Badge";
+import { ScoreExplanationModal } from "./ScoreExplanationModal";
 import type { ThemeMode } from "@/types/types";
 
 import Image from "next/image";
@@ -30,6 +32,7 @@ const STORAGE_KEYS = {
   DAY_FILTER: "farcaster-widget-day-filter",
   ACTIVE_TAB: "farcaster-widget-active-tab",
   REPUTATION_TYPE: "farcaster-widget-reputation-type",
+  SCORE_MODAL_SEEN: "farcaster-widget-score-modal-seen",
 } as const;
 
 // Helper functions for local storage
@@ -80,6 +83,7 @@ export default function FarcasterApp() {
     getStoredValue(STORAGE_KEYS.ACTIVE_TAB, "inbox")
   );
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isScoreModalOpen, setIsScoreModalOpen] = useState(false);
   const [viewMode, setViewMode] = useState<"list" | "grid">(() =>
     getStoredValue(STORAGE_KEYS.VIEW_MODE, "list")
   );
@@ -104,6 +108,14 @@ export default function FarcasterApp() {
         typeof window !== "undefined" &&
         window.location.href.includes("farcaster"),
     });
+  }, []); // Only run once on mount
+
+  // Show score explanation modal on first visit
+  useEffect(() => {
+    const hasSeenModal = getStoredValue(STORAGE_KEYS.SCORE_MODAL_SEEN, false);
+    if (!hasSeenModal) {
+      setIsScoreModalOpen(true);
+    }
   }, []); // Only run once on mount
 
   // Update local storage when settings change
@@ -141,6 +153,11 @@ export default function FarcasterApp() {
       previousTheme: themeMode,
       activeTab,
     });
+  };
+
+  const handleCloseScoreModal = () => {
+    setIsScoreModalOpen(false);
+    setStoredValue(STORAGE_KEYS.SCORE_MODAL_SEEN, true);
   };
 
   const getBackgroundClass = () => {
@@ -885,109 +902,6 @@ export default function FarcasterApp() {
           </div>
         )}
 
-        <div
-          className={`mb-6 p-4 rounded-2xl ${
-            isDarkTheme
-              ? "bg-white/5 backdrop-blur-md border border-white/10"
-              : "bg-gray-50/80 backdrop-blur-md border border-gray-200"
-          }`}
-        >
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {/* Following Score */}
-            <div className="flex flex-col">
-              <div className="flex items-center gap-2 mb-2">
-                <div className="w-2 h-2 rounded-full bg-green-500"></div>
-                <span
-                  className={`text-sm font-semibold ${
-                    isDarkTheme ? "text-white" : "text-gray-900"
-                  }`}
-                >
-                  Following Score
-                </span>
-              </div>
-              <p
-                className={`text-xs leading-relaxed mb-2 ${
-                  isDarkTheme ? "text-white/70" : "text-gray-600"
-                }`}
-              >
-                How many important people follow you. Not just the number, but
-                whether the followers themselves are trusted. Lower is better.
-              </p>
-              <div
-                className={`text-xs px-2 py-1 rounded ${
-                  isDarkTheme
-                    ? "bg-green-900/30 text-green-300"
-                    : "bg-green-100 text-green-700"
-                }`}
-              >
-                Example: #1,234
-              </div>
-            </div>
-
-            {/* Engagement Score */}
-            <div className="flex flex-col">
-              <div className="flex items-center gap-2 mb-2">
-                <div className="w-2 h-2 rounded-full bg-blue-500"></div>
-                <span
-                  className={`text-sm font-semibold ${
-                    isDarkTheme ? "text-white" : "text-gray-900"
-                  }`}
-                >
-                  Engagement Score
-                </span>
-              </div>
-              <p
-                className={`text-xs leading-relaxed mb-2 ${
-                  isDarkTheme ? "text-white/70" : "text-gray-600"
-                }`}
-              >
-                The more trusted people interact, the higher your score. Who
-                actually pays attention and interacts with you.
-              </p>
-              <div
-                className={`text-xs px-2 py-1 rounded ${
-                  isDarkTheme
-                    ? "bg-blue-900/30 text-blue-300"
-                    : "bg-blue-100 text-blue-700"
-                }`}
-              >
-                Example: #2,456
-              </div>
-            </div>
-
-            {/* Quotient Score */}
-            <div className="flex flex-col">
-              <div className="flex items-center gap-2 mb-2">
-                <div className="w-2 h-2 rounded-full bg-purple-500"></div>
-                <span
-                  className={`text-sm font-semibold ${
-                    isDarkTheme ? "text-white" : "text-gray-900"
-                  }`}
-                >
-                  Quotient Score
-                </span>
-              </div>
-              <p
-                className={`text-xs leading-relaxed mb-2 ${
-                  isDarkTheme ? "text-white/70" : "text-gray-600"
-                }`}
-              >
-                Reputation score that combines engagement and following. The
-                closest to 1.00, the more reputable.
-              </p>
-              <div
-                className={`text-xs px-2 py-1 rounded ${
-                  isDarkTheme
-                    ? "bg-purple-900/30 text-purple-300"
-                    : "bg-purple-100 text-purple-700"
-                }`}
-              >
-                Example: 0.85
-              </div>
-            </div>
-          </div>
-        </div>
-
         {/* Tab Content */}
         <div className="flex-1 overflow-y-auto pb-20">
           {activeTab === "inbox" && (
@@ -1120,6 +1034,13 @@ export default function FarcasterApp() {
         isVisible={toast.isVisible}
         onHide={hideToast}
         themeMode={themeMode}
+      />
+
+      {/* Score Explanation Modal */}
+      <ScoreExplanationModal
+        isOpen={isScoreModalOpen}
+        onClose={handleCloseScoreModal}
+        isDarkTheme={isDarkTheme}
       />
     </div>
   );
