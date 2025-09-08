@@ -14,7 +14,7 @@ export function ScoreExplanationModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto">
       {/* Backdrop */}
       <div
         className="absolute inset-0 bg-black/50 backdrop-blur-sm"
@@ -23,14 +23,14 @@ export function ScoreExplanationModal({
 
       {/* Modal Content */}
       <div
-        className={`relative w-full max-w-md rounded-2xl p-6 shadow-2xl ${
+        className={`relative w-full max-w-sm sm:max-w-md rounded-2xl p-4 sm:p-6 shadow-2xl my-4 ${
           isDarkTheme
             ? "bg-gray-900 border border-gray-700"
             : "bg-white border border-gray-200"
         }`}
       >
         {/* Header */}
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center justify-between mb-4 sm:mb-6">
           <div className="flex items-center gap-3">
             <div
               className={`w-8 h-8 rounded-full flex items-center justify-center ${
@@ -55,14 +55,14 @@ export function ScoreExplanationModal({
             </div>
             <div>
               <h2
-                className={`text-xl font-bold ${
+                className={`text-lg sm:text-xl font-bold leading-tight ${
                   isDarkTheme ? "text-white" : "text-gray-900"
                 }`}
               >
                 What&apos;s New
               </h2>
               <p
-                className={`text-sm ${
+                className={`text-sm leading-tight ${
                   isDarkTheme ? "text-white/60" : "text-gray-500"
                 }`}
               >
@@ -95,10 +95,10 @@ export function ScoreExplanationModal({
         </div>
 
         {/* Content */}
-        <div className="space-y-6">
+        <div className="space-y-4 sm:space-y-6">
           {/* Feature Introduction */}
           <div
-            className={`p-4 rounded-xl ${
+            className={`p-3 sm:p-4 rounded-xl ${
               isDarkTheme
                 ? "bg-purple-900/20 border border-purple-800/30"
                 : "bg-purple-50 border border-purple-200"
@@ -126,9 +126,9 @@ export function ScoreExplanationModal({
                   />
                 </svg>
               </div>
-              <div>
+              <div className="min-w-0 flex-1">
                 <h3
-                  className={`font-semibold mb-2 ${
+                  className={`font-semibold mb-2 text-sm sm:text-base leading-tight ${
                     isDarkTheme ? "text-white" : "text-gray-900"
                   }`}
                 >
@@ -149,9 +149,9 @@ export function ScoreExplanationModal({
           </div>
 
           {/* Features List */}
-          <div className="space-y-4">
+          <div className="space-y-3 sm:space-y-4">
             <h4
-              className={`text-sm font-semibold ${
+              className={`text-sm font-semibold leading-tight ${
                 isDarkTheme ? "text-white" : "text-gray-900"
               }`}
             >
@@ -161,7 +161,7 @@ export function ScoreExplanationModal({
             {/* Following Score Feature */}
             <div className="flex items-start gap-3">
               <div
-                className={`px-3 py-1.5 rounded-full text-sm font-medium flex-shrink-0 ${
+                className={`px-2 sm:px-3 py-1.5 rounded-full text-xs sm:text-sm font-medium flex-shrink-0 ${
                   isDarkTheme
                     ? "bg-yellow-900/30 text-yellow-300"
                     : "bg-yellow-100 text-yellow-700"
@@ -169,16 +169,16 @@ export function ScoreExplanationModal({
               >
                 F: #27
               </div>
-              <div>
+              <div className="min-w-0 flex-1">
                 <p
-                  className={`font-medium text-sm ${
+                  className={`font-medium text-sm leading-tight ${
                     isDarkTheme ? "text-white" : "text-gray-900"
                   }`}
                 >
                   Following Score
                 </p>
                 <p
-                  className={`text-xs mt-1 ${
+                  className={`text-xs mt-1 leading-relaxed ${
                     isDarkTheme ? "text-white/70" : "text-gray-600"
                   }`}
                 >
@@ -191,7 +191,7 @@ export function ScoreExplanationModal({
             {/* Engagement Score Feature */}
             <div className="flex items-start gap-3">
               <div
-                className={`px-3 py-1.5 rounded-full text-sm font-medium flex-shrink-0 ${
+                className={`px-2 sm:px-3 py-1.5 rounded-full text-xs sm:text-sm font-medium flex-shrink-0 ${
                   isDarkTheme
                     ? "bg-yellow-900/30 text-yellow-300"
                     : "bg-yellow-100 text-yellow-700"
@@ -199,16 +199,16 @@ export function ScoreExplanationModal({
               >
                 E: #42
               </div>
-              <div>
+              <div className="min-w-0 flex-1">
                 <p
-                  className={`font-medium text-sm ${
+                  className={`font-medium text-sm leading-tight ${
                     isDarkTheme ? "text-white" : "text-gray-900"
                   }`}
                 >
                   Engagement Score
                 </p>
                 <p
-                  className={`text-xs mt-1 ${
+                  className={`text-xs mt-1 leading-relaxed ${
                     isDarkTheme ? "text-white/70" : "text-gray-600"
                   }`}
                 >
@@ -221,7 +221,7 @@ export function ScoreExplanationModal({
             {/* Quotient Score Feature */}
             <div className="flex items-start gap-3">
               <div
-                className={`px-3 py-1.5 rounded-full text-sm font-medium flex-shrink-0 ${
+                className={`px-2 sm:px-3 py-1.5 rounded-full text-xs sm:text-sm font-medium flex-shrink-0 ${
                   isDarkTheme
                     ? "bg-blue-900/30 text-blue-300"
                     : "bg-blue-100 text-blue-700"
@@ -229,16 +229,16 @@ export function ScoreExplanationModal({
               >
                 0.85
               </div>
-              <div>
+              <div className="min-w-0 flex-1">
                 <p
-                  className={`font-medium text-sm ${
+                  className={`font-medium text-sm leading-tight ${
                     isDarkTheme ? "text-white" : "text-gray-900"
                   }`}
                 >
                   Reputation Score
                 </p>
                 <p
-                  className={`text-xs mt-1 ${
+                  className={`text-xs mt-1 leading-relaxed ${
                     isDarkTheme ? "text-white/70" : "text-gray-600"
                   }`}
                 >
@@ -287,10 +287,10 @@ export function ScoreExplanationModal({
         </div>
 
         {/* Footer */}
-        <div className="mt-6 flex justify-between items-center">
+        <div className="mt-4 sm:mt-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-0">
           <button
             onClick={onClose}
-            className={`text-sm underline hover:no-underline ${
+            className={`text-sm underline hover:no-underline leading-tight ${
               isDarkTheme ? "text-white/60" : "text-gray-500"
             }`}
           >
@@ -298,7 +298,7 @@ export function ScoreExplanationModal({
           </button>
           <button
             onClick={onClose}
-            className={`px-6 py-2 rounded-lg font-medium transition-colors ${
+            className={`w-full sm:w-auto px-6 py-2 rounded-lg font-medium transition-colors ${
               isDarkTheme
                 ? "bg-purple-600 hover:bg-purple-700 text-white"
                 : "bg-purple-600 hover:bg-purple-700 text-white"
