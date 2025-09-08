@@ -19,6 +19,8 @@ interface ReplyCardSimpleProps {
   isLoading?: boolean;
   onMarkAsRead?: (conversation: UnrepliedDetail) => void;
   onDiscard?: (conversation: UnrepliedDetail) => void;
+  isLastItem?: boolean;
+  hasMultipleItems?: boolean;
 }
 
 export const ReplyCardSimple = memo<ReplyCardSimpleProps>(
@@ -31,6 +33,8 @@ export const ReplyCardSimple = memo<ReplyCardSimpleProps>(
     isLoading = false,
     onMarkAsRead,
     onDiscard,
+    isLastItem = false,
+    hasMultipleItems = false,
   }) => {
     // Debug: Log the props to see if they're being passed
     console.log("ReplyCardSimple props:", {
@@ -485,9 +489,15 @@ export const ReplyCardSimple = memo<ReplyCardSimpleProps>(
         onKeyDown={handleKeyDown}
         role="button"
         tabIndex={0}
-        className={`group relative w-full bg-white border-b border-gray-200 hover:bg-gray-50 transition-all duration-300 cursor-pointer swipe-enabled ${
-          isLoading ? "opacity-75 pointer-events-none" : ""
-        } ${isSwipeModeActive ? "swipe-mode-active" : ""} ${className}`}
+        className={`group relative w-full transition-all duration-300 cursor-pointer swipe-enabled ${
+          themeMode === "Farcaster" && !isDarkTheme
+            ? "bg-[#e7e3fa] hover:bg-[#d4cdf0]"
+            : themeMode === "Farcaster" && isDarkTheme
+            ? "bg-white hover:bg-purple-900/30"
+            : "bg-white hover:bg-gray-50"
+        } ${isLoading ? "opacity-75 pointer-events-none" : ""} ${
+          isSwipeModeActive ? "swipe-mode-active" : ""
+        } ${className}`}
         style={{
           transform,
           ...(isSwipeModeActive && {
@@ -518,14 +528,30 @@ export const ReplyCardSimple = memo<ReplyCardSimpleProps>(
 
         {/* Loading overlay */}
         {isLoading && (
-          <div className="absolute inset-0 bg-white/50 flex items-center justify-center z-10">
+          <div
+            className={`absolute inset-0 flex items-center justify-center z-10 ${
+              themeMode === "Farcaster" && !isDarkTheme
+                ? "bg-[#e7e3fa]/50"
+                : themeMode === "Farcaster" && isDarkTheme
+                ? "bg-purple-900/20/50"
+                : "bg-white/50"
+            }`}
+          >
             <div className="w-6 h-6 border-2 border-purple-500 border-t-transparent rounded-full animate-spin"></div>
           </div>
         )}
 
         {/* Profile Picture */}
         <div className="flex flex-row p-4 gap-2 items-center">
-          <div className="rounded-full overflow-hidden ring-2 ring-gray-200 group-hover:ring-purple-300 transition-all duration-200">
+          <div
+            className={`rounded-full overflow-hidden ring-2 transition-all duration-200 ${
+              themeMode === "Farcaster" && !isDarkTheme
+                ? "ring-purple-200 group-hover:ring-purple-300"
+                : themeMode === "Farcaster" && isDarkTheme
+                ? "ring-purple-800/50 group-hover:ring-purple-700/50"
+                : "ring-gray-200 group-hover:ring-purple-300"
+            }`}
+          >
             <Image
               src={conversation.avatarUrl}
               alt={`@${conversation.username}'s avatar`}
@@ -651,6 +677,19 @@ export const ReplyCardSimple = memo<ReplyCardSimpleProps>(
             </div>
           </div>
         </div>
+
+        {/* Conditional Divider - only show when there are multiple items and this is not the last item */}
+        {hasMultipleItems && !isLastItem && (
+          <div
+            className={`h-px ${
+              themeMode === "Farcaster" && !isDarkTheme
+                ? "bg-purple-200"
+                : themeMode === "Farcaster" && isDarkTheme
+                ? "bg-purple-600/30"
+                : "bg-gray-200"
+            }`}
+          />
+        )}
       </div>
     );
   }

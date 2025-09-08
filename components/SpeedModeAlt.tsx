@@ -252,6 +252,8 @@ export function SpeedModeAlt({
                       isDarkTheme={isDarkTheme}
                       onMarkAsRead={onMarkAsRead}
                       onDiscard={onDiscard}
+                      isLastItem={index === userGroup.conversations.length - 1}
+                      hasMultipleItems={userGroup.conversations.length > 1}
                     />
                   ))}
                 </div>
