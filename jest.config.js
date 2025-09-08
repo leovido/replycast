@@ -2,6 +2,15 @@
 const config = {
   testEnvironment: "jsdom",
   setupFilesAfterEnv: ["<rootDir>/jest.setup.js"],
+  testMatch: [
+    "**/__tests__/**/*.(js|jsx|ts|tsx)",
+    "**/*.(test|spec).(js|jsx|ts|tsx)"
+  ],
+  testPathIgnorePatterns: [
+    "/node_modules/",
+    "/.next/",
+    "/out/"
+  ],
   moduleNameMapper: {
     "^@/(.*)": "<rootDir>/$1",
     "^@farcaster/miniapp-sdk$": "<rootDir>/__mocks__/@farcaster/miniapp-sdk.js",

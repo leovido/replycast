@@ -155,7 +155,33 @@ export default async function handler(
         const originalCastHash = cast.hash;
         const originalAuthorUsername = cast.author?.username || "unknown";
         const replyCount = replies.length;
-        const embeds = cast.embeds || [];
+        const embeds = (cast.embeds || []).map((embed) => {
+          // Handle both EmbedUrl and EmbedCast types
+          if ("url" in embed) {
+            // EmbedUrl type
+            return {
+              url: embed.url,
+              metadata: embed.metadata
+                ? {
+                    content_type: embed.metadata.content_type || undefined,
+                    content_length: embed.metadata.content_length || undefined,
+                    image: embed.metadata.image
+                      ? {
+                          width_px: embed.metadata.image.width_px || 0,
+                          height_px: embed.metadata.image.height_px || 0,
+                        }
+                      : undefined,
+                  }
+                : undefined,
+            };
+          } else {
+            // EmbedCast type
+            return {
+              cast_id: embed.cast_id,
+              metadata: undefined,
+            };
+          }
+        });
 
         unrepliedDetails.push({
           username,
