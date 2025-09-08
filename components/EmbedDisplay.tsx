@@ -352,3 +352,5 @@ export function EmbedDisplay({
     </button>
   );
 }
+
+export default EmbedDisplay;

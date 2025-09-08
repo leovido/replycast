@@ -66,7 +66,6 @@ export function SpeedModeTab({
     }
 
     // For now, just discard the reply as requested
-    console.log("Reply would be sent:", replyText);
 
     // Clear the reply text and error
     setReplyText("");

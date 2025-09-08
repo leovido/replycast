@@ -195,7 +195,7 @@ export const mockConversations: UnrepliedDetail[] = [
     timeAgo: "2 hours ago",
     timestamp: Date.now() - 2 * 60 * 60 * 1000,
     castUrl: "https://warpcast.com/alice/0x123",
-    text: "This is a really interesting conversation about Farcaster!",
+    text: "This is a really interesting conversation about Farcaster! https://i.imgur.com/avatar1.jpg",
     avatarUrl: "https://i.imgur.com/avatar1.jpg",
     castHash: "0x1234567890abcdef",
     authorFid: 123,

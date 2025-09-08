@@ -758,6 +758,7 @@ export const ReplyCard = memo<ReplyCardProps>(
           text={detail.text}
           isDarkTheme={isDarkTheme}
           className="z-10 pt-4"
+          embeds={detail.embeds}
         />
 
         {/* Show indicator when there's no text but there are embeds */}

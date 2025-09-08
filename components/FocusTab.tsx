@@ -22,6 +22,8 @@ interface FocusTabProps {
   onMarkAsRead?: (detail: UnrepliedDetail) => void;
   onDiscard?: (detail: UnrepliedDetail) => void;
   dayFilter?: string;
+  searchQuery?: string;
+  isSearching?: boolean;
 }
 
 export function FocusTab({
@@ -39,6 +41,8 @@ export function FocusTab({
   onMarkAsRead,
   onDiscard,
   dayFilter,
+  searchQuery,
+  isSearching,
 }: FocusTabProps) {
   const [showTutorial, setShowTutorial] = useState(false);
 

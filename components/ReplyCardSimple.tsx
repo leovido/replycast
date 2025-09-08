@@ -36,11 +36,6 @@ export const ReplyCardSimple = memo<ReplyCardSimpleProps>(
     isLastItem = false,
     hasMultipleItems = false,
   }) => {
-    // Debug: Log the props to see if they're being passed
-    console.log("ReplyCardSimple props:", {
-      onMarkAsRead: !!onMarkAsRead,
-      onDiscard: !!onDiscard,
-    });
     // Swipe functionality state
     const [isDragging, setIsDragging] = useState(false);
     const [dragOffset, setDragOffset] = useState(0);
@@ -106,7 +101,6 @@ export const ReplyCardSimple = memo<ReplyCardSimpleProps>(
       longPressTimer.current = setTimeout(() => {
         // Only activate swipe mode if user hasn't moved (not scrolling)
         if (!hasMovedDuringPress.current) {
-          console.log("Long press activated - swipe mode enabled");
           setIsSwipeModeActive(true);
           setShowSwipeActions(true);
 
@@ -243,8 +237,6 @@ export const ReplyCardSimple = memo<ReplyCardSimpleProps>(
 
             if (Math.abs(deltaX) > swipeThreshold) {
               if (deltaX > 0 && onMarkAsRead) {
-                // Swipe right - mark as read
-                console.log("Swipe right - calling onMarkAsRead", conversation);
                 try {
                   sdk.haptics?.impactOccurred?.("light");
                 } catch (error) {
@@ -255,7 +247,6 @@ export const ReplyCardSimple = memo<ReplyCardSimpleProps>(
                 resetDragState();
               } else if (deltaX < 0 && onDiscard) {
                 // Swipe left - discard
-                console.log("Swipe left - calling onDiscard", conversation);
                 try {
                   sdk.haptics?.impactOccurred?.("medium");
                 } catch (error) {
@@ -358,10 +349,6 @@ export const ReplyCardSimple = memo<ReplyCardSimpleProps>(
 
             if (Math.abs(deltaX) > swipeThreshold) {
               if (deltaX > 0 && onMarkAsRead) {
-                console.log(
-                  "Mouse swipe right - calling onMarkAsRead",
-                  conversation
-                );
                 try {
                   sdk.haptics?.impactOccurred?.("light");
                 } catch (error) {
@@ -371,10 +358,6 @@ export const ReplyCardSimple = memo<ReplyCardSimpleProps>(
                 onMarkAsRead(conversation);
                 resetDragState();
               } else if (deltaX < 0 && onDiscard) {
-                console.log(
-                  "Mouse swipe left - calling onDiscard",
-                  conversation
-                );
                 try {
                   sdk.haptics?.impactOccurred?.("medium");
                 } catch (error) {
@@ -609,6 +592,7 @@ export const ReplyCardSimple = memo<ReplyCardSimpleProps>(
                   text={conversation.text}
                   isDarkTheme={isDarkTheme}
                   className="mb-0"
+                  embeds={conversation.embeds}
                 />
               </div>
             )}

@@ -49,7 +49,6 @@ export function useFarcasterData({
         (typeof window !== "undefined" && (window as any).__FORCE_MOCKS__);
 
       if (useMocks) {
-        console.log("Mock: Using mock user reputation data in hook");
         // For mocks, we'll use the default "quotient" type
         const mockScore = await MockFarcasterService.fetchUserReputation(
           userFid,
@@ -113,7 +112,6 @@ export function useFarcasterData({
         let responseData;
 
         if (useMocks) {
-          console.log("Mock: Using mock Farcaster data in hook");
           responseData = await MockFarcasterService.fetchReplies(
             user.fid,
             dayFilter,
@@ -192,7 +190,6 @@ export function useFarcasterData({
       let responseData;
 
       if (useMocks) {
-        console.log("Mock: Using mock Farcaster data for load more in hook");
         responseData = await MockFarcasterService.fetchReplies(
           user?.fid || 0,
           dayFilter,
@@ -299,7 +296,6 @@ export function useFarcasterData({
       });
       const responseData = await res.json();
       if (responseData) {
-        console.log("Refresh - nextCursor", responseData.nextCursor);
         setData(responseData);
         setAllConversations(responseData.unrepliedDetails || []);
         setCursor(responseData.nextCursor || null);

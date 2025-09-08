@@ -124,3 +124,5 @@ export function ImageDisplay({
     </div>
   );
 }
+
+export default ImageDisplay;

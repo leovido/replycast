@@ -29,6 +29,22 @@ export interface UnrepliedDetail {
   // Reaction counts
   likesCount?: number;
   recastsCount?: number;
+  // Embeds data
+  embeds?: Array<{
+    url?: string;
+    cast_id?: {
+      fid: number;
+      hash: string;
+    };
+    metadata?: {
+      content_type?: string | null;
+      content_length?: number | null;
+      image?: {
+        width_px: number;
+        height_px: number;
+      };
+    };
+  }>;
 }
 
 export interface FarcasterRepliesResponse {

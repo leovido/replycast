@@ -23,6 +23,13 @@ import { isToday, isWithinLastDays } from "@/utils/farcaster";
 import { SpeedModeAlt } from "./SpeedModeAlt";
 import { ReputationBadges } from "./ReputationBadges";
 import { mockSpeedModeConversations } from "@/utils/speedModeMockData";
+import { SearchBar } from "./SearchBar";
+import { SearchResults } from "./SearchResults";
+import {
+  searchConversations,
+  getSearchStats,
+  type SearchResult,
+} from "@/utils/searchUtils";
 
 // Local storage keys
 const STORAGE_KEYS = {
@@ -98,6 +105,12 @@ export default function FarcasterApp() {
   const [dayFilter, setDayFilter] = useState<
     "all" | "today" | "3days" | "7days"
   >(() => getStoredValue(STORAGE_KEYS.DAY_FILTER, "today"));
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResult, setSearchResult] = useState<SearchResult>({
+    conversations: [],
+    totalMatches: 0,
+    searchQuery: "",
+  });
 
   // Track app opened
   useEffect(() => {
@@ -108,7 +121,7 @@ export default function FarcasterApp() {
         typeof window !== "undefined" &&
         window.location.href.includes("farcaster"),
     });
-  }, []); // Only run once on mount
+  }, [trackAppOpened, themeMode, activeTab]); // Include dependencies
 
   // Show score explanation modal on first visit
   useEffect(() => {
@@ -158,6 +171,24 @@ export default function FarcasterApp() {
   const handleCloseScoreModal = () => {
     setIsScoreModalOpen(false);
     setStoredValue(STORAGE_KEYS.SCORE_MODAL_SEEN, true);
+  };
+
+  // Search functionality
+  const handleSearch = (query: string) => {
+    setSearchQuery(query);
+
+    // Search through filtered conversations
+    const result = searchConversations(filteredConversations, query);
+    setSearchResult(result);
+  };
+
+  const handleClearSearch = () => {
+    setSearchQuery("");
+    setSearchResult({
+      conversations: [],
+      totalMatches: 0,
+      searchQuery: "",
+    });
   };
 
   const getBackgroundClass = () => {
@@ -386,6 +417,17 @@ export default function FarcasterApp() {
       !markedAsReadConversations.some(
         (marked) => marked.castHash === conversation.castHash
       )
+  );
+
+  // Get conversations to display (search results or filtered conversations)
+  const displayConversations = searchResult.searchQuery
+    ? searchResult.conversations
+    : filteredConversations;
+
+  // Get search stats
+  const searchStats = getSearchStats(
+    filteredConversations.length,
+    searchResult
   );
 
   // Swipe to refresh state
@@ -727,10 +769,24 @@ export default function FarcasterApp() {
               {activeTab === "inbox" && (
                 <>
                   <span className="font-semibold">
-                    {allConversations.length}
+                    {searchStats.isSearching
+                      ? searchStats.totalFound
+                      : allConversations.length}
                   </span>{" "}
-                  unreplied conversation
-                  {allConversations.length !== 1 ? "s" : ""}
+                  {searchStats.isSearching
+                    ? "search result"
+                    : "unreplied conversation"}
+                  {(searchStats.isSearching
+                    ? searchStats.totalFound
+                    : allConversations.length) !== 1
+                    ? "s"
+                    : ""}
+                  {searchStats.isSearching && (
+                    <span className="text-sm opacity-75">
+                      {" "}
+                      of {allConversations.length}
+                    </span>
+                  )}
                 </>
               )}
               {activeTab === "focus" && (
@@ -810,6 +866,27 @@ export default function FarcasterApp() {
       </div>
 
       <div className="container mx-auto px-4 max-w-6xl flex-1 flex flex-col">
+        {/* Search Bar */}
+        <div className="mb-6">
+          <SearchBar
+            onSearch={handleSearch}
+            placeholder="Search conversations, users, or FIDs..."
+            isDarkTheme={isDarkTheme}
+            themeMode={themeMode}
+          />
+        </div>
+
+        {/* Search Results */}
+        <SearchResults
+          isSearching={searchStats.isSearching}
+          totalFound={searchStats.totalFound}
+          totalOriginal={searchStats.totalOriginal}
+          searchQuery={searchStats.searchQuery}
+          isDarkTheme={isDarkTheme}
+          themeMode={themeMode}
+          onClearSearch={handleClearSearch}
+        />
+
         {/* User Info Card */}
         {user && (
           <div
@@ -906,10 +983,18 @@ export default function FarcasterApp() {
         <div className="flex-1 overflow-y-auto pb-20">
           {activeTab === "inbox" && (
             <>
-              {filteredConversations.length === 0 && !dataLoading ? (
+              {displayConversations.length === 0 && !dataLoading ? (
                 <EmptyState
-                  title="No Conversations"
-                  description="You're all caught up! No unreplied conversations found. Check back later or try adjusting your filters."
+                  title={
+                    searchStats.isSearching
+                      ? "No Search Results"
+                      : "No Conversations"
+                  }
+                  description={
+                    searchStats.isSearching
+                      ? `No conversations found matching "${searchStats.searchQuery}". Try a different search term.`
+                      : "You're all caught up! No unreplied conversations found. Check back later or try adjusting your filters."
+                  }
                   themeMode={themeMode}
                   icon={
                     <svg
@@ -925,19 +1010,35 @@ export default function FarcasterApp() {
                         isDarkTheme ? "text-white/40" : "text-gray-400"
                       }
                     >
-                      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-                      <path d="M9 10h.01" />
-                      <path d="M15 10h.01" />
+                      {searchStats.isSearching ? (
+                        <>
+                          <circle cx="11" cy="11" r="8" />
+                          <path d="m21 21-4.35-4.35" />
+                        </>
+                      ) : (
+                        <>
+                          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                          <path d="M9 10h.01" />
+                          <path d="M15 10h.01" />
+                        </>
+                      )}
                     </svg>
                   }
-                  action={{
-                    label: "Refresh",
-                    onClick: handleRefresh,
-                  }}
+                  action={
+                    searchStats.isSearching
+                      ? {
+                          label: "Clear Search",
+                          onClick: handleClearSearch,
+                        }
+                      : {
+                          label: "Refresh",
+                          onClick: handleRefresh,
+                        }
+                  }
                 />
               ) : (
                 <SpeedModeAlt
-                  conversations={filteredConversations}
+                  conversations={displayConversations}
                   quotientScores={quotientScores}
                   openRankData={openRankData}
                   isDarkThemeMode={isDarkTheme}
@@ -956,7 +1057,11 @@ export default function FarcasterApp() {
 
           {activeTab === "focus" && (
             <FocusTab
-              markedAsReadConversations={markedAsReadConversations}
+              markedAsReadConversations={
+                searchStats.isSearching
+                  ? searchResult.conversations
+                  : markedAsReadConversations
+              }
               viewMode={viewMode}
               quotientScores={quotientScores}
               openRankData={openRankData}
@@ -987,17 +1092,25 @@ export default function FarcasterApp() {
               onMarkAsRead={handleMarkAsRead}
               onDiscard={handleDiscard}
               dayFilter={dayFilter}
+              searchQuery={searchQuery}
+              isSearching={searchStats.isSearching}
             />
           )}
 
           {activeTab === "analytics" && (
             <AnalyticsTab
-              allConversations={allConversations}
+              allConversations={
+                searchStats.isSearching
+                  ? searchResult.conversations
+                  : allConversations
+              }
               userOpenRank={userOpenRank}
               userQuotientScore={userQuotientScore}
               openRankData={openRankData}
               isDarkTheme={isDarkTheme}
               themeMode={themeMode}
+              searchQuery={searchQuery}
+              isSearching={searchStats.isSearching}
             />
           )}
         </div>

@@ -139,11 +139,6 @@ export default async function handler(
           score: item.score,
           percentile: item.percentile,
         };
-        console.log(`Following: Successfully set data for FID ${returnedFid}`);
-      } else {
-        console.log(
-          `Following: No result found for returned FID ${returnedFid}`
-        );
       }
     });
 
@@ -158,11 +153,6 @@ export default async function handler(
           score: item.score,
           percentile: item.percentile,
         };
-        console.log(`Engagement: Successfully set data for FID ${returnedFid}`);
-      } else {
-        console.log(
-          `Engagement: No result found for returned FID ${returnedFid}`
-        );
       }
     });
 

@@ -54,7 +54,6 @@ export function useQuotient() {
 
     if (useMocks) {
       try {
-        console.log("Mock: Using mock Quotient data in hook");
         const mockData = await MockQuotientService.fetchScores(fids);
 
         if (mockData.data) {

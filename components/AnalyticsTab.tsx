@@ -10,6 +10,8 @@ interface AnalyticsTabProps {
   openRankData: Record<number, OpenRankData>;
   isDarkTheme: boolean;
   themeMode: ThemeMode;
+  searchQuery?: string;
+  isSearching?: boolean;
 }
 
 export function AnalyticsTab({
@@ -19,6 +21,8 @@ export function AnalyticsTab({
   openRankData,
   isDarkTheme,
   themeMode,
+  searchQuery,
+  isSearching,
 }: AnalyticsTabProps) {
   // Calculate analytics
   const totalConversations = allConversations.length;
@@ -76,9 +80,16 @@ export function AnalyticsTab({
       <div className="mb-6">
         <h2 className={`text-lg font-semibold mb-2 ${getTextClass()}`}>
           Analytics
+          {isSearching && (
+            <span className="ml-2 text-sm font-normal opacity-75">
+              (Search Results)
+            </span>
+          )}
         </h2>
         <p className={`text-sm ${getSubtextClass()}`}>
-          Insights about your unreplied conversations
+          {isSearching
+            ? `Insights about conversations matching "${searchQuery}"`
+            : "Insights about your unreplied conversations"}
         </p>
       </div>
 
