@@ -16,6 +16,7 @@ import { ToastNotification } from "./ToastNotification";
 import { EmptyState } from "./EmptyState";
 import { Badge } from "./Badge";
 import { ScoreExplanationModal } from "./ScoreExplanationModal";
+import { SkipLink } from "./SkipLink";
 import type { ThemeMode } from "@/types/types";
 
 import Image from "next/image";
@@ -108,7 +109,7 @@ export default function FarcasterApp() {
         typeof window !== "undefined" &&
         window.location.href.includes("farcaster"),
     });
-  }, []); // Only run once on mount
+  }, [activeTab, themeMode, trackAppOpened]); // Include all dependencies
 
   // Show score explanation modal on first visit
   useEffect(() => {
@@ -655,11 +656,14 @@ export default function FarcasterApp() {
           <p className="mb-4">{error}</p>
           <button
             onClick={handleRefresh}
-            className={`px-4 py-2 rounded-lg backdrop-blur-sm transition-colors ${
+            className={`px-4 py-2 rounded-lg backdrop-blur-sm transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
               themeMode === "light"
                 ? "bg-gray-800/20 hover:bg-gray-800/30 text-gray-900"
                 : "bg-white/20 hover:bg-white/30 text-white"
             }`}
+            aria-label="Try loading data again"
+            title="Try loading data again"
+            type="button"
           >
             Try Again
           </button>
@@ -674,7 +678,12 @@ export default function FarcasterApp() {
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
+      role="main"
+      aria-label="ReplyCast - Track unreplied conversations"
     >
+      {/* Skip Links for keyboard navigation */}
+      <SkipLink href="#main-content">Skip to main content</SkipLink>
+      <SkipLink href="#navigation">Skip to navigation</SkipLink>
       {/* Pull to refresh indicator */}
       {pullDistance > 0 && (
         <div
@@ -701,7 +710,7 @@ export default function FarcasterApp() {
       )}
 
       {/* Header */}
-      <div
+      <header
         className={`sticky top-0 z-40 backdrop-blur-md border-b mb-6 ${
           themeMode === "Farcaster"
             ? "bg-purple-900/95 border-white/10"
@@ -709,6 +718,7 @@ export default function FarcasterApp() {
             ? "bg-white/95 border-gray-200 text-gray-900"
             : "bg-black/80 border-white/10"
         }`}
+        role="banner"
       >
         <div className="container mx-auto px-4 max-w-6xl flex items-center justify-between py-4">
           <div>
@@ -716,6 +726,7 @@ export default function FarcasterApp() {
               className={`text-2xl font-bold mb-2 ${
                 themeMode === "light" ? "text-gray-900" : "text-white"
               }`}
+              id="app-title"
             >
               ReplyCast
             </h1>
@@ -723,10 +734,13 @@ export default function FarcasterApp() {
               className={`${
                 themeMode === "light" ? "text-gray-600" : "text-white/70"
               }`}
+              aria-live="polite"
+              aria-atomic="true"
+              id="conversation-status"
             >
               {activeTab === "inbox" && (
                 <>
-                  <span className="font-semibold">
+                  <span className="font-semibold" aria-label={`${allConversations.length} unreplied conversations`}>
                     {allConversations.length}
                   </span>{" "}
                   unreplied conversation
@@ -735,14 +749,14 @@ export default function FarcasterApp() {
               )}
               {activeTab === "focus" && (
                 <>
-                  <span className="font-semibold">{filteredFocusCount}</span>{" "}
+                  <span className="font-semibold" aria-label={`${filteredFocusCount} focus conversations`}>{filteredFocusCount}</span>{" "}
                   focus conversation
                   {filteredFocusCount !== 1 ? "s" : ""}
                 </>
               )}
               {activeTab === "analytics" && (
                 <>
-                  <span className="font-semibold">
+                  <span className="font-semibold" aria-label={`${allConversations.length} total conversations analyzed`}>
                     {allConversations.length}
                   </span>{" "}
                   total conversations analyzed
@@ -750,17 +764,18 @@ export default function FarcasterApp() {
               )}
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2" role="toolbar" aria-label="App actions">
             {/* Share Cast Button */}
             <button
               onClick={handleShareApp}
-              className={`p-3 rounded-xl transition-all duration-200 ${
+              className={`p-3 rounded-xl transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
                 isDarkTheme
-                  ? "bg-white/10 hover:bg-white/20 text-white"
-                  : "bg-gray-100 hover:bg-gray-200 text-gray-700"
+                  ? "bg-white/10 hover:bg-white/20 text-white focus:ring-offset-gray-800"
+                  : "bg-gray-100 hover:bg-gray-200 text-gray-700 focus:ring-offset-white"
               }`}
-              aria-label="Share ReplyCast"
+              aria-label="Share ReplyCast with your followers"
               title="Share ReplyCast with your followers"
+              type="button"
             >
               <svg
                 width={20}
@@ -786,12 +801,14 @@ export default function FarcasterApp() {
                   theme: themeMode,
                 });
               }}
-              className={`p-3 rounded-xl transition-all duration-200 ${
+              className={`p-3 rounded-xl transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
                 isDarkTheme
-                  ? "bg-white/10 hover:bg-white/20 text-white"
-                  : "bg-gray-100 hover:bg-gray-200 text-gray-700"
+                  ? "bg-white/10 hover:bg-white/20 text-white focus:ring-offset-gray-800"
+                  : "bg-gray-100 hover:bg-gray-200 text-gray-700 focus:ring-offset-white"
               }`}
-              aria-label="Settings"
+              aria-label="Open settings menu"
+              title="Open settings menu"
+              type="button"
             >
               <svg
                 width={20}
@@ -807,24 +824,26 @@ export default function FarcasterApp() {
             </button>
           </div>
         </div>
-      </div>
+      </header>
 
-      <div className="container mx-auto px-4 max-w-6xl flex-1 flex flex-col">
+      <div id="main-content" className="container mx-auto px-4 max-w-6xl flex-1 flex flex-col">
         {/* User Info Card */}
-        {user && (
-          <div
+        {user ? (
+          <section
             className={`mb-6 p-4 rounded-2xl ${
               isDarkTheme
                 ? "bg-white/10 backdrop-blur-md border border-white/20"
                 : "bg-white/80 backdrop-blur-md border border-gray-200"
             }`}
+            aria-labelledby="user-info-title"
           >
+            <h2 id="user-info-title" className="sr-only">User Information</h2>
             <div className="flex items-center gap-2">
               <div className="flex-shrink-0">
                 {user.pfpUrl ? (
                   <Image
                     src={`/api/image-proxy?url=${user.pfpUrl}`}
-                    alt={`${user.displayName || user.username}'s avatar`}
+                    alt={`Profile picture of ${user.displayName || user.username || 'user'}`}
                     className="w-12 h-12 rounded-full border-2 border-white/20"
                     width={48}
                     height={48}
@@ -835,7 +854,11 @@ export default function FarcasterApp() {
                     loading="eager"
                   />
                 ) : (
-                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold text-lg">
+                  <div 
+                    className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold text-lg"
+                    aria-label={`Avatar for ${user.displayName || user.username || 'user'}`}
+                    role="img"
+                  >
                     {user.displayName?.charAt(0) ||
                       user.username?.charAt(0) ||
                       "?"}
@@ -876,12 +899,14 @@ export default function FarcasterApp() {
               <button
                 onClick={handleRefresh}
                 disabled={dataLoading}
-                className={`p-2 rounded-lg transition-all duration-200 ${
+                className={`p-2 rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
                   dataLoading
                     ? "opacity-50 cursor-not-allowed"
                     : "hover:bg-white/20"
-                } ${isDarkTheme ? "text-white" : "text-gray-700"}`}
-                aria-label="Refresh data"
+                } ${isDarkTheme ? "text-white focus:ring-offset-gray-800" : "text-gray-700 focus:ring-offset-white"}`}
+                aria-label={dataLoading ? "Refreshing data" : "Refresh data"}
+                title={dataLoading ? "Refreshing data" : "Refresh data"}
+                type="button"
               >
                 <svg
                   width={20}
@@ -899,13 +924,13 @@ export default function FarcasterApp() {
                 </svg>
               </button>
             </div>
-          </div>
-        )}
+        </section>
+        ) : null}
 
         {/* Tab Content */}
         <div className="flex-1 overflow-y-auto pb-20">
           {activeTab === "inbox" && (
-            <>
+            <div role="tabpanel" aria-labelledby="inbox-tab" id="inbox-panel">
               {filteredConversations.length === 0 && !dataLoading ? (
                 <EmptyState
                   title="No Conversations"
@@ -951,11 +976,12 @@ export default function FarcasterApp() {
                   onDiscard={handleDiscard}
                 />
               )}
-            </>
+            </div>
           )}
 
           {activeTab === "focus" && (
-            <FocusTab
+            <div role="tabpanel" aria-labelledby="focus-tab" id="focus-panel">
+              <FocusTab
               markedAsReadConversations={markedAsReadConversations}
               viewMode={viewMode}
               quotientScores={quotientScores}
@@ -988,10 +1014,12 @@ export default function FarcasterApp() {
               onDiscard={handleDiscard}
               dayFilter={dayFilter}
             />
+            </div>
           )}
 
           {activeTab === "analytics" && (
-            <AnalyticsTab
+            <div role="tabpanel" aria-labelledby="analytics-tab" id="analytics-panel">
+              <AnalyticsTab
               allConversations={allConversations}
               userOpenRank={userOpenRank}
               userQuotientScore={userQuotientScore}
@@ -999,17 +1027,20 @@ export default function FarcasterApp() {
               isDarkTheme={isDarkTheme}
               themeMode={themeMode}
             />
+            </div>
           )}
         </div>
       </div>
 
       {/* Tab Bar */}
-      <TabBar
-        activeTab={activeTab}
-        onTabChange={setActiveTab}
-        isDarkTheme={isDarkTheme}
-        themeMode={themeMode}
-      />
+      <div id="navigation">
+        <TabBar
+          activeTab={activeTab}
+          onTabChange={setActiveTab}
+          isDarkTheme={isDarkTheme}
+          themeMode={themeMode}
+        />
+      </div>
 
       {/* Settings Menu */}
       <SettingsMenu

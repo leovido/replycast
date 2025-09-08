@@ -175,13 +175,21 @@ export function SpeedModeAlt({
             )} overflow-hidden shadow-lg shadow-purple-900/20`}
           >
             {/* User Header - Always Visible */}
-            <div
+            <button
               className={`${getCardBackground(
                 themeMode,
                 true,
                 false
-              )} p-2 cursor-pointer transition-colors`}
+              )} p-2 cursor-pointer transition-colors w-full text-left focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2`}
               onClick={() => toggleUserExpansion(userGroup.user.fid)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  toggleUserExpansion(userGroup.user.fid);
+                }
+              }}
+              aria-label={`Toggle conversations for ${userGroup.user.username || `FID ${userGroup.user.fid}`}`}
+              type="button"
             >
               <div className="flex items-center gap-2">
                 <Image
@@ -238,7 +246,7 @@ export function SpeedModeAlt({
                   </span>
                 </div>
               </div>
-            </div>
+            </button>
 
             {/* Expanded User Content - Only visible when user is expanded */}
             {expandedUser === userGroup.user.fid && (

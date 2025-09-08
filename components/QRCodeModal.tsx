@@ -1,5 +1,6 @@
 import React, { useEffect } from "react";
 import { createPortal } from "react-dom";
+import Image from "next/image";
 import { SignInButton } from "@farcaster/auth-kit";
 
 interface QRCodeModalProps {
@@ -46,6 +47,14 @@ export function QRCodeModal({
       <div
         className="absolute inset-0 bg-black/60 backdrop-blur-sm"
         onClick={onClose}
+        onKeyDown={(e) => {
+          if (e.key === 'Escape') {
+            onClose();
+          }
+        }}
+        role="button"
+        tabIndex={0}
+        aria-label="Close modal"
       />
 
       {/* Modal */}
@@ -118,12 +127,14 @@ export function QRCodeModal({
             <div className="flex flex-col items-center space-y-4">
               {/* QR Code Container */}
               <div className="w-48 h-48 bg-white border-2 border-gray-200 rounded-xl p-4 flex items-center justify-center">
-                <img
+                <Image
                   src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(
                     qrCodeUri
                   )}`}
                   alt="QR Code for Farcaster sign-in"
                   className="w-full h-full object-contain"
+                  width={180}
+                  height={180}
                 />
               </div>
 
@@ -134,10 +145,12 @@ export function QRCodeModal({
                 </p>
                 <div className="flex items-center justify-center space-x-2">
                   <div className="flex -space-x-1">
-                    <img
+                    <Image
                       src="/fc-logo.png"
                       alt="Farcaster"
                       className="w-5 h-5 rounded border bg-white"
+                      width={20}
+                      height={20}
                     />
                   </div>
                   <span className="text-xs text-gray-500">

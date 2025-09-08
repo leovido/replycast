@@ -100,22 +100,29 @@ export function TabBar({
   };
 
   return (
-    <div
+    <nav
       className={`sticky bottom-0 z-50 ${getBackgroundClass(
         themeMode
       )} border-t ${getBorderColor(themeMode)}`}
+      aria-label="Main navigation"
     >
-      <div className="flex items-center justify-around py-2">
+      <div className="flex items-center justify-around py-2" role="tablist">
         {tabs.map((tab) => {
           const isActive = activeTab === tab.id;
           return (
             <button
               key={tab.id}
               onClick={() => handleTabChange(tab.id)}
-              className={`flex flex-col items-center justify-center w-full py-2 rounded-lg transition-all duration-200 ${
+              className={`flex flex-col items-center justify-center w-full py-2 rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
                 isActive ? "scale-105" : "hover:scale-102 hover:bg-white/5"
               }`}
-              aria-label={tab.label}
+              role="tab"
+              aria-selected={isActive}
+              aria-controls={`${tab.id}-panel`}
+              id={`${tab.id}-tab`}
+              aria-label={`${tab.label} tab`}
+              title={`Switch to ${tab.label} tab`}
+              type="button"
             >
               <div
                 className={`mb-1 transition-all duration-200 ${getTextColor(
@@ -140,6 +147,6 @@ export function TabBar({
           );
         })}
       </div>
-    </div>
+    </nav>
   );
 }

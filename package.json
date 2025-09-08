@@ -11,7 +11,8 @@
     "test:quiet": "jest --silent",
     "perf:audit": "node scripts/performance-audit.js",
     "bundle:analyze": "npx @next/bundle-analyzer",
-    "check-openrank": "tsx scripts/check-openrank.ts"
+    "check-openrank": "tsx scripts/check-openrank.ts",
+    "test:accessibility": "node scripts/accessibility-test.js"
   },
   "dependencies": {
     "@farcaster/auth-kit": "^0.8.1",
@@ -30,6 +31,7 @@
     "satori": "^0.10.13"
   },
   "devDependencies": {
+    "@axe-core/react": "^4.10.2",
     "@babel/preset-env": "^7.28.0",
     "@babel/preset-react": "^7.27.1",
     "@babel/preset-typescript": "^7.27.1",
@@ -46,7 +48,9 @@
     "babel-jest": "^30.0.5",
     "eslint": "^8.0.0",
     "eslint-config-next": "^14.0.0",
+    "eslint-plugin-jsx-a11y": "^6.10.2",
     "jest": "^29.7.0",
+    "jest-axe": "^10.0.0",
     "jest-environment-jsdom": "^30.0.5",
     "node-mocks-http": "^1.17.2",
     "postcss": "^8.4.31",

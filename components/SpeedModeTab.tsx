@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useCallback } from "react";
 import type { UnrepliedDetail } from "@/types/types";
 import { sdk } from "@farcaster/miniapp-sdk";
 import { LinkContent } from "./LinkContent";
@@ -41,19 +41,19 @@ export function SpeedModeTab({
   const isDarkThemeMode =
     themeMode === "dark" || (themeMode === "Farcaster" && isDarkTheme);
 
-  const handleMarkAsRead = (detail: UnrepliedDetail) => {
+  const handleMarkAsRead = useCallback((detail: UnrepliedDetail) => {
     onMarkAsRead?.(detail);
     setProcessedCount((prev) => prev + 1);
     moveToNext();
-  };
+  }, [onMarkAsRead, moveToNext]);
 
-  const handleDiscard = (detail: UnrepliedDetail) => {
+  const handleDiscard = useCallback((detail: UnrepliedDetail) => {
     onDiscard?.(detail);
     setProcessedCount((prev) => prev + 1);
     moveToNext();
-  };
+  }, [onDiscard, moveToNext]);
 
-  const handleReply = (detail: UnrepliedDetail) => {
+  const handleReply = useCallback((detail: UnrepliedDetail) => {
     // Validate reply text
     if (!replyText.trim()) {
       setReplyError("Reply cannot be empty");
@@ -76,7 +76,7 @@ export function SpeedModeTab({
     onReply(detail);
     setProcessedCount((prev) => prev + 1);
     moveToNext();
-  };
+  }, [replyText, onReply, moveToNext]);
 
   // Focus management for reply textarea
   React.useEffect(() => {
@@ -153,25 +153,25 @@ export function SpeedModeTab({
 
     window.addEventListener("keydown", handleKeyPress);
     return () => window.removeEventListener("keydown", handleKeyPress);
-  }, [currentIndex, conversations.length]);
+  }, [currentIndex, conversations.length, conversations, handleDiscard, handleMarkAsRead, handleReply, moveToNext, moveToPrevious, replyText]);
 
-  const moveToNext = () => {
+  const moveToNext = useCallback(() => {
     if (currentIndex < conversations.length - 1) {
       setCurrentIndex((prev) => prev + 1);
       // Clear reply text when moving to next conversation
       setReplyText("");
       setReplyError("");
     }
-  };
+  }, [currentIndex, conversations.length]);
 
-  const moveToPrevious = () => {
+  const moveToPrevious = useCallback(() => {
     if (currentIndex > 0) {
       setCurrentIndex((prev) => prev - 1);
       // Clear reply text when moving to previous conversation
       setReplyText("");
       setReplyError("");
     }
-  };
+  }, [currentIndex]);
 
   const resetProgress = () => {
     setCurrentIndex(0);
@@ -507,10 +507,12 @@ export function SpeedModeTab({
                   key={`${conversation.castHash}-${currentIndex + 1 + idx}`}
                   className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700"
                 >
-                  <img
+                  <Image
                     src={conversation.avatarUrl}
                     alt={conversation.username}
                     className="w-6 h-6 rounded-full"
+                    width={24}
+                    height={24}
                     onError={(e) => {
                       const target = e.target as HTMLImageElement;
                       target.src = `https://api.dicebear.com/7.x/avataaars/svg?seed=${conversation.username}`;

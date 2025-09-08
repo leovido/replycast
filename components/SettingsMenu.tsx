@@ -182,11 +182,17 @@ export function SettingsMenu({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex justify-center pt-4">
+    <div 
+      className="fixed inset-0 z-50 flex justify-center pt-4"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="settings-title"
+    >
       {/* Backdrop */}
       <div
         className="absolute inset-0 bg-black/50 backdrop-blur-sm"
         onClick={onClose}
+        aria-hidden="true"
       />
 
       {/* Menu */}
@@ -196,10 +202,12 @@ export function SettingsMenu({
             ? "bg-gradient-to-br from-gray-800/95 to-gray-900/95 border border-white/20"
             : "bg-white/95 border border-gray-200"
         } backdrop-blur-md transform transition-all duration-300 ease-out max-h-[90vh] overflow-y-auto`}
+        role="document"
       >
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <h2
+            id="settings-title"
             className={`text-xl font-bold ${
               isDarkTheme ? "text-white" : "text-gray-900"
             }`}
@@ -211,9 +219,12 @@ export function SettingsMenu({
               sdk.haptics?.impactOccurred?.("light");
               onClose();
             }}
-            className={`p-2 rounded-full hover:bg-white/10 transition-colors ${
-              isDarkTheme ? "text-white/70" : "text-gray-600"
+            className={`p-2 rounded-full hover:bg-white/10 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
+              isDarkTheme ? "text-white/70 focus:ring-offset-gray-800" : "text-gray-600 focus:ring-offset-white"
             }`}
+            aria-label="Close settings menu"
+            title="Close settings menu"
+            type="button"
           >
             <svg
               width={20}
@@ -245,7 +256,7 @@ export function SettingsMenu({
                   sdk.haptics?.impactOccurred?.("light");
                   onThemeChange(theme);
                 }}
-                className={`p-3 rounded-xl transition-all duration-200 ${
+                className={`p-3 rounded-xl transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
                   themeMode === theme
                     ? isDarkTheme
                       ? "bg-white/20 ring-2 ring-white/40"
@@ -254,6 +265,10 @@ export function SettingsMenu({
                     ? "bg-white/10 hover:bg-white/15"
                     : "bg-gray-100 hover:bg-gray-150"
                 }`}
+                aria-pressed={themeMode === theme}
+                aria-label={`Select ${theme} theme`}
+                title={`Select ${theme} theme`}
+                type="button"
               >
                 <div className="flex flex-col items-center gap-2">
                   <div className="text-lg">
@@ -328,14 +343,16 @@ export function SettingsMenu({
 
         {/* Sort Options */}
         <div className="mb-6">
-          <h3
-            className={`text-sm font-semibold mb-3 ${
+          <label
+            htmlFor="sort-select"
+            className={`text-sm font-semibold mb-3 block ${
               isDarkTheme ? "text-white/80" : "text-gray-700"
             }`}
           >
             Sort By
-          </h3>
+          </label>
           <select
+            id="sort-select"
             value={sortOption}
             onChange={(e) => {
               sdk.haptics?.impactOccurred?.("light");
@@ -346,6 +363,7 @@ export function SettingsMenu({
                 ? "bg-white/10 border-white/20 text-white focus:ring-white/40"
                 : "bg-white border-gray-200 text-gray-900 focus:ring-gray-400"
             } focus:outline-none focus:ring-2`}
+            aria-label="Sort conversations by"
           >
             <option value="newest">Newest First</option>
             <option value="oldest">Oldest First</option>
@@ -360,14 +378,16 @@ export function SettingsMenu({
 
         {/* Day Filter */}
         <div className="mb-6">
-          <h3
-            className={`text-sm font-semibold mb-3 ${
+          <label
+            htmlFor="day-filter-select"
+            className={`text-sm font-semibold mb-3 block ${
               isDarkTheme ? "text-white/80" : "text-gray-700"
             }`}
           >
             Time Filter
-          </h3>
+          </label>
           <select
+            id="day-filter-select"
             value={dayFilter}
             onChange={(e) => {
               sdk.haptics?.impactOccurred?.("light");
@@ -378,6 +398,7 @@ export function SettingsMenu({
                 ? "bg-white/10 border-white/20 text-white focus:ring-white/40"
                 : "bg-white border-gray-200 text-gray-900 focus:ring-gray-400"
             } focus:outline-none focus:ring-2`}
+            aria-label="Filter conversations by time period"
           >
             <option value="all">All Time</option>
             <option value="today">Today</option>
@@ -409,27 +430,34 @@ export function SettingsMenu({
           </h3>
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <span
+              <label
+                htmlFor="analytics-toggle"
                 className={`text-sm ${
                   isDarkTheme ? "text-white/70" : "text-gray-600"
                 }`}
               >
                 Analytics
-              </span>
+              </label>
               <button
+                id="analytics-toggle"
                 onClick={() =>
                   handlePrivacyChange(
                     "enableAnalytics",
                     !privacyConfig.enableAnalytics
                   )
                 }
-                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
                   privacyConfig.enableAnalytics
                     ? "bg-blue-500"
                     : isDarkTheme
                     ? "bg-white/20"
                     : "bg-gray-200"
                 }`}
+                role="switch"
+                aria-checked={privacyConfig.enableAnalytics}
+                aria-label="Toggle analytics tracking"
+                title={privacyConfig.enableAnalytics ? "Disable analytics" : "Enable analytics"}
+                type="button"
               >
                 <span
                   className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${

@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import Image from "next/image";
 import { classifyUrl } from "@/utils/linkUtils";
 
 interface EmbedDisplayProps {
@@ -45,10 +46,12 @@ export function EmbedDisplay({
       <div className="flex flex-col">
         {thumbnail && !thumbnailError && (
           <div className="relative mb-3">
-            <img
+            <Image
               src={thumbnail}
               alt="Video thumbnail"
               className="w-full h-32 object-cover rounded-lg"
+              width={400}
+              height={128}
               onError={() => setThumbnailError(true)}
             />
             <div className="absolute inset-0 flex items-center justify-center">
@@ -68,10 +71,12 @@ export function EmbedDisplay({
         {/* Fallback thumbnail with multiple quality attempts */}
         {thumbnailError && fallbackThumbnails.length > 0 && (
           <div className="relative mb-3">
-            <img
+            <Image
               src={fallbackThumbnails[2]} // Try mqdefault.jpg as fallback
               alt="Video thumbnail (fallback)"
               className="w-full h-32 object-cover rounded-lg"
+              width={400}
+              height={128}
               onError={() => {
                 // If fallback also fails, show generic placeholder
                 setThumbnailError(true);

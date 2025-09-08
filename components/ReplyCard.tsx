@@ -210,7 +210,7 @@ export const ReplyCard = memo<ReplyCardProps>(
           console.error("Touch move error:", error);
         }
       },
-      [isSwipeModeActive, clearLongPress]
+      [isSwipeModeActive, clearLongPress, dragOffset, isDragging]
     );
 
     const handleTouchEnd = useCallback(
@@ -345,7 +345,7 @@ export const ReplyCard = memo<ReplyCardProps>(
           console.error("Mouse move error:", error);
         }
       },
-      [isSwipeModeActive, clearLongPress]
+      [isSwipeModeActive, clearLongPress, dragOffset, isDragging]
     );
 
     const handleMouseUp = useCallback(
@@ -567,12 +567,19 @@ export const ReplyCard = memo<ReplyCardProps>(
 
             {/* User Info */}
             <div className="flex flex-col gap-1 min-w-0 flex-1">
-              <div
+              <button
                 onClick={handleProfileClick}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    handleProfileClick();
+                  }
+                }}
                 className={`font-semibold leading-tight text-lg hover:text-blue-300 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 rounded flex items-center gap-1 truncate cursor-pointer ${
                   isDarkTheme ? "text-white" : "text-gray-900"
                 }`}
                 aria-label={`View @${detail.username}'s profile`}
+                type="button"
               >
                 @{detail.username}
                 <svg
@@ -590,13 +597,20 @@ export const ReplyCard = memo<ReplyCardProps>(
                   <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
                   <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
                 </svg>
-              </div>
-              <div
+              </button>
+              <button
                 onClick={handleProfileClick}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    handleProfileClick();
+                  }
+                }}
                 className={`text-sm hover:text-blue-300/70 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 rounded flex items-center gap-1 cursor-pointer ${
                   isDarkTheme ? "text-white/70" : "text-gray-600"
                 }`}
                 aria-label={`View FID ${detail.authorFid}'s profile`}
+                type="button"
               >
                 FID: {detail.authorFid}
                 <svg
@@ -614,7 +628,7 @@ export const ReplyCard = memo<ReplyCardProps>(
                   <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
                   <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
                 </svg>
-              </div>
+              </button>
             </div>
           </div>
 
