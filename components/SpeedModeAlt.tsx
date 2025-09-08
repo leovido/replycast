@@ -97,6 +97,26 @@ export function SpeedModeAlt({
         return a.user.fid - b.user.fid;
       case "fid-desc":
         return b.user.fid - a.user.fid;
+      case "quotient-asc":
+        // Sort by quotient score (low to high)
+        const quotientA = quotientScores[a.user.fid]?.quotientScore || 0;
+        const quotientB = quotientScores[b.user.fid]?.quotientScore || 0;
+        return quotientA - quotientB;
+      case "quotient-desc":
+        // Sort by quotient score (high to low)
+        const quotientDescA = quotientScores[a.user.fid]?.quotientScore || 0;
+        const quotientDescB = quotientScores[b.user.fid]?.quotientScore || 0;
+        return quotientDescB - quotientDescA;
+      case "openrank-asc":
+        // Sort by OpenRank (low to high)
+        const openRankA = openRankData[a.user.fid]?.engagement?.score || 0;
+        const openRankB = openRankData[b.user.fid]?.engagement?.score || 0;
+        return openRankA - openRankB;
+      case "openrank-desc":
+        // Sort by OpenRank (high to low)
+        const openRankDescA = openRankData[a.user.fid]?.engagement?.score || 0;
+        const openRankDescB = openRankData[b.user.fid]?.engagement?.score || 0;
+        return openRankDescB - openRankDescA;
       case "short":
         // Sort by users who have the most short conversations
         const shortA = a.conversations.filter((c) => c.text.length < 20).length;

@@ -1094,6 +1094,7 @@ export default function FarcasterApp() {
               dayFilter={dayFilter}
               searchQuery={searchQuery}
               isSearching={searchStats.isSearching}
+              sortOption={sortOption}
             />
           )}
 
