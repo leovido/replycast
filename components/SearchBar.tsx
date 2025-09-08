@@ -19,7 +19,6 @@ export function SearchBar({
   const [query, setQuery] = useState("");
   const [isListening, setIsListening] = useState(false);
   const [isSupported, setIsSupported] = useState(false);
-  const [isFocused, setIsFocused] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const recognitionRef = useRef<any>(null);
   const debounceRef = useRef<NodeJS.Timeout | null>(null);
@@ -121,15 +120,7 @@ export function SearchBar({
 
   const getContainerClass = () => {
     const baseClass = "relative flex items-center";
-    const focusClass = isFocused ? "ring-2 ring-opacity-50" : "";
-    const ringColor =
-      themeMode === "Farcaster"
-        ? "ring-purple-400"
-        : themeMode === "light"
-        ? "ring-blue-400"
-        : "ring-blue-400";
-
-    return `${baseClass} ${focusClass} ${ringColor} ${className}`;
+    return `${baseClass} ${className}`;
   };
 
   const getInputClass = () => {
@@ -181,8 +172,6 @@ export function SearchBar({
         value={query}
         onChange={handleInputChange}
         onKeyDown={handleKeyPress}
-        onFocus={() => setIsFocused(true)}
-        onBlur={() => setIsFocused(false)}
         placeholder={placeholder}
         className={getInputClass()}
         autoComplete="off"
