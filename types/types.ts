@@ -37,8 +37,8 @@ export interface UnrepliedDetail {
       hash: string;
     };
     metadata?: {
-      content_type?: string | null;
-      content_length?: number | null;
+      content_type?: string;
+      content_length?: number;
       image?: {
         width_px: number;
         height_px: number;
