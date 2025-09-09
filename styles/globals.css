@@ -51,6 +51,23 @@ body {
   overflow-x: hidden;
 }
 
+/* Safe area handling for mobile devices */
+.safe-area-inset-top {
+  height: env(safe-area-inset-top, 0px);
+}
+
+.safe-area-inset-bottom {
+  height: env(safe-area-inset-bottom, 0px);
+}
+
+.safe-area-inset-left {
+  width: env(safe-area-inset-left, 0px);
+}
+
+.safe-area-inset-right {
+  width: env(safe-area-inset-right, 0px);
+}
+
 /* Touch event optimization for production */
 .touch-enabled {
   touch-action: manipulation;
