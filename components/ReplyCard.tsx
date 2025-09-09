@@ -757,6 +757,7 @@ export const ReplyCard = memo<ReplyCardProps>(
         <LinkContent
           text={detail.text}
           isDarkTheme={isDarkTheme}
+          themeMode={themeMode}
           className="z-10 pt-4"
           embeds={detail.embeds}
         />

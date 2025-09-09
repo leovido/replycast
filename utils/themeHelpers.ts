@@ -185,7 +185,7 @@ export const getCardBackground = (
       case "light":
         return "bg-gradient-to-br from-blue-50 to-purple-50 ring-2 ring-blue-400/30 shadow-xl shadow-blue-500/20";
       case "Farcaster":
-        return "bg-gradient-to-br from-purple-50 to-purple-100 ring-2 ring-purple-400/30 shadow-xl shadow-purple-500/20";
+        return "bg-gradient-to-br from-purple-800/20 to-indigo-800/20 ring-2 ring-purple-400/30 shadow-xl shadow-purple-500/20 backdrop-blur-md border border-purple-400/20";
       case "neon":
         return "bg-gradient-to-br from-cyan-500/20 to-cyan-400/10 ring-2 ring-cyan-400/40 shadow-xl shadow-cyan-500/20 backdrop-blur-md border border-cyan-500/20";
       default:
@@ -198,7 +198,7 @@ export const getCardBackground = (
       case "light":
         return "bg-white/80 backdrop-blur-sm border border-gray-200 hover:bg-white/90";
       case "Farcaster":
-        return "bg-purple-50/80 backdrop-blur-sm border border-purple-200 hover:bg-purple-50/90";
+        return "bg-gradient-to-br from-purple-800/15 to-indigo-800/15 backdrop-blur-md border border-purple-400/20 hover:bg-gradient-to-br hover:from-purple-800/20 hover:to-indigo-800/20 hover:shadow-lg hover:shadow-purple-500/10";
       case "neon":
         return "bg-gradient-to-br from-cyan-500/10 to-cyan-400/5 backdrop-blur-md border border-cyan-500/15 hover:bg-gradient-to-br hover:from-cyan-500/15 hover:to-cyan-400/10 hover:shadow-lg hover:shadow-cyan-500/5";
       default:

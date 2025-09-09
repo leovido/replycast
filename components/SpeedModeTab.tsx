@@ -378,6 +378,7 @@ export function SpeedModeTab({
           <LinkContent
             text={currentConversation.text}
             isDarkTheme={isDarkThemeMode}
+            themeMode={themeMode}
             className="mb-0"
           />
         </div>
@@ -532,6 +533,7 @@ export function SpeedModeTab({
                       <LinkContent
                         text={conversation.text}
                         isDarkTheme={isDarkThemeMode}
+                        themeMode={themeMode}
                         className="scale-75 origin-left"
                       />
                     </div>

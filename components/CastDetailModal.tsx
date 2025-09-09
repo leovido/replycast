@@ -123,6 +123,7 @@ export function CastDetailModal({
             <LinkContent
               text={conversation.originalCastText}
               isDarkTheme={isDarkTheme}
+              themeMode={themeMode}
               className="mb-0"
               embeds={conversation.embeds}
             />
