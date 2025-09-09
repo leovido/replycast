@@ -8,6 +8,7 @@ import EmbedDisplay from "./EmbedDisplay";
 interface LinkContentProps {
   text: string;
   isDarkTheme: boolean;
+  themeMode?: "dark" | "light" | "Farcaster" | "neon";
   className?: string;
   embeds?: Array<{
     url?: string;
@@ -29,6 +30,7 @@ interface LinkContentProps {
 export function LinkContent({
   text,
   isDarkTheme,
+  themeMode = isDarkTheme ? "dark" : "light",
   className = "",
   embeds = [],
 }: LinkContentProps) {
@@ -71,6 +73,7 @@ export function LinkContent({
           key={`embed-${index}`}
           url={url}
           isDarkTheme={isDarkTheme}
+          themeMode={themeMode}
         />
       ))}
     </div>

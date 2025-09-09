@@ -476,7 +476,7 @@ export const ReplyCardSimple = memo<ReplyCardSimpleProps>(
           themeMode === "Farcaster" && !isDarkTheme
             ? "bg-[#e7e3fa] hover:bg-[#d4cdf0]"
             : themeMode === "Farcaster" && isDarkTheme
-            ? "bg-white hover:bg-purple-900/30"
+            ? "bg-white"
             : "bg-white hover:bg-gray-50"
         } ${isLoading ? "opacity-75 pointer-events-none" : ""} ${
           isSwipeModeActive ? "swipe-mode-active" : ""
@@ -516,7 +516,7 @@ export const ReplyCardSimple = memo<ReplyCardSimpleProps>(
               themeMode === "Farcaster" && !isDarkTheme
                 ? "bg-[#e7e3fa]/50"
                 : themeMode === "Farcaster" && isDarkTheme
-                ? "bg-purple-900/20/50"
+                ? "bg-gradient-to-br from-purple-800/20 to-indigo-800/20"
                 : "bg-white/50"
             }`}
           >
@@ -591,6 +591,7 @@ export const ReplyCardSimple = memo<ReplyCardSimpleProps>(
                 <LinkContent
                   text={conversation.text}
                   isDarkTheme={isDarkTheme}
+                  themeMode={themeMode}
                   className="mb-0"
                   embeds={conversation.embeds}
                 />

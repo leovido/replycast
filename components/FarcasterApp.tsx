@@ -194,13 +194,13 @@ export default function FarcasterApp() {
   const getBackgroundClass = () => {
     switch (themeMode) {
       case "dark":
-        return "bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900";
+        return "bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900";
       case "light":
-        return "bg-gradient-to-br from-gray-50 via-white to-gray-100";
+        return "bg-gradient-to-r from-gray-50 via-white to-gray-100";
       case "Farcaster":
-        return "bg-gradient-to-br from-purple-900 via-purple-800 to-indigo-900";
+        return "bg-gradient-to-r from-purple-900 via-purple-800 to-indigo-900";
       default:
-        return "bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900";
+        return "bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900";
     }
   };
 
@@ -610,6 +610,48 @@ export default function FarcasterApp() {
     }
   }, [user, dataLoading, authLoading]);
 
+  // Update theme color for status bar and browser UI
+  useEffect(() => {
+    const getThemeColor = () => {
+      switch (themeMode) {
+        case "dark":
+          return "#1f2937"; // gray-800
+        case "light":
+          return "#ffffff"; // white
+        case "Farcaster":
+          return "#6C2BD7"; // purple-600
+        default:
+          return "#6C2BD7";
+      }
+    };
+
+    const themeColor = getThemeColor();
+
+    // Update theme-color meta tag
+    const themeColorMeta = document.querySelector('meta[name="theme-color"]');
+    if (themeColorMeta) {
+      themeColorMeta.setAttribute("content", themeColor);
+    } else {
+      const meta = document.createElement("meta");
+      meta.name = "theme-color";
+      meta.content = themeColor;
+      document.head.appendChild(meta);
+    }
+
+    // Update msapplication-navbutton-color for Windows
+    const navButtonMeta = document.querySelector(
+      'meta[name="msapplication-navbutton-color"]'
+    );
+    if (navButtonMeta) {
+      navButtonMeta.setAttribute("content", themeColor);
+    } else {
+      const meta = document.createElement("meta");
+      meta.name = "msapplication-navbutton-color";
+      meta.content = themeColor;
+      document.head.appendChild(meta);
+    }
+  }, [themeMode]);
+
   // Fix for iframe/WebView touch events in production
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -717,6 +759,16 @@ export default function FarcasterApp() {
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
     >
+      {/* Status bar area for proper color coverage on mobile */}
+      <div
+        className={`w-full safe-area-inset-top ${
+          themeMode === "Farcaster"
+            ? "bg-gradient-to-r from-purple-900 via-purple-800 to-indigo-900"
+            : themeMode === "light"
+            ? "bg-gradient-to-r from-gray-50 via-white to-gray-100"
+            : "bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900"
+        }`}
+      />
       {/* Pull to refresh indicator */}
       {pullDistance > 0 && (
         <div
@@ -746,10 +798,10 @@ export default function FarcasterApp() {
       <div
         className={`sticky top-0 z-40 backdrop-blur-md border-b mb-6 ${
           themeMode === "Farcaster"
-            ? "bg-purple-900/95 border-white/10"
+            ? "bg-gradient-to-r from-purple-900/95 via-purple-800/95 to-indigo-900/95 border-white/10"
             : themeMode === "light"
-            ? "bg-white/95 border-gray-200 text-gray-900"
-            : "bg-black/80 border-white/10"
+            ? "bg-gradient-to-r from-gray-50/95 via-white/95 to-gray-100/95 border-gray-200 text-gray-900"
+            : "bg-gradient-to-r from-gray-900/95 via-gray-800/95 to-gray-900/95 border-white/10"
         }`}
       >
         <div className="container mx-auto px-4 max-w-6xl flex items-center justify-between py-4">
