@@ -8,15 +8,15 @@ export type ThemeMode = "dark" | "light" | "Farcaster" | "neon";
 export const getBackgroundClass = (themeMode: ThemeMode): string => {
   switch (themeMode) {
     case "dark":
-      return "bg-gray-900/95 backdrop-blur-md border-gray-800";
+      return "bg-gradient-to-r from-gray-900/95 via-gray-800/95 to-gray-900/95 backdrop-blur-md border-gray-800";
     case "light":
-      return "bg-white/95 backdrop-blur-md border-gray-200";
+      return "bg-gradient-to-r from-gray-50/95 via-white/95 to-gray-100/95 backdrop-blur-md border-gray-200";
     case "Farcaster":
-      return "bg-purple-900/95 backdrop-blur-md border-purple-800/50";
+      return "bg-gradient-to-r from-purple-900/95 via-purple-800/95 to-indigo-900/95 backdrop-blur-md border-purple-800/50";
     case "neon":
-      return "bg-black/95 backdrop-blur-md border-cyan-500/50";
+      return "bg-gradient-to-r from-black/95 via-gray-900/95 to-black/95 backdrop-blur-md border-cyan-500/50";
     default:
-      return "bg-gray-900/95 backdrop-blur-md border-gray-800";
+      return "bg-gradient-to-r from-gray-900/95 via-gray-800/95 to-gray-900/95 backdrop-blur-md border-gray-800";
   }
 };
 

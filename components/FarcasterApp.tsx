@@ -194,13 +194,13 @@ export default function FarcasterApp() {
   const getBackgroundClass = () => {
     switch (themeMode) {
       case "dark":
-        return "bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900";
+        return "bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900";
       case "light":
-        return "bg-gradient-to-br from-gray-50 via-white to-gray-100";
+        return "bg-gradient-to-r from-gray-50 via-white to-gray-100";
       case "Farcaster":
-        return "bg-gradient-to-br from-purple-900 via-purple-800 to-indigo-900";
+        return "bg-gradient-to-r from-purple-900 via-purple-800 to-indigo-900";
       default:
-        return "bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900";
+        return "bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900";
     }
   };
 
