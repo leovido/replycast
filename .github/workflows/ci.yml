@@ -51,6 +51,32 @@ jobs:
       - name: Run tests with coverage
         run: pnpm run test:coverage
 
+      - name: Security audit - Dependencies
+        run: |
+          echo "🔍 Running security audit on dependencies..."
+          pnpm audit --audit-level moderate
+          echo "✅ Dependency security audit completed"
+
+      - name: Security audit - Vulnerabilities
+        run: |
+          echo "🔍 Checking for known vulnerabilities..."
+          npx audit-ci --moderate --config .audit-ci.json
+          echo "✅ Vulnerability scan completed"
+
+      - name: Security audit - License compliance
+        run: |
+          echo "🔍 Checking license compliance..."
+          npx license-checker --onlyAllow "MIT;Apache-2.0;BSD-2-Clause;BSD-3-Clause;ISC;Unlicense"
+          echo "✅ License compliance check completed"
+
+      - name: Security audit - Secrets scanning
+        uses: trufflesecurity/trufflehog@main
+        with:
+          path: ./
+          base: main
+          head: HEAD
+          extra_args: --debug --only-verified
+
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@v3
         with:
