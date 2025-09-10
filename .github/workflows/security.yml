@@ -1,0 +1,111 @@
+name: Security Audit & Compliance
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    # Run daily at 3 AM UTC
+    - cron: "0 3 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: write
+  security-events: write
+
+jobs:
+  security-scan:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22.x"
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Security audit - Dependencies
+        run: |
+          echo "🔍 Running security audit on dependencies..."
+          pnpm audit --audit-level moderate
+          echo "✅ Dependency security audit completed"
+
+      - name: Security audit - Vulnerabilities
+        run: |
+          echo "🔍 Checking for known vulnerabilities..."
+          npx audit-ci --moderate --config .audit-ci.json
+          echo "✅ Vulnerability scan completed"
+
+      - name: Security audit - License compliance
+        run: |
+          echo "🔍 Checking license compliance..."
+          npx license-checker --onlyAllow "MIT;Apache-2.0;BSD-2-Clause;BSD-3-Clause;ISC;Unlicense;MPL-2.0"
+          echo "✅ License compliance check completed"
+
+      - name: Security audit - Secrets scanning
+        uses: trufflesecurity/trufflehog@main
+        with:
+          path: ./
+          base: main
+          head: HEAD
+          extra_args: --debug --only-verified
+
+      - name: Upload security report
+        uses: actions/upload-artifact@v4
+        with:
+          name: security-report
+          path: |
+            audit-results.json
+            license-report.json
+          retention-days: 90
+
+      - name: Comment PR with security status
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            try {
+              const comment = `## 🔒 Security Audit Results
+
+              **Status:** ✅ All security checks passed
+
+              **Checks Performed:**
+              - ✅ Dependency vulnerability scan
+              - ✅ License compliance check
+              - ✅ Secrets scanning
+              - ✅ Security audit
+
+              **Next Steps:**
+              - Review any warnings in the security report
+              - Update dependencies if vulnerabilities are found
+              - Ensure all licenses are compliant
+
+              📊 [View detailed security report](${process.env.GITHUB_SERVER_URL}/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID})
+              `;
+
+              await github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: comment
+              });
+              
+              console.log('✅ Security status comment posted successfully');
+            } catch (error) {
+              console.log('⚠️ Failed to post security status comment:', error.message);
+              // Don't fail the workflow if commenting fails
+            }

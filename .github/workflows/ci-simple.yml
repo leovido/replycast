@@ -1,4 +1,4 @@
-name: CI/CD (Simple)
+name: Quick Validation
 
 on:
   push:
@@ -7,7 +7,7 @@ on:
     branches: [main]
 
 jobs:
-  test:
+  basic-tests:
     runs-on: ubuntu-latest
 
     steps:
