@@ -31,19 +31,21 @@ export function ReputationBadges({
 
   return (
     <div className={`flex flex-row items-center gap-1 ${className}`}>
-      {/* Engagement Rank */}
-      {engagementRank && (
-        <Badge variant="engagement" size={size} showLabel={showLabels}>
-          #{engagementRank.toLocaleString()}
-        </Badge>
-      )}
+      <div className="flex flex-col items-center gap-1">
+        {/* Engagement Rank */}
+        {engagementRank && (
+          <Badge variant="engagement" size={size} showLabel={showLabels}>
+            #{engagementRank.toLocaleString()}
+          </Badge>
+        )}
 
-      {/* Following Rank */}
-      {followingRank && (
-        <Badge variant="following" size={size} showLabel={showLabels}>
-          #{followingRank.toLocaleString()}
-        </Badge>
-      )}
+        {/* Following Rank */}
+        {followingRank && (
+          <Badge variant="following" size={size} showLabel={showLabels}>
+            #{followingRank.toLocaleString()}
+          </Badge>
+        )}
+      </div>
 
       {/* Quotient Score */}
       {quotientScore && (

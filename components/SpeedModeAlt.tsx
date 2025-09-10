@@ -190,7 +190,7 @@ export function SpeedModeAlt({
         {sortedUserGroups.map((userGroup) => (
           <div
             key={userGroup.user.fid}
-            className={`rounded-lg border ${getBorderColor(
+            className={`rounded-lg border-[0.5px] ${getBorderColor(
               themeMode
             )} overflow-hidden shadow-lg shadow-purple-900/20`}
           >
