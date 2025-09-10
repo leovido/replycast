@@ -122,7 +122,7 @@ export default async function handler(
         identifier: hash,
         type: "hash",
         replyDepth: 2,
-        limit: 50,
+        limit: 25,
       });
 
       const convo = convoRes.conversation?.cast;
