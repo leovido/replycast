@@ -5,5 +5,5 @@
   "allowlist": [],
   "skip-dev": false,
   "report-type": "summary",
-  "output-format": "table"
+  "output-format": "text"
 }
