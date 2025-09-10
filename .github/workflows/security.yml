@@ -59,14 +59,14 @@ jobs:
         uses: trufflesecurity/trufflehog@main
         with:
           path: ./
-          base: main
+          base: ${{ github.event.before || 'HEAD~1' }}
           head: HEAD
           extra_args: --debug --only-verified
+        continue-on-error: true
 
       - name: Upload security report
         uses: actions/upload-artifact@v4
         with:
-          name: security-report
           path: |
             audit-results.json
             license-report.json

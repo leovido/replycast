@@ -40,17 +40,16 @@ This directory contains the CI/CD workflows for the **Reply Speed Insights** Far
 - **Duration:** ~5-8 minutes
 - **Reports:** Uploads security artifacts
 
-### 🚀 Deploy to Production (`deploy.yml`)
+### 🚀 Deploy to Production
 
-**Production deployment workflow**
+**Handled by Vercel Auto-Deployment**
 
-**Purpose:** Deploy the Mini App to production
+**Purpose:** Automatic deployment on push to main branch
 
-- **Triggers:** Push to main, Tags, Manual with environment selection
-- **Jobs:**
-  - `deploy`: Build and deploy to Vercel
-- **Duration:** ~4-6 minutes
-- **Environments:** Production, Staging
+- **Platform:** Vercel
+- **Triggers:** Push to main branch
+- **Duration:** ~2-3 minutes
+- **Note:** No manual workflow needed - Vercel handles deployment automatically
 
 ### 📊 Performance & Bundle Analysis (`performance.yml`)
 
