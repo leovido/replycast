@@ -87,5 +87,68 @@ jobs:
           fail_ci_if_error: false
           verbose: true
 
+  # Docker build and test
+  docker-test:
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Docker image
+        run: |
+          docker build -t replycast:test .
+
+      - name: Test Docker image
+        run: |
+          # Test that the container starts
+          docker run -d --name test-container -p 3000:3000 replycast:test
+
+          # Wait for container to start
+          sleep 10
+
+          # Test health check
+          docker exec test-container node -e "
+            require('http').get('http://localhost:3000/api/health', (res) => {
+              if (res.statusCode === 200) {
+                console.log('✅ Health check passed');
+                process.exit(0);
+              } else {
+                console.log('❌ Health check failed');
+                process.exit(1);
+              }
+            })
+          "
+
+          # Cleanup
+          docker stop test-container
+          docker rm test-container
+
+      - name: Test Docker Compose
+        run: |
+          # Test docker-compose build
+          docker-compose build
+
+          # Test docker-compose up (background)
+          docker-compose up -d
+
+          # Wait for services to start
+          sleep 30
+
+          # Test main application
+          curl -f http://localhost:3000/api/health || exit 1
+
+          # Test Redis
+          docker-compose exec redis redis-cli ping || exit 1
+
+          # Test PostgreSQL
+          docker-compose exec postgres pg_isready || exit 1
+
+          # Cleanup
+          docker-compose down
+
   # Build step removed - now handled by Lefthook pre-commit hooks
   # This ensures code is always built and tested before being committed
