@@ -37,6 +37,8 @@ const nextConfig = {
       "imagedelivery.net",
       "i.imgur.com",
       "tba-mobile.mypinata.cloud",
+      "cdn.recaster.org",
+      "ipfs.decentralized-content.com",
     ],
     formats: ["image/avif", "image/webp"],
     minimumCacheTTL: 86400, // 24 hours
@@ -66,6 +68,24 @@ const nextConfig = {
       {
         protocol: "https",
         hostname: "yt3.ggpht.com",
+        pathname: "/**",
+        port: "",
+      },
+      {
+        protocol: "https",
+        hostname: "cdn.recaster.org",
+        pathname: "/**",
+        port: "",
+      },
+      {
+        protocol: "https",
+        hostname: "ipfs.decentralized-content.com",
+        pathname: "/**",
+        port: "",
+      },
+      {
+        protocol: "https",
+        hostname: "imagedelivery.net",
         pathname: "/**",
         port: "",
       },
@@ -110,7 +130,10 @@ const nextConfig = {
         headers: [
           {
             key: "Cache-Control",
-            value: "public, s-maxage=60, stale-while-revalidate=120",
+            value:
+              process.env.NODE_ENV === "development"
+                ? "no-cache, no-store, must-revalidate"
+                : "public, s-maxage=60, stale-while-revalidate=120",
           },
         ],
       },

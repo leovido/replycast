@@ -14,7 +14,8 @@
     "check-openrank": "tsx scripts/check-openrank.ts",
     "lefthook:install": "lefthook install",
     "lefthook:uninstall": "lefthook uninstall",
-    "lefthook:run": "lefthook run"
+    "lefthook:run": "lefthook run",
+    "type-check": "tsc --noEmit"
   },
   "dependencies": {
     "@farcaster/auth-kit": "^0.8.1",
@@ -22,12 +23,15 @@
     "@hono/node-server": "^1.19.1",
     "@neynar/nodejs-sdk": "^3.34.0",
     "@tailwindcss/postcss": "^4.1.13",
+    "@types/pg": "^8.15.5",
     "@vercel/analytics": "^1.5.0",
-    "@vercel/speed-insights": "^1.2.0",
     "dotenv": "^16.6.1",
+    "drizzle-kit": "^0.31.4",
+    "drizzle-orm": "^0.44.5",
     "ethers": "^6.15.0",
     "hono": "^4.9.6",
     "next": "^14.2.32",
+    "pg": "^8.16.3",
     "react": "18.2.0",
     "react-dom": "18.2.0",
     "satori": "^0.10.14"

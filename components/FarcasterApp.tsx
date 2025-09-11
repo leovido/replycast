@@ -104,14 +104,13 @@ export default function FarcasterApp() {
   >(() => getStoredValue(STORAGE_KEYS.SORT_OPTION, "newest"));
   const [dayFilter, setDayFilter] = useState<
     "all" | "today" | "3days" | "7days"
-  >(() => getStoredValue(STORAGE_KEYS.DAY_FILTER, "today"));
+  >(() => getStoredValue(STORAGE_KEYS.DAY_FILTER, "7days"));
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResult, setSearchResult] = useState<SearchResult>({
     conversations: [],
     totalMatches: 0,
     searchQuery: "",
   });
-
   // Track app opened
   useEffect(() => {
     trackAppOpened({

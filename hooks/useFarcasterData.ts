@@ -18,7 +18,7 @@ export function useFarcasterData({
   user,
   fetchOpenRankData,
   clearOpenRankCache,
-  dayFilter = "today",
+  dayFilter = "7days",
 }: UseFarcasterDataProps) {
   const [data, setData] = useState<FarcasterRepliesResponse | null>(null);
   const [loading, setLoading] = useState(true);
@@ -109,29 +109,10 @@ export function useFarcasterData({
           process.env.NEXT_PUBLIC_USE_MOCKS === "true" ||
           (typeof window !== "undefined" && (window as any).__FORCE_MOCKS__);
 
-        let responseData;
-
-        if (useMocks) {
-          responseData = await MockFarcasterService.fetchReplies(
-            user.fid,
-            dayFilter,
-            25
-          );
-        } else {
-          // Use the same API endpoint as infinite scroll for consistency
-          const url = new URL(
-            "/api/farcaster-notification-replies",
-            window.location.origin
-          );
-          url.searchParams.set("fid", user.fid.toString());
-          url.searchParams.set("limit", "25");
-          if (dayFilter !== "all") {
-            url.searchParams.set("dayFilter", dayFilter);
-          }
-
-          const res = await fetch(url.toString());
-          responseData = await res.json();
-        }
+        const res = await fetch(url.toString(), {
+          cache: "no-store",
+        });
+        const responseData = await res.json();
 
         if (responseData) {
           setData(responseData);
@@ -212,9 +193,10 @@ export function useFarcasterData({
           url.searchParams.set("dayFilter", dayFilter);
         }
 
-        const res = await fetch(url.toString());
-        responseData = await res.json();
-      }
+      const res = await fetch(url.toString(), {
+        cache: "no-store",
+      });
+      const responseData = await res.json();
 
       // Append new conversations with deduplication
       setAllConversations((prev) => {
@@ -234,7 +216,7 @@ export function useFarcasterData({
           (detail: UnrepliedDetail) => detail.authorFid
         );
         // Don't await this to prevent blocking the UI update
-        fetchOpenRankData(fids).catch((error) => {
+        fetchOpenRankRanks(fids).catch((error) => {
           console.error(
             "Failed to fetch OpenRank for new conversations:",
             error
