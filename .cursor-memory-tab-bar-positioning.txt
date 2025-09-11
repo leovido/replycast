@@ -1,1 +1,71 @@
-Tab Bar Positioning Fix: The tab bar uses 'sticky bottom-0 z-50' positioning. All content areas (ConversationList, FocusTab, AnalyticsTab) must have 'pb-20' (80px bottom padding) to prevent content from appearing over the tab bar. The 'Today's conversations loaded' text and other bottom content should never overlap with the sticky tab bar.
+# Tab Bar & Scroll Features - Working Configuration Memory
+
+## Current Working State (After Merge Conflict Fix)
+
+### Tab Bar Positioning
+- **Component**: `components/TabBar.tsx`
+- **Positioning**: `sticky bottom-0 z-50` (NOT fixed)
+- **Status**: ✅ Working correctly - visible at all times, doesn't overlap content
+
+### Main Content Container
+- **File**: `components/FarcasterApp.tsx` (line ~821)
+- **Classes**: `flex-1 overflow-y-auto pb-20`
+- **Purpose**: `pb-20` (80px bottom padding) prevents content from overlapping with sticky tab bar
+- **IMPORTANT**: This is the ONLY container that should have `pb-20`
+
+### Content Area Padding
+Individual content components should NOT have `pb-20` since they're nested within the main container:
+
+1. **ConversationList** (`components/ConversationList.tsx`)
+   - Old Design: `px-4` ✅ (removed redundant `pb-20`)
+   - New Design: `px-6` ✅ (removed redundant `pb-20`)
+
+2. **FocusTab** (`components/FocusTab.tsx`)
+   - Container: No `pb-20` ✅ (removed redundant padding)
+
+3. **AnalyticsTab** (`components/AnalyticsTab.tsx`)
+   - Container: No `pb-20` ✅ (removed redundant padding)
+
+### CSS Structure (`styles/globals.css`)
+- **HTML/Body**: `html, body { height: 100%; overflow-x: hidden; }` - Enables sticky positioning
+- **Body**: No conflicting overflow rules that interfere with sticky behavior
+- **Swipe Mode**: `overflow: hidden` only when swipe mode is active (prevents vertical scrolling during swipes)
+
+### Scroll Behavior
+- **Normal Scrolling**: ✅ Works on both touch and mouse wheel
+- **Swipe Gestures**: ✅ Work correctly with long press activation
+- **Tab Bar**: ✅ Always visible, doesn't interfere with scrolling
+- **Content**: ✅ Never overlaps with tab bar due to single `pb-20` on main container
+
+## Key Requirements to Maintain
+
+1. **Tab Bar**: Must use `sticky bottom-0 z-50` (NOT fixed positioning)
+2. **Content Padding**: ONLY the main tab content container should have `pb-20` (80px bottom padding)
+3. **Individual Components**: Should NOT have `pb-20` to avoid redundant padding
+4. **CSS**: No conflicting `overflow: hidden` rules on body or main containers
+5. **Structure**: Main container must use `min-h-screen flex flex-col` with `overflow-y-auto`
+
+## What NOT to Change
+
+- ❌ Don't change TabBar from `sticky` to `fixed`
+- ❌ Don't add `pb-20` to individual content components (ConversationList, FocusTab, AnalyticsTab)
+- ❌ Don't remove `pb-20` from the main tab content container
+- ❌ Don't add `overflow: hidden` to body or main containers
+- ❌ Don't modify the main container structure (`min-h-screen flex flex-col`)
+
+## Padding Strategy
+
+- **Main Container**: `pb-20` (80px) - Prevents content overlap with tab bar
+- **Individual Components**: No bottom padding - Content flows naturally within main container
+- **Result**: Clean spacing without redundant padding accumulation
+
+## Merge Conflict Prevention
+
+If merging causes issues again, restore these exact configurations:
+1. TabBar: `sticky bottom-0 z-50`
+2. Main content container: `pb-20` padding ONLY
+3. Individual components: NO `pb-20` padding
+4. CSS: Clean structure without duplicate overflow rules
+
+## Last Updated
+Fixed after merge conflict on [current date] - tab bar now visible at all times with proper content spacing and NO redundant padding.

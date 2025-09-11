@@ -9,6 +9,8 @@ interface FiltersProps {
     | "short"
     | "medium"
     | "long"
+    | "quotient-asc"
+    | "quotient-desc"
     | "openrank-asc"
     | "openrank-desc";
   onSortOptionChange: (
@@ -20,11 +22,15 @@ interface FiltersProps {
       | "short"
       | "medium"
       | "long"
+      | "quotient-asc"
+      | "quotient-desc"
       | "openrank-asc"
       | "openrank-desc"
   ) => void;
   dayFilter: "today" | "all" | "3days" | "7days";
   onDayFilterChange: (filter: "today" | "all" | "3days" | "7days") => void;
+  reputationType: "quotient" | "openrank";
+  onReputationTypeChange: (type: "quotient" | "openrank") => void;
   isDarkTheme: boolean;
 }
 
@@ -35,6 +41,8 @@ export function Filters({
   onSortOptionChange,
   dayFilter,
   onDayFilterChange,
+  reputationType,
+  onReputationTypeChange,
   isDarkTheme,
 }: FiltersProps) {
   return (
@@ -148,6 +156,46 @@ export function Filters({
                   isDarkTheme ? "text-white/80" : "text-gray-700"
                 }`}
               >
+                Reputation:
+              </span>
+              <div className="flex rounded-lg overflow-hidden border border-gray-200">
+                <button
+                  onClick={() => onReputationTypeChange("quotient")}
+                  className={`px-3 py-1.5 text-sm font-medium transition-colors ${
+                    reputationType === "quotient"
+                      ? isDarkTheme
+                        ? "bg-purple-600 text-white"
+                        : "bg-purple-500 text-white"
+                      : isDarkTheme
+                      ? "text-white/60 hover:text-white/80 hover:bg-white/10"
+                      : "text-gray-600 hover:text-gray-800 hover:bg-gray-100"
+                  }`}
+                >
+                  Quotient
+                </button>
+                <button
+                  onClick={() => onReputationTypeChange("openrank")}
+                  className={`px-3 py-1.5 text-sm font-medium transition-colors ${
+                    reputationType === "openrank"
+                      ? isDarkTheme
+                        ? "bg-blue-600 text-white"
+                        : "bg-blue-500 text-white"
+                      : isDarkTheme
+                      ? "text-white/60 hover:text-white/80 hover:bg-white/10"
+                      : "text-gray-600 hover:text-gray-800 hover:bg-gray-100"
+                  }`}
+                >
+                  OpenRank
+                </button>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <span
+                className={`font-medium ${
+                  isDarkTheme ? "text-white/80" : "text-gray-700"
+                }`}
+              >
                 Sort:
               </span>
               <select
@@ -162,6 +210,8 @@ export function Filters({
                       | "short"
                       | "medium"
                       | "long"
+                      | "quotient-asc"
+                      | "quotient-desc"
                       | "openrank-asc"
                       | "openrank-desc"
                   )
@@ -179,6 +229,8 @@ export function Filters({
                 <option value="short">Short</option>
                 <option value="medium">Medium</option>
                 <option value="long">Long</option>
+                <option value="quotient-asc">Quotient ↑</option>
+                <option value="quotient-desc">Quotient ↓</option>
                 <option value="openrank-asc">OpenRank ↑</option>
                 <option value="openrank-desc">OpenRank ↓</option>
               </select>

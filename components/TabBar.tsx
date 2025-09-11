@@ -6,6 +6,7 @@ import {
   getBorderColor,
   getTextColor,
 } from "@/utils/themeHelpers";
+import type { ThemeMode } from "@/types/types";
 
 export type TabType = "inbox" | "focus" | "analytics";
 
@@ -13,7 +14,7 @@ interface TabBarProps {
   activeTab: TabType;
   onTabChange: (tab: TabType) => void;
   isDarkTheme: boolean;
-  themeMode: "dark" | "light" | "Farcaster";
+  themeMode: ThemeMode;
 }
 
 const tabs = [

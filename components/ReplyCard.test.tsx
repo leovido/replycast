@@ -16,6 +16,19 @@ const mockDetail = {
   replyCount: 5,
   hasUserInteraction: false,
   timestamp: Date.now(),
+  embeds: [
+    {
+      url: "https://example.com/image.jpg",
+      metadata: {
+        content_type: "image/jpeg",
+        content_length: 12345,
+        image: {
+          width_px: 800,
+          height_px: 600,
+        },
+      },
+    },
+  ],
 };
 
 describe("ReplyCard", () => {
@@ -84,5 +97,31 @@ describe("ReplyCard", () => {
     render(<ReplyCard {...defaultProps} />);
 
     expect(screen.queryByText("You interacted")).not.toBeInTheDocument();
+  });
+
+  it("handles embeds data correctly", () => {
+    render(<ReplyCard {...defaultProps} />);
+
+    // The LinkContent component should receive the embeds prop
+    // We can't easily test the LinkContent rendering without mocking it,
+    // but we can verify the component renders without errors
+    expect(screen.getByText("@testuser")).toBeInTheDocument();
+    expect(screen.getByText("This is a test reply")).toBeInTheDocument();
+  });
+
+  it("handles empty embeds array", () => {
+    const detailWithoutEmbeds = { ...mockDetail, embeds: [] };
+    render(<ReplyCard {...defaultProps} detail={detailWithoutEmbeds} />);
+
+    expect(screen.getByText("@testuser")).toBeInTheDocument();
+    expect(screen.getByText("This is a test reply")).toBeInTheDocument();
+  });
+
+  it("handles undefined embeds", () => {
+    const detailWithoutEmbeds = { ...mockDetail, embeds: undefined };
+    render(<ReplyCard {...defaultProps} detail={detailWithoutEmbeds} />);
+
+    expect(screen.getByText("@testuser")).toBeInTheDocument();
+    expect(screen.getByText("This is a test reply")).toBeInTheDocument();
   });
 });

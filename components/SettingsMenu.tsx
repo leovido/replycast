@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { sdk } from "@farcaster/miniapp-sdk";
 import { useAppAnalytics } from "../hooks/useAnalytics";
 import { privacyManager, type PrivacyConfig } from "../utils/privacy";
+import type { ThemeMode } from "../types/types";
 
 interface AddToFarcasterButtonProps {
   isDarkTheme: boolean;
@@ -138,14 +139,15 @@ function AddToFarcasterButton({ isDarkTheme }: AddToFarcasterButtonProps) {
 interface SettingsMenuProps {
   isOpen: boolean;
   onClose: () => void;
-  themeMode: "dark" | "light" | "Farcaster";
-  onThemeChange: (theme: "dark" | "light" | "Farcaster") => void;
+  themeMode: ThemeMode;
+  onThemeChange: (theme: ThemeMode) => void;
   viewMode: "list" | "grid";
   onViewModeChange: (mode: "list" | "grid") => void;
   sortOption: string;
   onSortChange: (option: string) => void;
   dayFilter: string;
   onDayFilterChange: (filter: string) => void;
+
   isDarkTheme: boolean;
 }
 
@@ -160,6 +162,7 @@ export function SettingsMenu({
   onSortChange,
   dayFilter,
   onDayFilterChange,
+
   isDarkTheme,
 }: SettingsMenuProps) {
   const [privacyConfig, setPrivacyConfig] = useState<PrivacyConfig>(
@@ -282,7 +285,7 @@ export function SettingsMenu({
               isDarkTheme ? "text-white/80" : "text-gray-700"
             }`}
           >
-            View Mode
+            View Mode (desktop only, Focus section only)
           </h3>
           <div className="flex gap-2">
             {(["list", "grid"] as const).map((mode) => (
@@ -348,6 +351,8 @@ export function SettingsMenu({
             <option value="oldest">Oldest First</option>
             <option value="fid-asc">FID (Low to High)</option>
             <option value="fid-desc">FID (High to Low)</option>
+            <option value="quotient-asc">Quotient (Low to High)</option>
+            <option value="quotient-desc">Quotient (High to Low)</option>
             <option value="openrank-asc">OpenRank (Low to High)</option>
             <option value="openrank-desc">OpenRank (High to Low)</option>
           </select>

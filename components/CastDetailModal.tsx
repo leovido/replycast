@@ -123,7 +123,9 @@ export function CastDetailModal({
             <LinkContent
               text={conversation.originalCastText}
               isDarkTheme={isDarkTheme}
+              themeMode={themeMode}
               className="mb-0"
+              embeds={conversation.embeds}
             />
           </div>
 
@@ -140,9 +142,11 @@ export function CastDetailModal({
 
           {/* Interaction Stats */}
           <div
-            className={`flex items-center gap-6 text-sm ${getTertiaryTextColor(
-              themeMode
-            )}`}
+            className={`flex items-center gap-6 text-sm ${
+              themeMode === "dark"
+                ? "text-white/80"
+                : getTertiaryTextColor(themeMode)
+            }`}
           >
             <div className="flex items-center gap-2">
               <svg
@@ -195,7 +199,6 @@ export function CastDetailModal({
             <button
               onClick={() => {
                 // TODO: Implement mark as read functionality
-                console.log("Marking as read:", conversation.castHash);
                 onClose();
               }}
               className="flex-1 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
@@ -205,7 +208,6 @@ export function CastDetailModal({
             <button
               onClick={() => {
                 // TODO: Implement discard functionality
-                console.log("Discarding:", conversation.castHash);
                 onClose();
               }}
               className="flex-1 bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"

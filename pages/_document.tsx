@@ -64,9 +64,20 @@ export default function Document() {
 
         {/* Touch Event Meta Tags for iframe/WebView environments */}
         <meta name="apple-mobile-web-app-capable" content="yes" />
-        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+        <meta
+          name="apple-mobile-web-app-status-bar-style"
+          content="black-translucent"
+        />
         <meta name="apple-touch-fullscreen" content="yes" />
         <meta name="mobile-web-app-capable" content="yes" />
+
+        {/* Theme Color for status bar and browser UI */}
+        <meta name="theme-color" content="#6C2BD7" />
+        <meta name="msapplication-navbutton-color" content="#6C2BD7" />
+        <meta
+          name="apple-mobile-web-app-status-bar-style"
+          content="black-translucent"
+        />
       </Head>
       <body>
         <Main />

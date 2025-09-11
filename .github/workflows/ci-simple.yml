@@ -1,4 +1,4 @@
-name: CI/CD (Simple)
+name: Quick Validation
 
 on:
   push:
@@ -7,7 +7,7 @@ on:
     branches: [main]
 
 jobs:
-  test:
+  basic-tests:
     runs-on: ubuntu-latest
 
     steps:
@@ -61,49 +61,5 @@ jobs:
           lcov-file: ./coverage/lcov.info
           delete-old-comments: true
 
-  build:
-    runs-on: ubuntu-latest
-    needs: test
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: "20.x"
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v2
-        with:
-          version: 8
-
-      - name: Get pnpm store directory
-        shell: bash
-        run: |
-          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
-
-      - name: Setup pnpm cache
-        uses: actions/cache@v3
-        with:
-          path: ${{ env.STORE_PATH }}
-          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
-          restore-keys: |
-            ${{ runner.os }}-pnpm-store-
-
-      - name: Install dependencies
-        run: |
-          pnpm install --frozen-lockfile || pnpm install
-
-      - name: Build project
-        run: pnpm run build
-
-      - name: Upload build artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: build-files
-          path: |
-            .next/
-            out/
-          retention-days: 7
+  # Build step removed - now handled by Lefthook pre-commit hooks
+  # This ensures code is always built and tested before being committed

@@ -9,6 +9,8 @@ import { getCardBackground, type ThemeMode } from "@/utils/themeHelpers";
 export interface ReplyCardProps {
   detail: UnrepliedDetail;
   openRank: number | null;
+  quotientScore: number | null;
+
   onClick: () => void;
   viewMode: "list" | "grid";
   isDarkTheme: boolean;
@@ -21,6 +23,8 @@ export const ReplyCard = memo<ReplyCardProps>(
   ({
     detail,
     openRank,
+    quotientScore,
+
     onClick,
     viewMode,
     isDarkTheme,
@@ -614,7 +618,7 @@ export const ReplyCard = memo<ReplyCardProps>(
             </div>
           </div>
 
-          {/* Time and OpenRank */}
+          {/* Time and Reputation */}
           <div className="flex flex-col items-end gap-1 text-right">
             <div
               className={`text-sm ${
@@ -623,6 +627,37 @@ export const ReplyCard = memo<ReplyCardProps>(
             >
               {detail.timeAgo}
             </div>
+
+            {/* Show Quotient score */}
+            {quotientScore !== null && quotientScore !== undefined && (
+              <div className="flex items-center gap-1">
+                <svg
+                  width={16}
+                  height={16}
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className={
+                    isDarkTheme ? "text-purple-400" : "text-purple-700"
+                  }
+                  aria-hidden="true"
+                >
+                  <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26" />
+                </svg>
+                <span
+                  className={`font-bold text-lg ${
+                    isDarkTheme ? "text-purple-400" : "text-purple-700"
+                  }`}
+                >
+                  {(quotientScore * 100).toFixed(0)}
+                </span>
+              </div>
+            )}
+
+            {/* Show OpenRank */}
             {openRank !== null && openRank !== undefined && (
               <div className="flex items-center gap-1">
                 <svg
@@ -650,7 +685,10 @@ export const ReplyCard = memo<ReplyCardProps>(
                 </span>
               </div>
             )}
-            {(openRank === null || openRank === undefined) && (
+
+            {/* Show placeholder when no reputation data */}
+            {(quotientScore === null || quotientScore === undefined) &&
+            (openRank === null || openRank === undefined) ? (
               <div className="flex items-center gap-1">
                 <svg
                   width={16}
@@ -674,7 +712,7 @@ export const ReplyCard = memo<ReplyCardProps>(
                   --
                 </span>
               </div>
-            )}
+            ) : null}
             {detail.userLiked && (
               <div className="flex items-center gap-1 text-xs text-red-400">
                 <svg
@@ -719,7 +757,9 @@ export const ReplyCard = memo<ReplyCardProps>(
         <LinkContent
           text={detail.text}
           isDarkTheme={isDarkTheme}
+          themeMode={themeMode}
           className="z-10 pt-4"
+          embeds={detail.embeds}
         />
 
         {/* Show indicator when there's no text but there are embeds */}
@@ -732,7 +772,7 @@ export const ReplyCard = memo<ReplyCardProps>(
         {/* Footer */}
         <div
           className={`z-10 flex items-center justify-between text-sm ${
-            isDarkTheme ? "text-white/60" : "text-gray-500"
+            isDarkTheme ? "text-white/80" : "text-gray-500"
           }`}
         >
           <div className="flex items-center gap-4">

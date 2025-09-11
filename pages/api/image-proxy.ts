@@ -6,7 +6,6 @@ export default async function handler(
 ) {
   const { url } = req.query;
 
-  console.log("url", req.query);
   if (!url || typeof url !== "string") {
     res.status(400).json({ error: "Missing or invalid url parameter" });
     return;

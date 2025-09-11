@@ -1,6 +1,8 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { readOnlyRepository } from "@/lib/db/repositories/readOnlyRepository";
 import type { FarcasterRepliesResponse, UnrepliedDetail } from "@/types/types";
+import { client } from "@/client";
+import { MockFarcasterService } from "@/utils/mockService";
 
 // Cache for user reply checks to avoid repeated database calls
 export const replyCheckCache = new Map<string, boolean>();
@@ -114,6 +116,26 @@ export default async function handler(
 
   if (!fid) {
     return res.status(400).json({ error: "fid query parameter is required" });
+  }
+
+  // Check if mocks are enabled
+  const useMocks = process.env.NEXT_PUBLIC_USE_MOCKS === "true";
+
+  if (useMocks) {
+    try {
+      console.log("Mock: Using mock Farcaster data");
+      const userFid = parseInt(fid as string, 10);
+      const mockData = await MockFarcasterService.fetchReplies(
+        userFid,
+        dayFilter as string,
+        parseInt(limit as string),
+        cursor as string
+      );
+      return res.status(200).json(mockData);
+    } catch (error) {
+      console.error("Mock service error:", error);
+      return res.status(500).json({ error: "Mock service failed" });
+    }
   }
 
   // Cache control is handled by Next.js config for this endpoint

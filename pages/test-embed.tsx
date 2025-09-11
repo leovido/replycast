@@ -1,6 +1,6 @@
 import type { NextPage } from "next";
 import Head from "next/head";
-import { LinkContent } from "../components/LinkContent";
+import { LinkContent } from "@/components/LinkContent";
 
 const TestEmbed: NextPage = () => {
   return (

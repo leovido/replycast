@@ -2,7 +2,7 @@ import { client } from "@/client";
 import type { NextApiRequest, NextApiResponse } from "next";
 
 // === CONFIG ===
-const API_KEY = process.env.NEYNAR_API_KEY;
+// API_KEY will be checked at runtime in the handler
 
 const timeAgo = (dateString: string): string => {
   const now = new Date();
@@ -57,7 +57,7 @@ export default async function handler(
 
   const limitNum = parseInt(limit as string, 10) || 10;
 
-  if (!API_KEY) {
+  if (!process.env.NEYNAR_API_KEY) {
     return res.status(500).json({ error: "API key not configured" });
   }
 
@@ -92,6 +92,21 @@ export default async function handler(
       originalCastHash: string;
       originalAuthorUsername: string;
       replyCount: number;
+      embeds?: Array<{
+        url?: string;
+        cast_id?: {
+          fid: number;
+          hash: string;
+        };
+        metadata?: {
+          content_type?: string;
+          content_length?: number;
+          image?: {
+            width_px: number;
+            height_px: number;
+          };
+        };
+      }>;
     }> = [];
 
     // Process casts until we have enough unreplied conversations or run out of casts
@@ -107,7 +122,7 @@ export default async function handler(
         identifier: hash,
         type: "hash",
         replyDepth: 2,
-        limit: 50,
+        limit: 25,
       });
 
       const convo = convoRes.conversation?.cast;
@@ -140,6 +155,33 @@ export default async function handler(
         const originalCastHash = cast.hash;
         const originalAuthorUsername = cast.author?.username || "unknown";
         const replyCount = replies.length;
+        const embeds = (cast.embeds || []).map((embed) => {
+          // Handle both EmbedUrl and EmbedCast types
+          if ("url" in embed) {
+            // EmbedUrl type
+            return {
+              url: embed.url,
+              metadata: embed.metadata
+                ? {
+                    content_type: embed.metadata.content_type || undefined,
+                    content_length: embed.metadata.content_length || undefined,
+                    image: embed.metadata.image
+                      ? {
+                          width_px: embed.metadata.image.width_px || 0,
+                          height_px: embed.metadata.image.height_px || 0,
+                        }
+                      : undefined,
+                  }
+                : undefined,
+            };
+          } else {
+            // EmbedCast type
+            return {
+              cast_id: embed.cast_id,
+              metadata: undefined,
+            };
+          }
+        });
 
         unrepliedDetails.push({
           username,
@@ -153,6 +195,7 @@ export default async function handler(
           originalCastHash,
           originalAuthorUsername,
           replyCount,
+          embeds,
         });
       }
     }

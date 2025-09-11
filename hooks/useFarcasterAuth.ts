@@ -21,7 +21,6 @@ export function useFarcasterAuth() {
           process.env.NEXT_PUBLIC_BYPASS_MINIAPP === "true";
 
         if (bypassMiniApp) {
-          console.log("Development mode: bypassing mini app check");
           setIsInMiniApp(false);
           // In development, use a test user but log it clearly
           const testUser = {
@@ -52,15 +51,10 @@ export function useFarcasterAuth() {
               const farUser = ctx?.user;
 
               if (farUser) {
-                console.log("Successfully got user context:", farUser);
                 setUser(farUser);
                 setLoading(false);
                 return true;
               } else {
-                console.log(
-                  "User context not available yet, retry:",
-                  retries + 1
-                );
                 return false;
               }
             } catch (err) {
