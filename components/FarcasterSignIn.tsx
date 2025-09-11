@@ -4,6 +4,57 @@ import { SignInButton } from "@farcaster/auth-kit";
 import { QRCodeModal } from "./QRCodeModal";
 import { Button } from "./Button";
 
+// Custom styled sign-in button component for main page
+function StyledSignInButton({
+  onSuccess,
+  onError,
+  className = "",
+}: {
+  onSuccess?: (data: any) => void;
+  onError?: (error: any) => void;
+  className?: string;
+}) {
+  return (
+    <div className={`styled-signin-main ${className}`}>
+      <style
+        dangerouslySetInnerHTML={{
+          __html: `
+          .styled-signin-main button {
+            width: 100% !important;
+            background: #8b5cf6 !important;
+            backdrop-filter: blur(8px) !important;
+            color: white !important;
+            font-weight: 600 !important;
+            font-size: 1.125rem !important;
+            padding: 1rem 1.5rem !important;
+            border-radius: 0.75rem !important;
+            border: 1px solid rgba(139, 92, 246, 0.3) !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            gap: 0.75rem !important;
+            transition: all 0.2s ease !important;
+            transform: scale(1) !important;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05) !important;
+            cursor: pointer !important;
+          }
+          .styled-signin-main button:hover {
+            background: #7c3aed !important;
+            border-color: rgba(124, 58, 237, 0.5) !important;
+            transform: scale(1.02) !important;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04) !important;
+          }
+          .styled-signin-main button:active {
+            transform: scale(0.98) !important;
+          }
+        `,
+        }}
+      />
+      <SignInButton onSuccess={onSuccess} onError={onError} />
+    </div>
+  );
+}
+
 interface FarcasterSignInProps {
   onSignIn: (user: {
     fid: number;
@@ -140,9 +191,10 @@ export function FarcasterSignIn({ onSignIn, onError }: FarcasterSignInProps) {
           )}
 
           <div className="w-full">
-            <SignInButton
+            <StyledSignInButton
               onSuccess={handleSignInSuccess}
               onError={handleSignInError}
+              className="w-full"
             />
           </div>
 

@@ -2,6 +2,54 @@ import React, { useEffect } from "react";
 import { createPortal } from "react-dom";
 import { SignInButton } from "@farcaster/auth-kit";
 
+// Custom styled sign-in button component
+function StyledSignInButton({
+  onSuccess,
+  onError,
+  className = "",
+}: {
+  onSuccess?: (data: any) => void;
+  onError?: (error: any) => void;
+  className?: string;
+}) {
+  return (
+    <div className={`styled-signin-container ${className}`}>
+      <style
+        dangerouslySetInnerHTML={{
+          __html: `
+          .styled-signin-container button {
+            width: 100% !important;
+            background: #8b5cf6 !important;
+            color: white !important;
+            font-weight: 600 !important;
+            padding: 0.75rem 1.5rem !important;
+            border-radius: 0.5rem !important;
+            border: none !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            gap: 0.5rem !important;
+            transition: all 0.2s ease !important;
+            transform: scale(1) !important;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05) !important;
+            cursor: pointer !important;
+          }
+          .styled-signin-container button:hover {
+            background: #7c3aed !important;
+            transform: scale(1.02) !important;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04) !important;
+          }
+          .styled-signin-container button:active {
+            transform: scale(0.98) !important;
+          }
+        `,
+        }}
+      />
+      <SignInButton onSuccess={onSuccess} onError={onError} />
+    </div>
+  );
+}
+
 interface QRCodeModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -166,7 +214,13 @@ export function QRCodeModal({
             <p className="text-center text-gray-500 text-sm mb-4">
               Or sign in directly:
             </p>
-            <SignInButton onSuccess={onSignInSuccess} onError={onSignInError} />
+            <div className="w-full">
+              <StyledSignInButton
+                onSuccess={onSignInSuccess}
+                onError={onSignInError}
+                className="w-full"
+              />
+            </div>
           </div>
         </div>
       </div>
