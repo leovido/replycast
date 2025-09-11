@@ -29,7 +29,6 @@ async function fetchReplies(fid: string, hash: string) {
 async function fetchConversationTree(fid: string, hash: string) {
   const rootCast = await fetchCastById(fid, hash);
   const replies = await fetchReplies(fid, hash);
-  console.log(`Replies for ${fid}/${hash}:`, replies.length);
   const nestedReplies = await Promise.all(
     replies.map(async (reply: any) => {
       const child = await fetchConversationTree(

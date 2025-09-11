@@ -46,10 +46,6 @@ export function FarcasterSignIn({ onSignIn, onError }: FarcasterSignInProps) {
                 onSignIn(ctx.user);
                 return true;
               } else {
-                console.log(
-                  "SignIn: User context not available yet, retry:",
-                  retries + 1
-                );
                 return false;
               }
             } catch (err) {

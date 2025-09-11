@@ -1,16 +1,17 @@
 #!/usr/bin/env tsx
 
-import { ethers } from "ethers";
+const OPENRANK_URL = process.env.OPENRANK_URL || "https://api.openrank.xyz/";
 
-const openRankAddress = "0xaC1EBa9e86740e38F0aCbE016d32b3B015206cd8";
-const openRankAbi = [
-  "function getRanksAndScoresForFIDs(uint256[] fids) view returns (uint256[] ranks, uint256[] scores)",
-];
+interface OpenRankScore {
+  rank: number | null;
+  score: number | null;
+  percentile: number | null;
+}
 
 interface OpenRankResult {
   fid: number;
-  rank: number | null;
-  score?: number | null;
+  following: OpenRankScore;
+  engagement: OpenRankScore;
 }
 
 async function checkOpenRank(fids: number[]): Promise<OpenRankResult[]> {
@@ -19,26 +20,62 @@ async function checkOpenRank(fids: number[]): Promise<OpenRankResult[]> {
       `🔍 Checking OpenRank for ${fids.length} FID(s): ${fids.join(", ")}`
     );
 
-    const provider = new ethers.JsonRpcProvider("https://mainnet.base.org");
-    const contract = new ethers.Contract(
-      openRankAddress,
-      openRankAbi,
-      provider
-    );
+    const followingURL = OPENRANK_URL + "scores/global/following/fids";
+    const engagementURL = OPENRANK_URL + "scores/global/engagement/fids";
 
-    // Call the batch method
-    const [ranks, scores] = await contract.getRanksAndScoresForFIDs(fids);
+    // Filter out invalid FIDs and convert to strings for API
+    const validFids = fids
+      .filter((fid) => !isNaN(fid))
+      .map((fid) => fid.toString());
 
+    // Fetch both following and engagement scores
+    const [followingResponse, engagementResponse] = await Promise.all([
+      fetch(followingURL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(validFids),
+      }),
+      fetch(engagementURL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(validFids),
+      }),
+    ]);
+
+    if (!followingResponse.ok || !engagementResponse.ok) {
+      throw new Error("Failed to fetch OpenRank data from API");
+    }
+
+    const followingData = await followingResponse.json();
+    const engagementData = await engagementResponse.json();
+
+    // Create result objects with both following and engagement data
     const results: OpenRankResult[] = [];
 
-    fids.forEach((fid, index) => {
-      const rank = ranks[index] ? parseInt(ranks[index].toString()) : null;
-      const score = scores[index] ? parseInt(scores[index].toString()) : null;
+    fids.forEach((fid) => {
+      const followingItem = followingData.result?.find(
+        (item: any) => item.fid === fid
+      );
+      const engagementItem = engagementData.result?.find(
+        (item: any) => item.fid === fid
+      );
 
       results.push({
         fid,
-        rank,
-        score,
+        following: {
+          rank: followingItem?.rank || null,
+          score: followingItem?.score || null,
+          percentile: followingItem?.percentile || null,
+        },
+        engagement: {
+          rank: engagementItem?.rank || null,
+          score: engagementItem?.score || null,
+          percentile: engagementItem?.percentile || null,
+        },
       });
     });
 
@@ -51,34 +88,77 @@ async function checkOpenRank(fids: number[]): Promise<OpenRankResult[]> {
 
 function displayResults(results: OpenRankResult[]): void {
   console.log("\n📊 OpenRank Results:");
-  console.log("=".repeat(50));
+  console.log("=".repeat(80));
 
-  results.forEach(({ fid, rank, score }) => {
-    const rankDisplay = rank ? `#${rank.toLocaleString()}` : "N/A";
-    const scoreDisplay = score ? score.toLocaleString() : "N/A";
+  results.forEach(({ fid, following, engagement }) => {
+    const followingRankDisplay = following.rank
+      ? `#${following.rank.toLocaleString()}`
+      : "N/A";
+    const engagementRankDisplay = engagement.rank
+      ? `#${engagement.rank.toLocaleString()}`
+      : "N/A";
+    const followingScoreDisplay = following.score
+      ? following.score.toFixed(6)
+      : "N/A";
+    const engagementScoreDisplay = engagement.score
+      ? engagement.score.toFixed(6)
+      : "N/A";
 
     console.log(
-      `FID ${fid.toString().padStart(8)} | Rank: ${rankDisplay.padStart(
-        10
-      )} | Score: ${scoreDisplay.padStart(12)}`
+      `FID ${fid
+        .toString()
+        .padStart(8)} | Following: ${followingRankDisplay.padStart(
+        8
+      )} (${followingScoreDisplay}) | Engagement: ${engagementRankDisplay.padStart(
+        8
+      )} (${engagementScoreDisplay})`
     );
   });
 
-  console.log("=".repeat(50));
+  console.log("=".repeat(80));
 
-  // Summary
-  const validRanks = results.filter((r) => r.rank !== null);
-  if (validRanks.length > 0) {
-    const avgRank = Math.round(
-      validRanks.reduce((sum, r) => sum + (r.rank || 0), 0) / validRanks.length
+  // Summary for engagement ranks (primary metric)
+  const validEngagementRanks = results.filter(
+    (r) => r.engagement.rank !== null
+  );
+  if (validEngagementRanks.length > 0) {
+    const avgEngagementRank = Math.round(
+      validEngagementRanks.reduce(
+        (sum, r) => sum + (r.engagement.rank || 0),
+        0
+      ) / validEngagementRanks.length
     );
-    const minRank = Math.min(...validRanks.map((r) => r.rank || 0));
-    const maxRank = Math.max(...validRanks.map((r) => r.rank || 0));
+    const minEngagementRank = Math.min(
+      ...validEngagementRanks.map((r) => r.engagement.rank || 0)
+    );
+    const maxEngagementRank = Math.max(
+      ...validEngagementRanks.map((r) => r.engagement.rank || 0)
+    );
 
-    console.log(`\n📈 Summary:`);
-    console.log(`   Average Rank: #${avgRank.toLocaleString()}`);
-    console.log(`   Best Rank: #${minRank.toLocaleString()}`);
-    console.log(`   Worst Rank: #${maxRank.toLocaleString()}`);
+    console.log(`\n📈 Engagement Rank Summary:`);
+    console.log(`   Average Rank: #${avgEngagementRank.toLocaleString()}`);
+    console.log(`   Best Rank: #${minEngagementRank.toLocaleString()}`);
+    console.log(`   Worst Rank: #${maxEngagementRank.toLocaleString()}`);
+  }
+
+  // Summary for following ranks
+  const validFollowingRanks = results.filter((r) => r.following.rank !== null);
+  if (validFollowingRanks.length > 0) {
+    const avgFollowingRank = Math.round(
+      validFollowingRanks.reduce((sum, r) => sum + (r.following.rank || 0), 0) /
+        validFollowingRanks.length
+    );
+    const minFollowingRank = Math.min(
+      ...validFollowingRanks.map((r) => r.following.rank || 0)
+    );
+    const maxFollowingRank = Math.max(
+      ...validFollowingRanks.map((r) => r.following.rank || 0)
+    );
+
+    console.log(`\n👥 Following Rank Summary:`);
+    console.log(`   Average Rank: #${avgFollowingRank.toLocaleString()}`);
+    console.log(`   Best Rank: #${minFollowingRank.toLocaleString()}`);
+    console.log(`   Worst Rank: #${maxFollowingRank.toLocaleString()}`);
   }
 }
 

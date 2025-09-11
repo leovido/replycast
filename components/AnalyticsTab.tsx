@@ -1,28 +1,43 @@
 import React from "react";
-import type { UnrepliedDetail } from "@/types/types";
+import type { UnrepliedDetail, OpenRankData } from "@/types/types";
 import Image from "next/image";
+import type { ThemeMode } from "@/types/types";
 
 interface AnalyticsTabProps {
   allConversations: UnrepliedDetail[];
   userOpenRank: number | null;
-  openRankRanks: Record<number, number | null>;
+  userQuotientScore: number | null;
+  openRankData: Record<number, OpenRankData>;
   isDarkTheme: boolean;
-  themeMode: "dark" | "light" | "Farcaster";
+  themeMode: ThemeMode;
+  searchQuery?: string;
+  isSearching?: boolean;
 }
 
 export function AnalyticsTab({
   allConversations,
   userOpenRank,
-  openRankRanks,
+  userQuotientScore,
+  openRankData,
   isDarkTheme,
   themeMode,
+  searchQuery,
+  isSearching,
 }: AnalyticsTabProps) {
   // Calculate analytics
   const totalConversations = allConversations.length;
   const uniqueAuthors = new Set(allConversations.map((c) => c.authorFid)).size;
-  const averageOpenRank =
+  const averageEngagementRank =
     allConversations.reduce((sum, conv) => {
-      const rank = openRankRanks[conv.authorFid];
+      const data = openRankData[conv.authorFid];
+      const rank = data?.engagement?.rank;
+      return sum + (rank || 0);
+    }, 0) / totalConversations || 0;
+
+  const averageFollowingRank =
+    allConversations.reduce((sum, conv) => {
+      const data = openRankData[conv.authorFid];
+      const rank = data?.following?.rank;
       return sum + (rank || 0);
     }, 0) / totalConversations || 0;
 
@@ -30,6 +45,8 @@ export function AnalyticsTab({
     switch (themeMode) {
       case "light":
         return "bg-white/80 backdrop-blur-md border border-gray-200";
+      case "neon":
+        return "bg-pink-500/20 backdrop-blur-md border border-pink-500/40 shadow-lg shadow-pink-500/25";
       case "Farcaster":
         return "bg-purple-900/20 backdrop-blur-md border border-purple-800/30";
       default:
@@ -49,6 +66,8 @@ export function AnalyticsTab({
     switch (themeMode) {
       case "light":
         return "text-blue-600";
+      case "neon":
+        return "text-pink-400";
       case "Farcaster":
         return "text-purple-300";
       default:
@@ -57,17 +76,24 @@ export function AnalyticsTab({
   };
 
   return (
-    <div className="pb-20">
+    <div>
       <div className="mb-6">
         <h2 className={`text-lg font-semibold mb-2 ${getTextClass()}`}>
           Analytics
+          {isSearching && (
+            <span className="ml-2 text-sm font-normal opacity-75">
+              (Search Results)
+            </span>
+          )}
         </h2>
         <p className={`text-sm ${getSubtextClass()}`}>
-          Insights about your unreplied conversations
+          {isSearching
+            ? `Insights about conversations matching "${searchQuery}"`
+            : "Insights about your unreplied conversations"}
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         {/* Total Conversations */}
         <div className={`p-4 rounded-xl ${getCardClass()}`}>
           <div className="flex items-center justify-between mb-2">
@@ -127,10 +153,12 @@ export function AnalyticsTab({
           </p>
         </div>
 
-        {/* Average OpenRank */}
+        {/* Average Engagement Rank */}
         <div className={`p-4 rounded-xl ${getCardClass()}`}>
           <div className="flex items-center justify-between mb-2">
-            <h3 className={`font-semibold ${getTextClass()}`}>Avg OpenRank</h3>
+            <h3 className={`font-semibold ${getTextClass()}`}>
+              Avg Engagement Rank
+            </h3>
             <svg
               width={20}
               height={20}
@@ -144,58 +172,120 @@ export function AnalyticsTab({
             </svg>
           </div>
           <div className={`text-2xl font-bold ${getAccentClass()}`}>
-            #{Math.round(averageOpenRank).toLocaleString()}
+            #{Math.round(averageEngagementRank).toLocaleString()}
           </div>
           <p className={`text-sm ${getSubtextClass()}`}>
-            Average rank of authors
+            Average engagement rank
           </p>
         </div>
-      </div>
 
-      {/* Your OpenRank */}
-      {userOpenRank !== null && userOpenRank !== undefined && (
-        <div className={`p-6 rounded-xl ${getCardClass()} mb-8`}>
-          <div className="flex items-center justify-between mb-4">
-            <h3 className={`text-lg font-semibold ${getTextClass()}`}>
-              Your OpenRank
+        {/* Average Following Rank */}
+        <div className={`p-4 rounded-xl ${getCardClass()}`}>
+          <div className="flex items-center justify-between mb-2">
+            <h3 className={`font-semibold ${getTextClass()}`}>
+              Avg Following Rank
             </h3>
             <svg
-              width={24}
-              height={24}
+              width={20}
+              height={20}
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
               strokeWidth={2}
               className={getAccentClass()}
             >
-              <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26" />
+              <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+              <circle cx="9" cy="7" r="4" />
+              <path d="m22 21-2-2" />
+              <path d="M16 16l4 4" />
             </svg>
           </div>
-          <div className={`text-4xl font-bold mb-2 ${getAccentClass()}`}>
-            #{userOpenRank.toLocaleString()}
+          <div className={`text-2xl font-bold ${getAccentClass()}`}>
+            #{Math.round(averageFollowingRank).toLocaleString()}
           </div>
           <p className={`text-sm ${getSubtextClass()}`}>
-            Your current OpenRank position
+            Average following rank
           </p>
         </div>
-      )}
+      </div>
 
-      {/* Top Authors by OpenRank */}
+      {/* Your Reputation Scores */}
+      {(userOpenRank !== null && userOpenRank !== undefined) ||
+      (userQuotientScore !== null && userQuotientScore !== undefined) ? (
+        <div className={`p-6 rounded-xl ${getCardClass()} mb-8`}>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className={`text-lg font-semibold ${getTextClass()}`}>
+              Your Reputation
+            </h3>
+            <div className="flex items-center gap-2">
+              <svg
+                width={20}
+                height={20}
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth={2}
+                className="text-yellow-400"
+              >
+                <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26" />
+              </svg>
+              <svg
+                width={20}
+                height={20}
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth={2}
+                className="text-purple-400"
+              >
+                <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26" />
+              </svg>
+            </div>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-2 gap-4">
+            {userOpenRank !== null && userOpenRank !== undefined && (
+              <div className="text-center">
+                <div className={`text-3xl font-bold mb-1 ${getAccentClass()}`}>
+                  #{userOpenRank.toLocaleString()}
+                </div>
+                <p className={`text-sm ${getSubtextClass()}`}>
+                  Engagement Rank
+                </p>
+              </div>
+            )}
+            {userQuotientScore !== null && userQuotientScore !== undefined && (
+              <div className="text-center">
+                <div className={`text-3xl font-bold mb-1 text-purple-400`}>
+                  {(userQuotientScore * 100).toFixed(0)}
+                </div>
+                <p className={`text-sm ${getSubtextClass()}`}>Quotient Score</p>
+              </div>
+            )}
+          </div>
+        </div>
+      ) : null}
+
+      {/* Top Authors by Engagement Rank */}
       <div className={`p-6 rounded-xl ${getCardClass()}`}>
         <h3 className={`text-lg font-semibold mb-4 ${getTextClass()}`}>
-          Top Authors by OpenRank
+          Top Authors by Engagement Rank
         </h3>
         <div className="space-y-3">
           {allConversations
             .sort((a, b) => {
-              const rankA = openRankRanks[a.authorFid] || 0;
-              const rankB = openRankRanks[b.authorFid] || 0;
+              const dataA = openRankData[a.authorFid];
+              const dataB = openRankData[b.authorFid];
+              const rankA = dataA?.engagement?.rank || 999999;
+              const rankB = dataB?.engagement?.rank || 999999;
               return rankA - rankB;
             })
             .slice(0, 5)
             .map((conversation, index) => {
-              const rank = openRankRanks[conversation.authorFid];
-              if (!rank) return null;
+              const data = openRankData[conversation.authorFid];
+              const engagementRank = data?.engagement?.rank;
+              const followingRank = data?.following?.rank;
+
+              if (!engagementRank) return null;
 
               return (
                 <div
@@ -218,6 +308,11 @@ export function AnalyticsTab({
                           width={48}
                           height={48}
                           className="w-10 h-10 rounded-full border-2 border-white/20"
+                          // Disable optimization to prevent multiple requests
+                          unoptimized={true}
+                          // Disable lazy loading for immediate display
+                          priority={false}
+                          loading="eager"
                         />
                       </div>
                       <div>
@@ -230,8 +325,18 @@ export function AnalyticsTab({
                       </div>
                     </div>
                   </div>
-                  <div className={`font-bold ${getAccentClass()}`}>
-                    #{rank.toLocaleString()}
+                  <div className="text-right">
+                    <div className={`font-bold ${getAccentClass()}`}>
+                      #{engagementRank.toLocaleString()}
+                    </div>
+                    <div className={`text-xs ${getSubtextClass()}`}>
+                      Eng: #{engagementRank.toLocaleString()}
+                    </div>
+                    {followingRank && (
+                      <div className={`text-xs ${getSubtextClass()}`}>
+                        Fol: #{followingRank.toLocaleString()}
+                      </div>
+                    )}
                   </div>
                 </div>
               );

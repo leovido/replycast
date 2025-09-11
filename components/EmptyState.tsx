@@ -1,11 +1,12 @@
 import React from "react";
 import { Button } from "./Button";
+import type { ThemeMode } from "../types/types";
 
 interface EmptyStateProps {
   title: string;
   description: string;
   icon?: React.ReactNode;
-  themeMode?: "dark" | "light" | "Farcaster";
+  themeMode?: ThemeMode;
   action?: {
     label: string;
     onClick: () => void;
@@ -36,6 +37,14 @@ export function EmptyState({
           textMuted: "text-gray-600",
           border: "border-gray-200",
           iconBg: "bg-gray-100",
+        };
+      case "neon":
+        return {
+          container: "bg-gradient-to-br from-pink-500/10 to-cyan-500/10",
+          text: "text-pink-400",
+          textMuted: "text-cyan-400/70",
+          border: "border-pink-500/30",
+          iconBg: "bg-pink-500/20",
         };
       case "Farcaster":
       default:

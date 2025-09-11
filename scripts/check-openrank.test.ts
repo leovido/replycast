@@ -1,68 +1,136 @@
-// Mock ethers
-jest.mock("ethers", () => ({
-  JsonRpcProvider: jest.fn(),
-  Contract: jest.fn(),
-}));
+// Mock fetch globally
+global.fetch = jest.fn();
 
-const mockProvider = {
-  // Add any provider methods if needed
-};
+// Mock environment variables
+const originalEnv = process.env;
+beforeAll(() => {
+  process.env.OPENRANK_URL = "https://api.openrank.xyz/";
+});
 
-const mockContract = {
-  getRanksAndScoresForFIDs: jest.fn(),
-};
+afterAll(() => {
+  process.env = originalEnv;
+});
 
 describe("OpenRank Checker Script", () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    const ethers = require("ethers");
-    (ethers.JsonRpcProvider as jest.Mock).mockReturnValue(mockProvider);
-    (ethers.Contract as jest.Mock).mockReturnValue(mockContract);
   });
 
   it("should handle valid FIDs", async () => {
-    const mockRanks = ["100", "200", "300"];
-    const mockScores = ["1000000", "2000000", "3000000"];
-    
-    mockContract.getRanksAndScoresForFIDs.mockResolvedValue([mockRanks, mockScores]);
+    const mockFollowingResponse = {
+      ok: true,
+      json: async () => ({
+        result: [
+          { fid: 1, username: "user1", rank: 100, score: 0.5, percentile: 99 },
+          { fid: 2, username: "user2", rank: 200, score: 0.4, percentile: 98 },
+          { fid: 3, username: "user3", rank: 300, score: 0.3, percentile: 97 },
+        ],
+      }),
+    };
+    const mockEngagementResponse = {
+      ok: true,
+      json: async () => ({
+        result: [
+          { fid: 1, username: "user1", rank: 150, score: 0.6, percentile: 99 },
+          { fid: 2, username: "user2", rank: 250, score: 0.5, percentile: 98 },
+          { fid: 3, username: "user3", rank: 350, score: 0.4, percentile: 97 },
+        ],
+      }),
+    };
+
+    (global.fetch as jest.Mock)
+      .mockResolvedValueOnce(mockFollowingResponse)
+      .mockResolvedValueOnce(mockEngagementResponse);
 
     // This would test the actual function if we exported it
     // For now, we'll test the logic
     const fids = [1, 2, 3];
     const expectedResults = [
-      { fid: 1, rank: 100, score: 1000000 },
-      { fid: 2, rank: 200, score: 2000000 },
-      { fid: 3, rank: 300, score: 3000000 },
+      {
+        fid: 1,
+        following: { rank: 100, score: 0.5, percentile: 99 },
+        engagement: { rank: 150, score: 0.6, percentile: 99 },
+      },
+      {
+        fid: 2,
+        following: { rank: 200, score: 0.4, percentile: 98 },
+        engagement: { rank: 250, score: 0.5, percentile: 98 },
+      },
+      {
+        fid: 3,
+        following: { rank: 300, score: 0.3, percentile: 97 },
+        engagement: { rank: 350, score: 0.4, percentile: 97 },
+      },
     ];
 
     expect(fids.length).toBe(3);
     expect(expectedResults.length).toBe(3);
   });
 
-  it("should handle null responses from contract", async () => {
-    const mockRanks = ["null", "null", "100"];
-    const mockScores = ["null", "null", "1000000"];
-    
-    mockContract.getRanksAndScoresForFIDs.mockResolvedValue([mockRanks, mockScores]);
+  it("should handle missing FIDs in API response", async () => {
+    const mockFollowingResponse = {
+      ok: true,
+      json: async () => ({
+        result: [
+          {
+            fid: 4703,
+            username: "user3",
+            rank: 100,
+            score: 0.5,
+            percentile: 99,
+          },
+        ],
+      }),
+    };
+    const mockEngagementResponse = {
+      ok: true,
+      json: async () => ({
+        result: [
+          {
+            fid: 4703,
+            username: "user3",
+            rank: 150,
+            score: 0.6,
+            percentile: 99,
+          },
+        ],
+      }),
+    };
+
+    (global.fetch as jest.Mock)
+      .mockResolvedValueOnce(mockFollowingResponse)
+      .mockResolvedValueOnce(mockEngagementResponse);
 
     const fids = [4701, 4702, 4703];
     const expectedResults = [
-      { fid: 4701, rank: null, score: null },
-      { fid: 4702, rank: null, score: null },
-      { fid: 4703, rank: 100, score: 1000000 },
+      {
+        fid: 4701,
+        following: { rank: null, score: null, percentile: null },
+        engagement: { rank: null, score: null, percentile: null },
+      },
+      {
+        fid: 4702,
+        following: { rank: null, score: null, percentile: null },
+        engagement: { rank: null, score: null, percentile: null },
+      },
+      {
+        fid: 4703,
+        following: { rank: 100, score: 0.5, percentile: 99 },
+        engagement: { rank: 150, score: 0.6, percentile: 99 },
+      },
     ];
 
     expect(fids.length).toBe(3);
     expect(expectedResults.length).toBe(3);
   });
 
-  it("should handle contract errors", async () => {
-    mockContract.getRanksAndScoresForFIDs.mockRejectedValue(new Error("Contract error"));
+  it("should handle API errors", async () => {
+    (global.fetch as jest.Mock).mockRejectedValue(new Error("Network error"));
 
     // Test error handling
     expect(() => {
-      throw new Error("Contract error");
-    }).toThrow("Contract error");
+      throw new Error("Network error");
+    }).toThrow("Network error");
   });
 
   it("should validate FID parsing", () => {
@@ -80,7 +148,7 @@ describe("OpenRank Checker Script", () => {
 
   it("should format large numbers correctly", () => {
     const formatNumber = (num: number) => num.toLocaleString();
-    
+
     expect(formatNumber(1234567)).toBe("1,234,567");
     expect(formatNumber(1000000)).toBe("1,000,000");
     expect(formatNumber(999)).toBe("999");
@@ -88,18 +156,61 @@ describe("OpenRank Checker Script", () => {
 
   it("should calculate summary statistics", () => {
     const results = [
-      { fid: 1, rank: 100, score: 1000000 },
-      { fid: 2, rank: 200, score: 2000000 },
-      { fid: 3, rank: 300, score: 3000000 },
+      {
+        fid: 1,
+        following: { rank: 100, score: 0.5, percentile: 99 },
+        engagement: { rank: 150, score: 0.6, percentile: 99 },
+      },
+      {
+        fid: 2,
+        following: { rank: 200, score: 0.4, percentile: 98 },
+        engagement: { rank: 250, score: 0.5, percentile: 98 },
+      },
+      {
+        fid: 3,
+        following: { rank: 300, score: 0.3, percentile: 97 },
+        engagement: { rank: 350, score: 0.4, percentile: 97 },
+      },
     ];
 
-    const validRanks = results.filter(r => r.rank !== null);
-    const avgRank = Math.round(validRanks.reduce((sum, r) => sum + (r.rank || 0), 0) / validRanks.length);
-    const minRank = Math.min(...validRanks.map(r => r.rank || 0));
-    const maxRank = Math.max(...validRanks.map(r => r.rank || 0));
+    // Test engagement rank statistics (primary metric)
+    const validEngagementRanks = results.filter(
+      (r) => r.engagement.rank !== null
+    );
+    const avgEngagementRank = Math.round(
+      validEngagementRanks.reduce(
+        (sum, r) => sum + (r.engagement.rank || 0),
+        0
+      ) / validEngagementRanks.length
+    );
+    const minEngagementRank = Math.min(
+      ...validEngagementRanks.map((r) => r.engagement.rank || 0)
+    );
+    const maxEngagementRank = Math.max(
+      ...validEngagementRanks.map((r) => r.engagement.rank || 0)
+    );
 
-    expect(avgRank).toBe(200);
-    expect(minRank).toBe(100);
-    expect(maxRank).toBe(300);
+    expect(avgEngagementRank).toBe(250);
+    expect(minEngagementRank).toBe(150);
+    expect(maxEngagementRank).toBe(350);
+
+    // Test following rank statistics
+    const validFollowingRanks = results.filter(
+      (r) => r.following.rank !== null
+    );
+    const avgFollowingRank = Math.round(
+      validFollowingRanks.reduce((sum, r) => sum + (r.following.rank || 0), 0) /
+        validFollowingRanks.length
+    );
+    const minFollowingRank = Math.min(
+      ...validFollowingRanks.map((r) => r.following.rank || 0)
+    );
+    const maxFollowingRank = Math.max(
+      ...validFollowingRanks.map((r) => r.following.rank || 0)
+    );
+
+    expect(avgFollowingRank).toBe(200);
+    expect(minFollowingRank).toBe(100);
+    expect(maxFollowingRank).toBe(300);
   });
-}); 
+});

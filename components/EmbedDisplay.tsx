@@ -6,12 +6,14 @@ import { classifyUrl } from "@/utils/linkUtils";
 interface EmbedDisplayProps {
   url: string;
   isDarkTheme: boolean;
+  themeMode?: "dark" | "light" | "Farcaster" | "neon";
   className?: string;
 }
 
 export function EmbedDisplay({
   url,
   isDarkTheme,
+  themeMode = isDarkTheme ? "dark" : "light",
   className = "",
 }: EmbedDisplayProps) {
   const urlInfo = classifyUrl(url);
@@ -292,17 +294,73 @@ export function EmbedDisplay({
   };
 
   const renderGenericEmbed = () => {
+    const getIconBackgroundClass = () => {
+      switch (themeMode) {
+        case "Farcaster":
+          return "bg-purple-500/20";
+        case "dark":
+          return "bg-white/10";
+        case "light":
+          return "bg-gray-100";
+        case "neon":
+          return "bg-cyan-500/20";
+        default:
+          return isDarkTheme ? "bg-white/10" : "bg-gray-100";
+      }
+    };
+
+    const getIconTextClass = () => {
+      switch (themeMode) {
+        case "Farcaster":
+          return "text-purple-600";
+        case "dark":
+          return "text-gray-600";
+        case "light":
+          return "text-gray-500";
+        case "neon":
+          return "text-cyan-600";
+        default:
+          return isDarkTheme ? "text-gray-600" : "text-gray-500";
+      }
+    };
+
+    const getUrlTextClass = () => {
+      switch (themeMode) {
+        case "Farcaster":
+          return "text-purple-900";
+        case "dark":
+          return "text-black";
+        case "light":
+          return "text-gray-700";
+        case "neon":
+          return "text-cyan-900";
+        default:
+          return isDarkTheme ? "text-black" : "text-gray-700";
+      }
+    };
+
+    const getDomainTextClass = () => {
+      switch (themeMode) {
+        case "Farcaster":
+          return "text-purple-700";
+        case "dark":
+          return "text-gray-700";
+        case "light":
+          return "text-gray-500";
+        case "neon":
+          return "text-cyan-700";
+        default:
+          return isDarkTheme ? "text-gray-700" : "text-gray-500";
+      }
+    };
+
     return (
       <div className="flex items-center gap-3">
         <div
-          className={`w-12 h-12 rounded-lg flex items-center justify-center flex-shrink-0 ${
-            isDarkTheme ? "bg-white/10" : "bg-gray-100"
-          }`}
+          className={`w-12 h-12 rounded-lg flex items-center justify-center flex-shrink-0 ${getIconBackgroundClass()}`}
         >
           <svg
-            className={`w-6 h-6 ${
-              isDarkTheme ? "text-white/60" : "text-gray-500"
-            }`}
+            className={`w-6 h-6 ${getIconTextClass()}`}
             fill="none"
             viewBox="0 0 24 24"
             stroke="currentColor"
@@ -316,33 +374,34 @@ export function EmbedDisplay({
           </svg>
         </div>
         <div className="min-w-0 flex-1">
-          <p
-            className={`text-sm truncate ${
-              isDarkTheme ? "text-white/80" : "text-gray-700"
-            }`}
-          >
-            {url}
-          </p>
-          <p
-            className={`text-xs ${
-              isDarkTheme ? "text-white/60" : "text-gray-500"
-            }`}
-          >
-            {urlInfo.domain}
-          </p>
+          <p className={`text-sm truncate ${getUrlTextClass()}`}>{url}</p>
+          <p className={`text-xs ${getDomainTextClass()}`}>{urlInfo.domain}</p>
         </div>
       </div>
     );
   };
 
+  const getButtonClass = () => {
+    switch (themeMode) {
+      case "Farcaster":
+        return "border-purple-400/30 bg-purple-800/20 hover:bg-purple-800/30";
+      case "dark":
+        return "border-black bg-white/5 hover:bg-white/10";
+      case "light":
+        return "border-gray-200 bg-gray-50 hover:bg-gray-100";
+      case "neon":
+        return "border-cyan-400/30 bg-cyan-800/20 hover:bg-cyan-800/30";
+      default:
+        return isDarkTheme
+          ? "border-black bg-white/5 hover:bg-white/10"
+          : "border-gray-200 bg-gray-50 hover:bg-gray-100";
+    }
+  };
+
   return (
     <button
       onClick={handleClick}
-      className={`w-full p-3 rounded-lg border transition-all duration-200 hover:scale-[1.02] focus:outline-none focus:ring-2 focus:ring-blue-400 ${
-        isDarkTheme
-          ? "border-white/20 bg-white/5 hover:bg-white/10"
-          : "border-gray-200 bg-gray-50 hover:bg-gray-100"
-      } ${className}`}
+      className={`w-full p-3 rounded-lg border transition-all duration-200 hover:scale-[1.02] focus:outline-none focus:ring-2 focus:ring-blue-400 ${getButtonClass()} ${className}`}
     >
       {urlInfo.type === "youtube"
         ? renderYouTubeEmbed()
@@ -352,3 +411,5 @@ export function EmbedDisplay({
     </button>
   );
 }
+
+export default EmbedDisplay;

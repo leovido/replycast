@@ -41,31 +41,48 @@ describe("TabBar", () => {
   });
 
   it("applies dark theme styling", () => {
-    render(<TabBar {...defaultProps} isDarkTheme={true} />);
+    render(<TabBar {...defaultProps} isDarkTheme={true} themeMode="dark" />);
 
     const tabBar = screen.getByText("Inbox").closest("div")?.parentElement;
-    expect(tabBar).toHaveClass("bg-purple-900/95");
+    expect(tabBar).toHaveClass(
+      "bg-gradient-to-r",
+      "from-gray-900/95",
+      "via-gray-800/95",
+      "to-gray-900/95"
+    );
   });
 
   it("applies light theme styling", () => {
     render(<TabBar {...defaultProps} isDarkTheme={false} themeMode="light" />);
 
     const tabBar = screen.getByText("Inbox").closest("div")?.parentElement;
-    expect(tabBar).toHaveClass("bg-white/95");
+    expect(tabBar).toHaveClass(
+      "bg-gradient-to-r",
+      "from-gray-50/95",
+      "via-white/95",
+      "to-gray-100/95"
+    );
   });
 
   it("applies Farcaster theme styling", () => {
     render(<TabBar {...defaultProps} themeMode="Farcaster" />);
 
     const tabBar = screen.getByText("Inbox").closest("div")?.parentElement;
-    expect(tabBar).toHaveClass("bg-purple-900/95");
+    expect(tabBar).toHaveClass(
+      "bg-gradient-to-r",
+      "from-purple-900/95",
+      "via-purple-800/95",
+      "to-indigo-900/95"
+    );
   });
 
   it("shows active indicator for active tab", () => {
     render(<TabBar {...defaultProps} activeTab="analytics" />);
 
     const analyticsTab = screen.getByText("Analytics").closest("button");
-    const activeIndicator = analyticsTab?.querySelector("div[class*='w-1 h-1']");
+    const activeIndicator = analyticsTab?.querySelector(
+      "div[class*='w-1 h-1']"
+    );
     expect(activeIndicator).toBeInTheDocument();
   });
 
@@ -90,4 +107,4 @@ describe("TabBar", () => {
     const focusTab = screen.getByText("Focus").closest("button");
     expect(focusTab).toHaveClass("hover:scale-102", "hover:bg-white/5");
   });
-}); 
+});

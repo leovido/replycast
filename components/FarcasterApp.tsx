@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import { sdk } from "@farcaster/miniapp-sdk";
 import { useFarcasterAuth } from "../hooks/useFarcasterAuth";
-import { useOpenRank } from "../hooks/useOpenRank";
+import { useReputation } from "../hooks/useReputation";
 import { useFarcasterData } from "../hooks/useFarcasterData";
 import { useInfiniteScroll } from "../hooks/useInfiniteScroll";
 import { useAppAnalytics, ANALYTICS_ACTIONS } from "../hooks/useAnalytics";
@@ -15,11 +15,22 @@ import { AnalyticsTab } from "./AnalyticsTab";
 import { TipsTab } from "./TipsTab";
 import { ToastNotification } from "./ToastNotification";
 import { EmptyState } from "./EmptyState";
-import { sortDetails } from "../utils/farcaster";
+import { Badge } from "./Badge";
+import { ScoreExplanationModal } from "./ScoreExplanationModal";
+import type { ThemeMode } from "@/types/types";
+
 import Image from "next/image";
 import { isToday, isWithinLastDays } from "@/utils/farcaster";
 import { SpeedModeAlt } from "./SpeedModeAlt";
+import { ReputationBadges } from "./ReputationBadges";
 import { mockSpeedModeConversations } from "@/utils/speedModeMockData";
+import { SearchBar } from "./SearchBar";
+import { SearchResults } from "./SearchResults";
+import {
+  searchConversations,
+  getSearchStats,
+  type SearchResult,
+} from "@/utils/searchUtils";
 
 // Local storage keys
 const STORAGE_KEYS = {
@@ -28,6 +39,8 @@ const STORAGE_KEYS = {
   SORT_OPTION: "farcaster-widget-sort-option",
   DAY_FILTER: "farcaster-widget-day-filter",
   ACTIVE_TAB: "farcaster-widget-active-tab",
+  REPUTATION_TYPE: "farcaster-widget-reputation-type",
+  SCORE_MODAL_SEEN: "farcaster-widget-score-modal-seen",
 } as const;
 
 // Helper functions for local storage
@@ -65,21 +78,20 @@ export default function FarcasterApp() {
   } = useAppAnalytics();
 
   // Initialize state from local storage
-  const [themeMode, setThemeMode] = useState<"dark" | "light" | "Farcaster">(
-    () => {
-      const storedValue = getStoredValue(STORAGE_KEYS.THEME_MODE, "Farcaster");
-      // Migration: Convert "glass" to "Farcaster"
-      if (storedValue === ("glass" as any)) {
-        setStoredValue(STORAGE_KEYS.THEME_MODE, "Farcaster");
-        return "Farcaster";
-      }
-      return storedValue;
+  const [themeMode, setThemeMode] = useState<ThemeMode>(() => {
+    const storedValue = getStoredValue(STORAGE_KEYS.THEME_MODE, "Farcaster");
+    // Migration: Convert "glass" to "Farcaster"
+    if (storedValue === ("glass" as any)) {
+      setStoredValue(STORAGE_KEYS.THEME_MODE, "Farcaster");
+      return "Farcaster";
     }
-  );
+    return storedValue;
+  });
   const [activeTab, setActiveTab] = useState<TabType>(() =>
     getStoredValue(STORAGE_KEYS.ACTIVE_TAB, "inbox")
   );
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isScoreModalOpen, setIsScoreModalOpen] = useState(false);
   const [viewMode, setViewMode] = useState<"list" | "grid">(() =>
     getStoredValue(STORAGE_KEYS.VIEW_MODE, "list")
   );
@@ -94,6 +106,12 @@ export default function FarcasterApp() {
   const [dayFilter, setDayFilter] = useState<
     "all" | "today" | "3days" | "7days"
   >(() => getStoredValue(STORAGE_KEYS.DAY_FILTER, "today"));
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResult, setSearchResult] = useState<SearchResult>({
+    conversations: [],
+    totalMatches: 0,
+    searchQuery: "",
+  });
 
   // Track app opened
   useEffect(() => {
@@ -104,6 +122,14 @@ export default function FarcasterApp() {
         typeof window !== "undefined" &&
         window.location.href.includes("farcaster"),
     });
+  }, [trackAppOpened, themeMode, activeTab]); // Include dependencies
+
+  // Show score explanation modal on first visit
+  useEffect(() => {
+    const hasSeenModal = getStoredValue(STORAGE_KEYS.SCORE_MODAL_SEEN, false);
+    if (!hasSeenModal) {
+      setIsScoreModalOpen(true);
+    }
   }, []); // Only run once on mount
 
   // Update local storage when settings change
@@ -132,9 +158,10 @@ export default function FarcasterApp() {
     setStoredValue(STORAGE_KEYS.DAY_FILTER, dayFilter);
   }, [dayFilter]);
 
-  const isDarkTheme = themeMode === "dark" || themeMode === "Farcaster";
+  const isDarkTheme =
+    themeMode === "dark" || themeMode === "Farcaster" || themeMode === "neon";
 
-  const handleThemeChange = (newTheme: "dark" | "light" | "Farcaster") => {
+  const handleThemeChange = (newTheme: ThemeMode) => {
     setThemeMode(newTheme);
     trackThemeChanged(newTheme, {
       previousTheme: themeMode,
@@ -142,16 +169,39 @@ export default function FarcasterApp() {
     });
   };
 
+  const handleCloseScoreModal = () => {
+    setIsScoreModalOpen(false);
+    setStoredValue(STORAGE_KEYS.SCORE_MODAL_SEEN, true);
+  };
+
+  // Search functionality
+  const handleSearch = (query: string) => {
+    setSearchQuery(query);
+
+    // Search through filtered conversations
+    const result = searchConversations(filteredConversations, query);
+    setSearchResult(result);
+  };
+
+  const handleClearSearch = () => {
+    setSearchQuery("");
+    setSearchResult({
+      conversations: [],
+      totalMatches: 0,
+      searchQuery: "",
+    });
+  };
+
   const getBackgroundClass = () => {
     switch (themeMode) {
       case "dark":
-        return "bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900";
+        return "bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900";
       case "light":
-        return "bg-gradient-to-br from-gray-50 via-white to-gray-100";
+        return "bg-gradient-to-r from-gray-50 via-white to-gray-100";
       case "Farcaster":
-        return "bg-gradient-to-br from-purple-900 via-purple-800 to-indigo-900";
+        return "bg-gradient-to-r from-purple-900 via-purple-800 to-indigo-900";
       default:
-        return "bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900";
+        return "bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900";
     }
   };
 
@@ -162,11 +212,21 @@ export default function FarcasterApp() {
     isInMiniApp,
   } = useFarcasterAuth();
 
-  const { fetchOpenRankRanks, clearCache, openRankRanks } = useOpenRank();
+  const {
+    fetchReputationData,
+    getReputationValue,
+    getReputationDisplay,
+    getReputationColor,
+    openRankData,
+    quotientScores,
+    clearCache,
+  } = useReputation();
 
   const {
     allConversations,
     userOpenRank,
+    userQuotientScore,
+    userFollowingRank,
     loading: dataLoading,
     error,
     handleRefresh,
@@ -175,7 +235,7 @@ export default function FarcasterApp() {
     isLoadingMore,
   } = useFarcasterData({
     user,
-    fetchOpenRankRanks,
+    fetchOpenRankData: fetchReputationData,
     clearOpenRankCache: clearCache,
     dayFilter,
   });
@@ -194,13 +254,6 @@ export default function FarcasterApp() {
     loading: dataLoading,
     loadMoreConversations,
   });
-
-  // Sort conversations with interaction prioritization
-  const sortedConversations = sortDetails(
-    allConversations,
-    sortOption,
-    openRankRanks
-  );
 
   // State for marked as read conversations
   const [markedAsReadConversations, setMarkedAsReadConversations] = useState<
@@ -357,7 +410,7 @@ export default function FarcasterApp() {
   };
 
   // Filter out discarded and marked as read conversations from the main list
-  const filteredConversations = sortedConversations.filter(
+  const filteredConversations = allConversations.filter(
     (conversation) =>
       !discardedConversations.some(
         (discarded) => discarded.castHash === conversation.castHash
@@ -365,6 +418,17 @@ export default function FarcasterApp() {
       !markedAsReadConversations.some(
         (marked) => marked.castHash === conversation.castHash
       )
+  );
+
+  // Get conversations to display (search results or filtered conversations)
+  const displayConversations = searchResult.searchQuery
+    ? searchResult.conversations
+    : filteredConversations;
+
+  // Get search stats
+  const searchStats = getSearchStats(
+    filteredConversations.length,
+    searchResult
   );
 
   // Swipe to refresh state
@@ -532,6 +596,13 @@ export default function FarcasterApp() {
     touchStartTime.current = 0;
   };
 
+  // Fetch reputation data for current user
+  useEffect(() => {
+    if (user?.fid) {
+      fetchReputationData([user.fid]);
+    }
+  }, [user?.fid, fetchReputationData]);
+
   // Call ready when app is loaded and data is ready
   useEffect(() => {
     // Only call ready when we have user and data is not loading
@@ -539,6 +610,48 @@ export default function FarcasterApp() {
       sdk.actions.ready();
     }
   }, [user, dataLoading, authLoading]);
+
+  // Update theme color for status bar and browser UI
+  useEffect(() => {
+    const getThemeColor = () => {
+      switch (themeMode) {
+        case "dark":
+          return "#1f2937"; // gray-800
+        case "light":
+          return "#ffffff"; // white
+        case "Farcaster":
+          return "#6C2BD7"; // purple-600
+        default:
+          return "#6C2BD7";
+      }
+    };
+
+    const themeColor = getThemeColor();
+
+    // Update theme-color meta tag
+    const themeColorMeta = document.querySelector('meta[name="theme-color"]');
+    if (themeColorMeta) {
+      themeColorMeta.setAttribute("content", themeColor);
+    } else {
+      const meta = document.createElement("meta");
+      meta.name = "theme-color";
+      meta.content = themeColor;
+      document.head.appendChild(meta);
+    }
+
+    // Update msapplication-navbutton-color for Windows
+    const navButtonMeta = document.querySelector(
+      'meta[name="msapplication-navbutton-color"]'
+    );
+    if (navButtonMeta) {
+      navButtonMeta.setAttribute("content", themeColor);
+    } else {
+      const meta = document.createElement("meta");
+      meta.name = "msapplication-navbutton-color";
+      meta.content = themeColor;
+      document.head.appendChild(meta);
+    }
+  }, [themeMode]);
 
   // Fix for iframe/WebView touch events in production
   useEffect(() => {
@@ -647,6 +760,16 @@ export default function FarcasterApp() {
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
     >
+      {/* Status bar area for proper color coverage on mobile */}
+      <div
+        className={`w-full safe-area-inset-top ${
+          themeMode === "Farcaster"
+            ? "bg-gradient-to-r from-purple-900 via-purple-800 to-indigo-900"
+            : themeMode === "light"
+            ? "bg-gradient-to-r from-gray-50 via-white to-gray-100"
+            : "bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900"
+        }`}
+      />
       {/* Pull to refresh indicator */}
       {pullDistance > 0 && (
         <div
@@ -676,10 +799,10 @@ export default function FarcasterApp() {
       <div
         className={`sticky top-0 z-40 backdrop-blur-md border-b mb-6 ${
           themeMode === "Farcaster"
-            ? "bg-purple-900/95 border-white/10"
+            ? "bg-gradient-to-r from-purple-900/95 via-purple-800/95 to-indigo-900/95 border-white/10"
             : themeMode === "light"
-            ? "bg-white/95 border-gray-200 text-gray-900"
-            : "bg-black/80 border-white/10"
+            ? "bg-gradient-to-r from-gray-50/95 via-white/95 to-gray-100/95 border-gray-200 text-gray-900"
+            : "bg-gradient-to-r from-gray-900/95 via-gray-800/95 to-gray-900/95 border-white/10"
         }`}
       >
         <div className="container mx-auto px-4 max-w-6xl flex items-center justify-between py-4">
@@ -699,10 +822,24 @@ export default function FarcasterApp() {
               {activeTab === "inbox" && (
                 <>
                   <span className="font-semibold">
-                    {allConversations.length}
+                    {searchStats.isSearching
+                      ? searchStats.totalFound
+                      : allConversations.length}
                   </span>{" "}
-                  unreplied conversation
-                  {allConversations.length !== 1 ? "s" : ""}
+                  {searchStats.isSearching
+                    ? "search result"
+                    : "unreplied conversation"}
+                  {(searchStats.isSearching
+                    ? searchStats.totalFound
+                    : allConversations.length) !== 1
+                    ? "s"
+                    : ""}
+                  {searchStats.isSearching && (
+                    <span className="text-sm opacity-75">
+                      {" "}
+                      of {allConversations.length}
+                    </span>
+                  )}
                 </>
               )}
               {activeTab === "focus" && (
@@ -782,6 +919,27 @@ export default function FarcasterApp() {
       </div>
 
       <div className="container mx-auto px-4 max-w-6xl flex-1 flex flex-col">
+        {/* Search Bar */}
+        <div className="mb-6">
+          <SearchBar
+            onSearch={handleSearch}
+            placeholder="Search conversations, users, or FIDs..."
+            isDarkTheme={isDarkTheme}
+            themeMode={themeMode}
+          />
+        </div>
+
+        {/* Search Results */}
+        <SearchResults
+          isSearching={searchStats.isSearching}
+          totalFound={searchStats.totalFound}
+          totalOriginal={searchStats.totalOriginal}
+          searchQuery={searchStats.searchQuery}
+          isDarkTheme={isDarkTheme}
+          themeMode={themeMode}
+          onClearSearch={handleClearSearch}
+        />
+
         {/* User Info Card */}
         {user && (
           <div
@@ -800,6 +958,11 @@ export default function FarcasterApp() {
                     className="w-12 h-12 rounded-full border-2 border-white/20"
                     width={48}
                     height={48}
+                    // Disable optimization to prevent multiple requests
+                    unoptimized={true}
+                    // Disable lazy loading for immediate display
+                    priority={false}
+                    loading="eager"
                   />
                 ) : (
                   <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold text-lg">
@@ -810,45 +973,35 @@ export default function FarcasterApp() {
                 )}
               </div>
               <div className="flex-1 min-w-0">
-                <div className="flex items-center mb-0">
-                  <span
-                    className={`font-semibold truncate ${
-                      isDarkTheme ? "text-white" : "text-gray-900"
-                    }`}
-                  >
-                    {user.displayName || user.username}
-                  </span>
-                </div>
-                <span
-                  className={`text-sm mb-0 ${
-                    isDarkTheme ? "text-white/60" : "text-gray-600"
-                  }`}
-                  style={{ marginTop: "-5px" }}
-                >
-                  FID: {user.fid}
-                </span>
-                {userOpenRank !== null && userOpenRank !== undefined && (
-                  <div className="flex items-center gap-1">
-                    <svg
-                      width={14}
-                      height={14}
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth={2}
-                      className="text-yellow-400"
-                    >
-                      <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26" />
-                    </svg>
+                <div className="flex items-center justify-between mb-0">
+                  <div className="flex flex-col min-w-0">
                     <span
-                      className={`font-bold ${
-                        isDarkTheme ? "text-yellow-400" : "text-purple-700"
+                      className={`font-semibold truncate ${
+                        isDarkTheme ? "text-white" : "text-gray-900"
                       }`}
                     >
-                      #{userOpenRank.toLocaleString()}
+                      {user.displayName || user.username}
+                    </span>
+                    <span
+                      className={`text-sm ${
+                        isDarkTheme ? "text-white/60" : "text-gray-600"
+                      }`}
+                    >
+                      FID: {user.fid}
                     </span>
                   </div>
-                )}
+
+                  {/* Reputation Badges */}
+                  <ReputationBadges
+                    fid={user.fid}
+                    openRankData={openRankData}
+                    quotientScores={quotientScores}
+                    userOpenRank={userOpenRank}
+                    userQuotientScore={userQuotientScore}
+                    showLabels={false}
+                    size="md"
+                  />
+                </div>
               </div>
               <button
                 onClick={handleRefresh}
@@ -883,10 +1036,18 @@ export default function FarcasterApp() {
         <div className="flex-1 overflow-y-auto pb-20">
           {activeTab === "inbox" && (
             <>
-              {filteredConversations.length === 0 && !dataLoading ? (
+              {displayConversations.length === 0 && !dataLoading ? (
                 <EmptyState
-                  title="No Conversations"
-                  description="You're all caught up! No unreplied conversations found. Check back later or try adjusting your filters."
+                  title={
+                    searchStats.isSearching
+                      ? "No Search Results"
+                      : "No Conversations"
+                  }
+                  description={
+                    searchStats.isSearching
+                      ? `No conversations found matching "${searchStats.searchQuery}". Try a different search term.`
+                      : "You're all caught up! No unreplied conversations found. Check back later or try adjusting your filters."
+                  }
                   themeMode={themeMode}
                   icon={
                     <svg
@@ -902,26 +1063,44 @@ export default function FarcasterApp() {
                         isDarkTheme ? "text-white/40" : "text-gray-400"
                       }
                     >
-                      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-                      <path d="M9 10h.01" />
-                      <path d="M15 10h.01" />
+                      {searchStats.isSearching ? (
+                        <>
+                          <circle cx="11" cy="11" r="8" />
+                          <path d="m21 21-4.35-4.35" />
+                        </>
+                      ) : (
+                        <>
+                          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                          <path d="M9 10h.01" />
+                          <path d="M15 10h.01" />
+                        </>
+                      )}
                     </svg>
                   }
-                  action={{
-                    label: "Refresh",
-                    onClick: handleRefresh,
-                  }}
+                  action={
+                    searchStats.isSearching
+                      ? {
+                          label: "Clear Search",
+                          onClick: handleClearSearch,
+                        }
+                      : {
+                          label: "Refresh",
+                          onClick: handleRefresh,
+                        }
+                  }
                 />
               ) : (
                 <SpeedModeAlt
-                  conversations={filteredConversations}
-                  openRankRanks={openRankRanks}
+                  conversations={displayConversations}
+                  quotientScores={quotientScores}
+                  openRankData={openRankData}
                   isDarkThemeMode={isDarkTheme}
                   themeMode={themeMode}
                   loading={dataLoading}
                   isLoadingMore={isLoadingMore}
                   hasMore={hasMore}
                   observerRef={observerRef}
+                  sortOption={sortOption}
                   onMarkAsRead={handleMarkAsRead}
                   onDiscard={handleDiscard}
                 />
@@ -931,9 +1110,14 @@ export default function FarcasterApp() {
 
           {activeTab === "focus" && (
             <FocusTab
-              markedAsReadConversations={markedAsReadConversations}
+              markedAsReadConversations={
+                searchStats.isSearching
+                  ? searchResult.conversations
+                  : markedAsReadConversations
+              }
               viewMode={viewMode}
-              openRankRanks={openRankRanks}
+              quotientScores={quotientScores}
+              openRankData={openRankData}
               loading={dataLoading}
               isLoadingMore={isLoadingMore}
               hasMore={hasMore}
@@ -961,16 +1145,26 @@ export default function FarcasterApp() {
               onMarkAsRead={handleMarkAsRead}
               onDiscard={handleDiscard}
               dayFilter={dayFilter}
+              searchQuery={searchQuery}
+              isSearching={searchStats.isSearching}
+              sortOption={sortOption}
             />
           )}
 
           {activeTab === "analytics" && (
             <AnalyticsTab
-              allConversations={allConversations}
+              allConversations={
+                searchStats.isSearching
+                  ? searchResult.conversations
+                  : allConversations
+              }
               userOpenRank={userOpenRank}
-              openRankRanks={openRankRanks}
+              userQuotientScore={userQuotientScore}
+              openRankData={openRankData}
               isDarkTheme={isDarkTheme}
               themeMode={themeMode}
+              searchQuery={searchQuery}
+              isSearching={searchStats.isSearching}
             />
           )}
 
@@ -1016,6 +1210,13 @@ export default function FarcasterApp() {
         isVisible={toast.isVisible}
         onHide={hideToast}
         themeMode={themeMode}
+      />
+
+      {/* Score Explanation Modal */}
+      <ScoreExplanationModal
+        isOpen={isScoreModalOpen}
+        onClose={handleCloseScoreModal}
+        isDarkTheme={isDarkTheme}
       />
     </div>
   );

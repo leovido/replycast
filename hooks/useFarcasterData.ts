@@ -5,17 +5,18 @@ import type {
   User,
   Cursor,
 } from "@/types/types";
+import { MockFarcasterService } from "@/utils/mockService";
 
 interface UseFarcasterDataProps {
   user: User | null;
-  fetchOpenRankRanks: (fids: number[]) => Promise<void>;
+  fetchOpenRankData: (fids: number[]) => Promise<void>;
   clearOpenRankCache: () => void;
   dayFilter?: string;
 }
 
 export function useFarcasterData({
   user,
-  fetchOpenRankRanks,
+  fetchOpenRankData,
   clearOpenRankCache,
   dayFilter = "today",
 }: UseFarcasterDataProps) {
@@ -24,6 +25,12 @@ export function useFarcasterData({
   const [error, setError] = useState<string | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [userOpenRank, setUserOpenRank] = useState<number | null>(null);
+  const [userQuotientScore, setUserQuotientScore] = useState<number | null>(
+    null
+  );
+  const [userFollowingRank, setUserFollowingRank] = useState<number | null>(
+    null
+  );
 
   // Pagination state
   const [cursor, setCursor] = useState<Cursor>(null);
@@ -33,49 +40,98 @@ export function useFarcasterData({
     []
   );
 
-  // Fetch user's OpenRank score
-  const fetchUserOpenRank = useCallback(async (userFid: number) => {
+  // Fetch user's reputation score
+  const fetchUserReputation = useCallback(async (userFid: number) => {
     try {
-      const response = await fetch(`/api/openRank?fids=${userFid}`, {
-        signal: AbortSignal.timeout(10000), // 10 second timeout
-      });
+      // Check if mocks are enabled
+      const useMocks =
+        process.env.NEXT_PUBLIC_USE_MOCKS === "true" ||
+        (typeof window !== "undefined" && (window as any).__FORCE_MOCKS__);
 
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      if (useMocks) {
+        // For mocks, we'll use the default "quotient" type
+        const mockScore = await MockFarcasterService.fetchUserReputation(
+          userFid,
+          "quotient"
+        );
+        setUserOpenRank(mockScore);
+        return;
+      }
 
-      const data = await response.json();
+      // Fetch both OpenRank and Quotient data for the user
+      const [openRankResponse, quotientResponse] = await Promise.all([
+        fetch(`/api/openRank?fids=${userFid}`, {
+          signal: AbortSignal.timeout(10000), // 10 second timeout
+        }),
+        fetch(`/api/quotient`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ fids: [userFid] }),
+          signal: AbortSignal.timeout(10000), // 10 second timeout
+        }),
+      ]);
 
-      if (data.ranks && data.ranks[userFid]) {
-        setUserOpenRank(data.ranks[userFid] as number);
+      if (openRankResponse.ok) {
+        const openRankData = await openRankResponse.json();
+        if (openRankData.ranks && openRankData.ranks[userFid]) {
+          const engagementRank = openRankData.ranks[userFid].engagement.rank;
+          const followingRank = openRankData.ranks[userFid].following.rank;
+          setUserOpenRank(engagementRank);
+          setUserFollowingRank(followingRank);
+        }
+      }
+
+      if (quotientResponse.ok) {
+        const quotientData = await quotientResponse.json();
+        if (quotientData.data && quotientData.data[0]) {
+          setUserQuotientScore(quotientData.data[0].quotientScore);
+        }
       }
     } catch (error) {
-      console.error("Failed to fetch user OpenRank:", error);
-      // Don't set error state for user OpenRank as it's not critical
+      console.error("Failed to fetch user reputation:", error);
+      // Don't set error state for user reputation as it's not critical
     }
   }, []);
 
-  // Fetch data when user is set
   useEffect(() => {
     if (!user) return;
 
     const fetchData = async () => {
       setLoading(true);
       try {
-        // Fetch user's OpenRank score first
-        await fetchUserOpenRank(user.fid);
+        // Fetch user's reputation score first
+        await fetchUserReputation(user.fid);
 
-        // Use the same API endpoint as infinite scroll for consistency
-        const url = new URL(
-          "/api/farcaster-notification-replies",
-          window.location.origin
-        );
-        url.searchParams.set("fid", user.fid.toString());
-        url.searchParams.set("limit", "25");
-        if (dayFilter !== "all") {
-          url.searchParams.set("dayFilter", dayFilter);
+        // Check if mocks are enabled
+        const useMocks =
+          process.env.NEXT_PUBLIC_USE_MOCKS === "true" ||
+          (typeof window !== "undefined" && (window as any).__FORCE_MOCKS__);
+
+        let responseData;
+
+        if (useMocks) {
+          responseData = await MockFarcasterService.fetchReplies(
+            user.fid,
+            dayFilter,
+            25
+          );
+        } else {
+          // Use the same API endpoint as infinite scroll for consistency
+          const url = new URL(
+            "/api/farcaster-notification-replies",
+            window.location.origin
+          );
+          url.searchParams.set("fid", user.fid.toString());
+          url.searchParams.set("limit", "25");
+          if (dayFilter !== "all") {
+            url.searchParams.set("dayFilter", dayFilter);
+          }
+
+          const res = await fetch(url.toString());
+          responseData = await res.json();
         }
-
-        const res = await fetch(url.toString());
-        const responseData = await res.json();
 
         if (responseData) {
           setData(responseData);
@@ -106,7 +162,7 @@ export function useFarcasterData({
             const fids = responseData.unrepliedDetails.map(
               (detail: UnrepliedDetail) => detail.authorFid
             );
-            await fetchOpenRankRanks(fids);
+            await fetchOpenRankData(fids);
           }
         }
       } catch (err) {
@@ -119,30 +175,46 @@ export function useFarcasterData({
     };
 
     fetchData();
-  }, [user, fetchOpenRankRanks, fetchUserOpenRank, dayFilter]);
+  }, [user, fetchOpenRankData, userOpenRank, fetchUserReputation, dayFilter]);
 
   const loadMoreConversations = useCallback(async () => {
     if (!hasMore || isLoadingMore || loading) return;
 
     setIsLoadingMore(true);
     try {
-      const url = new URL(
-        "/api/farcaster-notification-replies",
-        window.location.origin
-      );
-      if (!user?.fid) {
-        throw new Error("User FID is required to load conversations");
-      }
-      url.searchParams.set("fid", user.fid.toString());
-      if (cursor) {
-        url.searchParams.set("cursor", cursor);
-      }
-      if (dayFilter !== "all") {
-        url.searchParams.set("dayFilter", dayFilter);
-      }
+      // Check if mocks are enabled
+      const useMocks =
+        process.env.NEXT_PUBLIC_USE_MOCKS === "true" ||
+        (typeof window !== "undefined" && (window as any).__FORCE_MOCKS__);
 
-      const res = await fetch(url.toString());
-      const responseData = await res.json();
+      let responseData;
+
+      if (useMocks) {
+        responseData = await MockFarcasterService.fetchReplies(
+          user?.fid || 0,
+          dayFilter,
+          25,
+          cursor || undefined
+        );
+      } else {
+        const url = new URL(
+          "/api/farcaster-notification-replies",
+          window.location.origin
+        );
+        if (!user?.fid) {
+          throw new Error("User FID is required to load conversations");
+        }
+        url.searchParams.set("fid", user.fid.toString());
+        if (cursor) {
+          url.searchParams.set("cursor", cursor);
+        }
+        if (dayFilter !== "all") {
+          url.searchParams.set("dayFilter", dayFilter);
+        }
+
+        const res = await fetch(url.toString());
+        responseData = await res.json();
+      }
 
       // Append new conversations with deduplication
       setAllConversations((prev) => {
@@ -161,7 +233,13 @@ export function useFarcasterData({
         const fids = responseData.unrepliedDetails.map(
           (detail: UnrepliedDetail) => detail.authorFid
         );
-        await fetchOpenRankRanks(fids);
+        // Don't await this to prevent blocking the UI update
+        fetchOpenRankData(fids).catch((error) => {
+          console.error(
+            "Failed to fetch OpenRank for new conversations:",
+            error
+          );
+        });
       }
 
       // If no more data, stop loading more
@@ -179,7 +257,7 @@ export function useFarcasterData({
     user,
     cursor,
     dayFilter,
-    fetchOpenRankRanks,
+    fetchOpenRankData,
   ]);
 
   const handleRefresh = useCallback(async () => {
@@ -201,7 +279,7 @@ export function useFarcasterData({
     const userFid = user.fid;
     try {
       // Refresh user's OpenRank score
-      await fetchUserOpenRank(userFid);
+      await fetchUserReputation(userFid);
 
       const url = new URL(
         "/api/farcaster-notification-replies",
@@ -218,7 +296,6 @@ export function useFarcasterData({
       });
       const responseData = await res.json();
       if (responseData) {
-        console.log("Refresh - nextCursor", responseData.nextCursor);
         setData(responseData);
         setAllConversations(responseData.unrepliedDetails || []);
         setCursor(responseData.nextCursor || null);
@@ -229,7 +306,7 @@ export function useFarcasterData({
           const fids = responseData.unrepliedDetails.map(
             (detail: UnrepliedDetail) => detail.authorFid
           );
-          await fetchOpenRankRanks(fids);
+          await fetchOpenRankData(fids);
         }
       } else {
         setError(responseData.error || "Failed to fetch data");
@@ -240,8 +317,8 @@ export function useFarcasterData({
     setIsRefreshing(false);
   }, [
     user?.fid,
-    fetchOpenRankRanks,
-    fetchUserOpenRank,
+    fetchOpenRankData,
+    fetchUserReputation,
     clearOpenRankCache,
     dayFilter,
   ]);
@@ -263,6 +340,8 @@ export function useFarcasterData({
     isLoadingMore,
     cursor,
     userOpenRank,
+    userQuotientScore,
+    userFollowingRank,
     loadMoreConversations,
     handleRefresh,
     resetPagination,

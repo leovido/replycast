@@ -1,0 +1,78 @@
+# Lefthook configuration for Reply Speed Insights
+# https://github.com/evilmartians/lefthook
+
+# Pre-commit hooks - run before each commit
+pre-commit:
+  parallel: true
+  commands:
+    # Run tests quietly (fast feedback)
+    test:
+      glob: "*.{js,jsx,ts,tsx,json,md,yml,yaml}"
+      run: pnpm test:quiet
+      fail_text: "❌ Tests failed. Please fix the failing tests before committing."
+
+    # Build the project to ensure it compiles
+    build:
+      glob: "*.{js,jsx,ts,tsx,json,md,yml,yaml}"
+      run: pnpm build
+      fail_text: "❌ Build failed. Please fix compilation errors before committing."
+
+    # Run linting
+    lint:
+      glob: "*.{js,jsx,ts,tsx}"
+      run: pnpm lint
+      fail_text: "❌ Linting failed. Please fix linting errors before committing."
+
+# Pre-push hooks - run before pushing to remote
+pre-push:
+  parallel: true
+  commands:
+    # Run full test suite with coverage
+    test-coverage:
+      run: pnpm test:coverage
+      fail_text: "❌ Test coverage failed. Please ensure all tests pass before pushing."
+
+    # Run performance audit
+    performance:
+      run: pnpm perf:audit
+      fail_text: "❌ Performance audit failed. Please check performance issues before pushing."
+
+# Post-commit hooks - run after successful commit
+post-commit:
+  commands:
+    # Notify about successful commit
+    success:
+      run: echo "✅ Commit successful! Build and tests passed."
+      fail_text: ""
+
+# Commit-msg hooks - run on commit message
+# commit-msg:
+#   commands:
+#     # Check commit message format (optional)
+#     message-check:
+#       run: |
+#         if ! echo "$1" | grep -qE "^(feat|fix|docs|style|refactor|test|chore|perf|ci|build|revert)(\(.+\))?: .+"; then
+#           echo "❌ Commit message should follow conventional commits format:"
+#           echo "   type(scope): description"
+#           echo "   Examples: feat: add new feature, fix: resolve bug, docs: update readme"
+#           exit 1
+#         fi
+#       fail_text: "❌ Invalid commit message format. Please use conventional commits format."
+
+# Post-merge hooks - run after successful merge
+post-merge:
+  commands:
+    # Install dependencies if package files changed
+    install-deps:
+      glob: "{package.json,pnpm-lock.yaml}"
+      run: pnpm install
+      fail_text: "❌ Failed to install dependencies after merge."
+
+# Post-checkout hooks - run after checkout
+post-checkout:
+  commands:
+    # Install dependencies if package files changed
+    install-deps:
+      glob: "{package.json,pnpm-lock.yaml}"
+      run: pnpm install
+      fail_text: "❌ Failed to install dependencies after checkout."

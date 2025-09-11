@@ -1,31 +1,37 @@
 import React, { useState, useEffect } from "react";
-import type { UnrepliedDetail } from "@/types/types";
+import type { UnrepliedDetail, OpenRankData } from "@/types/types";
 import { ConversationList } from "./ConversationList";
 import { FocusTutorial } from "./FocusTutorial";
 import { EmptyState } from "./EmptyState";
 import type { RefObject } from "react";
 import { isToday, isWithinLastDays } from "@/utils/farcaster";
+import type { ThemeMode } from "@/types/types";
 
 interface FocusTabProps {
   markedAsReadConversations: UnrepliedDetail[];
   viewMode: "list" | "grid";
-  openRankRanks: Record<number, number | null>;
+  quotientScores: Record<number, { quotientScore: number } | null>;
+  openRankData: Record<number, OpenRankData>;
   loading: boolean;
   isLoadingMore: boolean;
   hasMore: boolean;
   observerRef: RefObject<HTMLDivElement>;
   onReply: (detail: UnrepliedDetail) => void;
   isDarkTheme: boolean;
-  themeMode?: "dark" | "light" | "Farcaster";
+  themeMode?: ThemeMode;
   onMarkAsRead?: (detail: UnrepliedDetail) => void;
   onDiscard?: (detail: UnrepliedDetail) => void;
   dayFilter?: string;
+  searchQuery?: string;
+  isSearching?: boolean;
+  sortOption?: string;
 }
 
 export function FocusTab({
   markedAsReadConversations,
   viewMode,
-  openRankRanks,
+  quotientScores,
+  openRankData,
   loading,
   isLoadingMore,
   hasMore,
@@ -36,29 +42,75 @@ export function FocusTab({
   onMarkAsRead,
   onDiscard,
   dayFilter,
+  searchQuery,
+  isSearching,
+  sortOption = "newest",
 }: FocusTabProps) {
   const [showTutorial, setShowTutorial] = useState(false);
 
-  // Apply date filter to focus items
-  const filteredMarkedAsRead = React.useMemo(() => {
+  // Apply date filter and sorting to focus items
+  const filteredAndSortedMarkedAsRead = React.useMemo(() => {
     // Filter out items with invalid timestamps first
     const validConversations = markedAsReadConversations.filter(
       (c) =>
         c.timestamp && typeof c.timestamp === "number" && !isNaN(c.timestamp)
     );
 
-    if (!dayFilter || dayFilter === "all") return validConversations;
-    if (dayFilter === "today") {
-      return validConversations.filter((c) => isToday(c.timestamp));
+    let filtered = validConversations;
+    if (dayFilter && dayFilter !== "all") {
+      if (dayFilter === "today") {
+        filtered = validConversations.filter((c) => isToday(c.timestamp));
+      } else if (dayFilter === "3days") {
+        filtered = validConversations.filter((c) =>
+          isWithinLastDays(c.timestamp, 3)
+        );
+      } else if (dayFilter === "7days") {
+        filtered = validConversations.filter((c) =>
+          isWithinLastDays(c.timestamp, 7)
+        );
+      }
     }
-    if (dayFilter === "3days") {
-      return validConversations.filter((c) => isWithinLastDays(c.timestamp, 3));
-    }
-    if (dayFilter === "7days") {
-      return validConversations.filter((c) => isWithinLastDays(c.timestamp, 7));
-    }
-    return validConversations;
-  }, [markedAsReadConversations, dayFilter]);
+
+    // Apply sorting
+    return filtered.sort((a, b) => {
+      switch (sortOption) {
+        case "newest":
+          return (b.timestamp || 0) - (a.timestamp || 0);
+        case "oldest":
+          return (a.timestamp || 0) - (b.timestamp || 0);
+        case "fid-asc":
+          return a.authorFid - b.authorFid;
+        case "fid-desc":
+          return b.authorFid - a.authorFid;
+        case "quotient-asc":
+          const quotientA = quotientScores[a.authorFid]?.quotientScore || 0;
+          const quotientB = quotientScores[b.authorFid]?.quotientScore || 0;
+          return quotientA - quotientB;
+        case "quotient-desc":
+          const quotientDescA = quotientScores[a.authorFid]?.quotientScore || 0;
+          const quotientDescB = quotientScores[b.authorFid]?.quotientScore || 0;
+          return quotientDescB - quotientDescA;
+        case "openrank-asc":
+          const openRankA = openRankData[a.authorFid]?.engagement?.score || 0;
+          const openRankB = openRankData[b.authorFid]?.engagement?.score || 0;
+          return openRankA - openRankB;
+        case "openrank-desc":
+          const openRankDescA =
+            openRankData[a.authorFid]?.engagement?.score || 0;
+          const openRankDescB =
+            openRankData[b.authorFid]?.engagement?.score || 0;
+          return openRankDescB - openRankDescA;
+        default:
+          return 0;
+      }
+    });
+  }, [
+    markedAsReadConversations,
+    dayFilter,
+    sortOption,
+    quotientScores,
+    openRankData,
+  ]);
 
   // Check if tutorial has been completed
   useEffect(() => {
@@ -94,7 +146,7 @@ export function FocusTab({
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-12">
+      <div className="flex items-center justify-center py-6">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-current mx-auto mb-4"></div>
           <p className={isDarkTheme ? "text-white/60" : "text-gray-600"}>
@@ -105,7 +157,7 @@ export function FocusTab({
     );
   }
 
-  if (filteredMarkedAsRead.length === 0) {
+  if (filteredAndSortedMarkedAsRead.length === 0) {
     return (
       <EmptyState
         title="No Focus Items"
@@ -137,7 +189,7 @@ export function FocusTab({
   }
 
   return (
-    <div className="min-h-[calc(100vh-200px)] flex flex-col pb-20">
+    <div className="min-h-[calc(100vh-200px)] flex flex-col">
       <div className="mb-4">
         <div className="flex items-center gap-3 mb-2">
           <h2
@@ -145,7 +197,7 @@ export function FocusTab({
               isDarkTheme ? "text-white" : "text-gray-900"
             }`}
           >
-            Focus ({filteredMarkedAsRead.length})
+            Focus ({filteredAndSortedMarkedAsRead.length})
           </h2>
           <div
             className={`px-2 py-1 rounded-full text-xs font-medium ${
@@ -154,7 +206,7 @@ export function FocusTab({
                 : "bg-blue-100 text-blue-700 border border-blue-200"
             }`}
           >
-            {filteredMarkedAsRead.reduce(
+            {filteredAndSortedMarkedAsRead.reduce(
               (total, conversation) => total + (conversation.replyCount || 0),
               0
             )}{" "}
@@ -172,12 +224,13 @@ export function FocusTab({
 
       <div className="flex-1">
         <ConversationList
-          conversations={filteredMarkedAsRead}
+          conversations={filteredAndSortedMarkedAsRead}
           viewMode={viewMode}
           loading={loading}
           observerRef={observerRef}
           isDarkTheme={isDarkTheme}
-          openRankRanks={openRankRanks}
+          quotientScores={quotientScores}
+          openRankData={openRankData}
           isLoadingMore={isLoadingMore}
           hasMore={hasMore}
           onReply={onReply}

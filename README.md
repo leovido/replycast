@@ -158,3 +158,5 @@ For issues or questions:
 ---
 
 Built with ❤️ for the Farcaster community
+# Lefthook Setup Complete
+# Test commit for Lefthook

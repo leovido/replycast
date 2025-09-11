@@ -1,6 +1,8 @@
 import React, { useState, useEffect, type RefObject } from "react";
+import Image from "next/image";
 import { sdk } from "@farcaster/miniapp-sdk";
-import type { UnrepliedDetail } from "@/types/types";
+import type { UnrepliedDetail, OpenRankData } from "@/types/types";
+import type { QuotientScore } from "@/hooks/useQuotient";
 import {
   getBackgroundClass,
   getBorderColor,
@@ -10,29 +12,35 @@ import {
 } from "@/utils/themeHelpers";
 import type { ThemeMode } from "@/utils/themeHelpers";
 import { ReplyCardSimple } from "./ReplyCardSimple";
+import { ReputationBadges } from "./ReputationBadges";
+import { getMinutesAgo } from "@/utils/farcaster";
 
 interface SpeedModeAltProps {
   conversations: UnrepliedDetail[];
-  openRankRanks: Record<number, number | null>;
+  quotientScores: Record<number, QuotientScore | null>;
+  openRankData: Record<number, OpenRankData>;
   isDarkThemeMode: boolean;
   themeMode: ThemeMode;
   loading: boolean;
   isLoadingMore: boolean;
   hasMore: boolean;
   observerRef: RefObject<HTMLDivElement>;
+  sortOption: string;
   onMarkAsRead?: (conversation: UnrepliedDetail) => void;
   onDiscard?: (conversation: UnrepliedDetail) => void;
 }
 
 export function SpeedModeAlt({
   conversations,
-  openRankRanks,
+  quotientScores,
+  openRankData,
   isDarkThemeMode,
   themeMode,
   loading,
   isLoadingMore,
   hasMore,
   observerRef,
+  sortOption,
   onMarkAsRead,
   onDiscard,
 }: SpeedModeAltProps) {
@@ -64,26 +72,73 @@ export function SpeedModeAlt({
     return groups;
   }, {} as Record<number, { user: { fid: number; username: string; avatarUrl: string }; conversations: UnrepliedDetail[] }>);
 
-  // Sort users by OpenRank (highest rank first, since lower numbers are better ranks)
+  // Sort user groups based on sortOption
   const sortedUserGroups = Object.values(userGroups).sort((a, b) => {
-    const rankA = openRankRanks[a.user.fid];
-    const rankB = openRankRanks[b.user.fid];
-
-    // If both have ranks, sort by rank (lower number = better rank)
-    if (rankA !== null && rankB !== null) {
-      return rankA - rankB;
+    switch (sortOption) {
+      case "newest":
+        // Sort by most recent conversation in each group
+        const newestA = Math.min(
+          ...a.conversations.map((c) => getMinutesAgo(c.timeAgo))
+        );
+        const newestB = Math.min(
+          ...b.conversations.map((c) => getMinutesAgo(c.timeAgo))
+        );
+        return newestA - newestB;
+      case "oldest":
+        // Sort by oldest conversation in each group
+        const oldestA = Math.max(
+          ...a.conversations.map((c) => getMinutesAgo(c.timeAgo))
+        );
+        const oldestB = Math.max(
+          ...b.conversations.map((c) => getMinutesAgo(c.timeAgo))
+        );
+        return oldestB - oldestA;
+      case "fid-asc":
+        return a.user.fid - b.user.fid;
+      case "fid-desc":
+        return b.user.fid - a.user.fid;
+      case "quotient-asc":
+        // Sort by quotient score (low to high)
+        const quotientA = quotientScores[a.user.fid]?.quotientScore || 0;
+        const quotientB = quotientScores[b.user.fid]?.quotientScore || 0;
+        return quotientA - quotientB;
+      case "quotient-desc":
+        // Sort by quotient score (high to low)
+        const quotientDescA = quotientScores[a.user.fid]?.quotientScore || 0;
+        const quotientDescB = quotientScores[b.user.fid]?.quotientScore || 0;
+        return quotientDescB - quotientDescA;
+      case "openrank-asc":
+        // Sort by OpenRank (low to high)
+        const openRankA = openRankData[a.user.fid]?.engagement?.score || 0;
+        const openRankB = openRankData[b.user.fid]?.engagement?.score || 0;
+        return openRankA - openRankB;
+      case "openrank-desc":
+        // Sort by OpenRank (high to low)
+        const openRankDescA = openRankData[a.user.fid]?.engagement?.score || 0;
+        const openRankDescB = openRankData[b.user.fid]?.engagement?.score || 0;
+        return openRankDescB - openRankDescA;
+      case "short":
+        // Sort by users who have the most short conversations
+        const shortA = a.conversations.filter((c) => c.text.length < 20).length;
+        const shortB = b.conversations.filter((c) => c.text.length < 20).length;
+        return shortB - shortA;
+      case "medium":
+        // Sort by users who have the most medium conversations
+        const mediumA = a.conversations.filter(
+          (c) => c.text.length >= 20 && c.text.length <= 50
+        ).length;
+        const mediumB = b.conversations.filter(
+          (c) => c.text.length >= 20 && c.text.length <= 50
+        ).length;
+        return mediumB - mediumA;
+      case "long":
+        // Sort by users who have the most long conversations
+        const longA = a.conversations.filter((c) => c.text.length > 50).length;
+        const longB = b.conversations.filter((c) => c.text.length > 50).length;
+        return longB - longA;
+      default:
+        return 0;
     }
-
-    // If only one has a rank, prioritize the one with rank
-    if (rankA !== null && rankB === null) {
-      return -1; // A has rank, B doesn't - A comes first
-    }
-    if (rankA === null && rankB !== null) {
-      return 1; // B has rank, A doesn't - B comes first
-    }
-
-    // If neither has rank, sort alphabetically by username
-    return a.user.username.localeCompare(b.user.username);
   });
 
   const toggleUserExpansion = (userId: number) => {
@@ -135,9 +190,9 @@ export function SpeedModeAlt({
         {sortedUserGroups.map((userGroup) => (
           <div
             key={userGroup.user.fid}
-            className={`rounded-lg border ${getBorderColor(
+            className={`rounded-lg border-[0.5px] ${getBorderColor(
               themeMode
-            )} overflow-hidden border-purple-300/60 shadow-lg shadow-purple-900/20`}
+            )} overflow-hidden shadow-lg shadow-purple-900/20`}
           >
             {/* User Header - Always Visible */}
             <div
@@ -149,10 +204,17 @@ export function SpeedModeAlt({
               onClick={() => toggleUserExpansion(userGroup.user.fid)}
             >
               <div className="flex items-center gap-2">
-                <img
+                <Image
                   src={userGroup.user.avatarUrl}
                   alt={`@${userGroup.user.username}`}
-                  className="w-6 h-6 rounded-full"
+                  className="w-10 h-10 rounded-full object-cover"
+                  width={40}
+                  height={40}
+                  // Disable optimization to prevent multiple requests
+                  unoptimized={true}
+                  // Disable lazy loading for immediate display
+                  priority={false}
+                  loading="eager"
                   onError={(e) => {
                     const target = e.target as HTMLImageElement;
                     target.src = `https://api.dicebear.com/7.x/avataaars/svg?seed=${userGroup.user.username}`;
@@ -160,22 +222,40 @@ export function SpeedModeAlt({
                 />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
-                    <span className="font-medium text-white dark:text-white truncate text-sm">
+                    <span
+                      className={`font-medium truncate text-sm ${
+                        isDarkTheme ? "text-white" : "text-gray-900"
+                      }`}
+                    >
                       @{userGroup.user.username}
                     </span>
-                    {openRankRanks[userGroup.user.fid] && (
-                      <span className="text-xs bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200 px-1.5 py-0.5 rounded-full">
-                        #{openRankRanks[userGroup.user.fid]?.toLocaleString()}
-                      </span>
-                    )}
                   </div>
-                  <div className="text-xs text-gray-400 dark:text-gray-400">
+                  <div
+                    className={`text-xs ${
+                      isDarkTheme ? "text-gray-400" : "text-gray-600"
+                    }`}
+                  >
                     {userGroup.conversations.length} unreplied cast
                     {userGroup.conversations.length !== 1 ? "s" : ""}
                   </div>
                 </div>
-                <div className="text-xs text-gray-400">
-                  {expandedUser === userGroup.user.fid ? "▼" : "▶"}
+                <div className="flex items-center gap-2">
+                  <ReputationBadges
+                    fid={userGroup.user.fid}
+                    openRankData={openRankData}
+                    quotientScores={quotientScores}
+                    showLabels={true}
+                    size="sm"
+                  />
+
+                  {/* Expand/Collapse Arrow */}
+                  <span
+                    className={`text-xs ${
+                      isDarkTheme ? "text-gray-400" : "text-gray-600"
+                    }`}
+                  >
+                    {expandedUser === userGroup.user.fid ? "▼" : "▶"}
+                  </span>
                 </div>
               </div>
             </div>
@@ -192,6 +272,8 @@ export function SpeedModeAlt({
                       isDarkTheme={isDarkTheme}
                       onMarkAsRead={onMarkAsRead}
                       onDiscard={onDiscard}
+                      isLastItem={index === userGroup.conversations.length - 1}
+                      hasMultipleItems={userGroup.conversations.length > 1}
                     />
                   ))}
                 </div>

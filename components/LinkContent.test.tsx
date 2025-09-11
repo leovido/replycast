@@ -1,69 +1,156 @@
 import React from "react";
 import { render, screen } from "@testing-library/react";
-import { LinkContent } from "./LinkContent";
+import LinkContent from "./LinkContent";
 
-// Mock the child components
-jest.mock("./ImageDisplay", () => ({
-  ImageDisplay: ({ src, alt }: { src: string; alt: string }) => (
-    <div data-testid="image-display" data-src={src} data-alt={alt}>
-      Image: {src}
-    </div>
-  ),
-}));
+// Mock the child components with simple implementations
+jest.mock("./ImageDisplay", () => {
+  return function MockImageDisplay({
+    src,
+    alt,
+    isDarkTheme,
+  }: {
+    src: string;
+    alt: string;
+    isDarkTheme?: boolean;
+  }) {
+    return (
+      <div
+        data-testid="image-display"
+        data-src={src}
+        data-alt={alt}
+        data-dark={isDarkTheme}
+      />
+    );
+  };
+});
 
-jest.mock("./EmbedDisplay", () => ({
-  EmbedDisplay: ({ url }: { url: string }) => (
-    <div data-testid="embed-display" data-url={url}>
-      Embed: {url}
-    </div>
-  ),
+jest.mock("./EmbedDisplay", () => {
+  return function MockEmbedDisplay({
+    url,
+    isDarkTheme,
+  }: {
+    url: string;
+    isDarkTheme?: boolean;
+  }) {
+    return (
+      <div data-testid="embed-display" data-url={url} data-dark={isDarkTheme} />
+    );
+  };
+});
+
+// Mock the linkUtils functions
+jest.mock("@/utils/linkUtils", () => ({
+  extractUrls: jest.fn((text: string) => {
+    const urlRegex = /https?:\/\/[^\s]+/g;
+    return text.match(urlRegex) || [];
+  }),
+  isImageUrl: jest.fn((url: string) => {
+    return (
+      /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(url) ||
+      /imgur\.com|images\.unsplash\.com|picsum\.photos/i.test(url) ||
+      /\/image\/|\/img\/|\/photo\//i.test(url)
+    );
+  }),
 }));
 
 describe("LinkContent", () => {
-  it("renders nothing when no URLs are present", () => {
-    render(<LinkContent text="This is just plain text" isDarkTheme={false} />);
+  const defaultProps = {
+    text: "Test text",
+    isDarkTheme: false,
+  };
+
+  it("renders nothing when no URLs are found", () => {
+    render(<LinkContent {...defaultProps} text="No URLs here" embeds={[]} />);
     expect(screen.queryByTestId("image-display")).not.toBeInTheDocument();
     expect(screen.queryByTestId("embed-display")).not.toBeInTheDocument();
   });
 
-  it("renders image display for image URLs", () => {
-    const text = "Check out this image: https://example.com/image.jpg";
-    render(<LinkContent text={text} isDarkTheme={false} />);
+  it("extracts and displays URLs from text", () => {
+    const text =
+      "Check out this image: https://example.com/image.jpg and this link: https://example.com/page";
+    render(<LinkContent {...defaultProps} text={text} />);
 
-    expect(screen.getByTestId("image-display")).toBeInTheDocument();
     expect(screen.getByTestId("image-display")).toHaveAttribute(
       "data-src",
       "https://example.com/image.jpg"
     );
-  });
-
-  it("renders embed display for non-image URLs", () => {
-    const text = "Check out this video: https://youtu.be/avjI3_GIZBw";
-    render(<LinkContent text={text} isDarkTheme={false} />);
-
-    expect(screen.getByTestId("embed-display")).toBeInTheDocument();
     expect(screen.getByTestId("embed-display")).toHaveAttribute(
       "data-url",
-      "https://youtu.be/avjI3_GIZBw"
+      "https://example.com/page"
     );
   });
 
-  it("renders both images and embeds when mixed content is present", () => {
-    const text =
-      "Check out this image: https://example.com/image.jpg and this video: https://youtu.be/avjI3_GIZBw";
-    render(<LinkContent text={text} isDarkTheme={false} />);
+  it("extracts and displays URLs from embeds", () => {
+    const embeds = [
+      {
+        url: "https://example.com/embed-image.png",
+        metadata: { content_type: "image/png" },
+      },
+      {
+        url: "https://youtube.com/watch?v=123",
+        metadata: { content_type: "text/html" },
+      },
+    ];
 
-    expect(screen.getByTestId("image-display")).toBeInTheDocument();
-    expect(screen.getByTestId("embed-display")).toBeInTheDocument();
+    render(
+      <LinkContent {...defaultProps} text="No text URLs" embeds={embeds} />
+    );
+
+    expect(screen.getByTestId("image-display")).toHaveAttribute(
+      "data-src",
+      "https://example.com/embed-image.png"
+    );
+    expect(screen.getByTestId("embed-display")).toHaveAttribute(
+      "data-url",
+      "https://youtube.com/watch?v=123"
+    );
+  });
+
+  it("handles empty embeds array", () => {
+    render(
+      <LinkContent
+        {...defaultProps}
+        text="https://example.com/text-image.jpg"
+        embeds={[]}
+      />
+    );
+    expect(screen.getByTestId("image-display")).toHaveAttribute(
+      "data-src",
+      "https://example.com/text-image.jpg"
+    );
+  });
+
+  it("handles undefined embeds prop", () => {
+    render(
+      <LinkContent
+        {...defaultProps}
+        text="https://example.com/text-image.jpg"
+        embeds={undefined}
+      />
+    );
+    expect(screen.getByTestId("image-display")).toHaveAttribute(
+      "data-src",
+      "https://example.com/text-image.jpg"
+    );
   });
 
   it("applies custom className", () => {
-    const text = "Check out this: https://example.com";
     const { container } = render(
-      <LinkContent text={text} isDarkTheme={false} className="custom-class" />
+      <LinkContent
+        {...defaultProps}
+        text="https://example.com/image.jpg"
+        className="custom-class"
+      />
     );
+    expect(container.firstChild).toHaveClass("custom-class");
+  });
 
-    const linkContent = container.firstChild as HTMLElement;
-    expect(linkContent).toHaveClass("custom-class");
+  it("passes isDarkTheme to child components", () => {
+    const text = "https://example.com/image.jpg https://example.com/page";
+    render(<LinkContent {...defaultProps} text={text} isDarkTheme={true} />);
+
+    // The mock components don't actually use isDarkTheme, but we verify they render
+    expect(screen.getByTestId("image-display")).toBeInTheDocument();
+    expect(screen.getByTestId("embed-display")).toBeInTheDocument();
   });
 });

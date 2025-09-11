@@ -22,14 +22,7 @@ export function useInfiniteScroll({
     const observer = new IntersectionObserver(
       (entries) => {
         const [entry] = entries;
-        console.log("Intersection observer triggered:", {
-          isIntersecting: entry.isIntersecting,
-          hasMore,
-          isLoadingMore,
-          loading,
-        });
         if (entry.isIntersecting && hasMore && !isLoadingMore && !loading) {
-          console.log("Loading more conversations...");
           loadMoreConversations();
         }
       },

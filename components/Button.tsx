@@ -1,5 +1,6 @@
 import React from "react";
 import { sdk } from "@farcaster/miniapp-sdk";
+import type { ThemeMode } from "../types/types";
 
 interface ButtonProps {
   children: React.ReactNode;
@@ -7,7 +8,7 @@ interface ButtonProps {
   disabled?: boolean;
   variant?: "primary" | "secondary";
   size?: "sm" | "md" | "lg";
-  themeMode?: "dark" | "light" | "Farcaster";
+  themeMode?: ThemeMode;
   className?: string;
   hapticFeedback?: "light" | "medium" | "heavy";
 }
@@ -47,6 +48,13 @@ export function Button({
           primary: "bg-gray-900 hover:bg-gray-800 text-white border-gray-300",
           secondary:
             "bg-gray-100 hover:bg-gray-200 text-gray-900 border-gray-200",
+        };
+      case "neon":
+        return {
+          primary:
+            "bg-pink-500/20 hover:bg-pink-500/30 text-pink-400 border-pink-500/40 shadow-lg shadow-pink-500/25",
+          secondary:
+            "bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-400 border-cyan-500/40 shadow-lg shadow-cyan-500/25",
         };
       case "Farcaster":
       default:

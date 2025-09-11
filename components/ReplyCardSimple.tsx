@@ -19,6 +19,8 @@ interface ReplyCardSimpleProps {
   isLoading?: boolean;
   onMarkAsRead?: (conversation: UnrepliedDetail) => void;
   onDiscard?: (conversation: UnrepliedDetail) => void;
+  isLastItem?: boolean;
+  hasMultipleItems?: boolean;
 }
 
 export const ReplyCardSimple = memo<ReplyCardSimpleProps>(
@@ -31,12 +33,9 @@ export const ReplyCardSimple = memo<ReplyCardSimpleProps>(
     isLoading = false,
     onMarkAsRead,
     onDiscard,
+    isLastItem = false,
+    hasMultipleItems = false,
   }) => {
-    // Debug: Log the props to see if they're being passed
-    console.log("ReplyCardSimple props:", {
-      onMarkAsRead: !!onMarkAsRead,
-      onDiscard: !!onDiscard,
-    });
     // Swipe functionality state
     const [isDragging, setIsDragging] = useState(false);
     const [dragOffset, setDragOffset] = useState(0);
@@ -102,7 +101,6 @@ export const ReplyCardSimple = memo<ReplyCardSimpleProps>(
       longPressTimer.current = setTimeout(() => {
         // Only activate swipe mode if user hasn't moved (not scrolling)
         if (!hasMovedDuringPress.current) {
-          console.log("Long press activated - swipe mode enabled");
           setIsSwipeModeActive(true);
           setShowSwipeActions(true);
 
@@ -239,8 +237,6 @@ export const ReplyCardSimple = memo<ReplyCardSimpleProps>(
 
             if (Math.abs(deltaX) > swipeThreshold) {
               if (deltaX > 0 && onMarkAsRead) {
-                // Swipe right - mark as read
-                console.log("Swipe right - calling onMarkAsRead", conversation);
                 try {
                   sdk.haptics?.impactOccurred?.("light");
                 } catch (error) {
@@ -251,7 +247,6 @@ export const ReplyCardSimple = memo<ReplyCardSimpleProps>(
                 resetDragState();
               } else if (deltaX < 0 && onDiscard) {
                 // Swipe left - discard
-                console.log("Swipe left - calling onDiscard", conversation);
                 try {
                   sdk.haptics?.impactOccurred?.("medium");
                 } catch (error) {
@@ -354,10 +349,6 @@ export const ReplyCardSimple = memo<ReplyCardSimpleProps>(
 
             if (Math.abs(deltaX) > swipeThreshold) {
               if (deltaX > 0 && onMarkAsRead) {
-                console.log(
-                  "Mouse swipe right - calling onMarkAsRead",
-                  conversation
-                );
                 try {
                   sdk.haptics?.impactOccurred?.("light");
                 } catch (error) {
@@ -367,10 +358,6 @@ export const ReplyCardSimple = memo<ReplyCardSimpleProps>(
                 onMarkAsRead(conversation);
                 resetDragState();
               } else if (deltaX < 0 && onDiscard) {
-                console.log(
-                  "Mouse swipe left - calling onDiscard",
-                  conversation
-                );
                 try {
                   sdk.haptics?.impactOccurred?.("medium");
                 } catch (error) {
@@ -485,9 +472,15 @@ export const ReplyCardSimple = memo<ReplyCardSimpleProps>(
         onKeyDown={handleKeyDown}
         role="button"
         tabIndex={0}
-        className={`group relative w-full bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800/30 transition-all duration-300 cursor-pointer swipe-enabled ${
-          isLoading ? "opacity-75 pointer-events-none" : ""
-        } ${isSwipeModeActive ? "swipe-mode-active" : ""} ${className}`}
+        className={`group relative w-full transition-all duration-300 cursor-pointer swipe-enabled ${
+          themeMode === "Farcaster" && !isDarkTheme
+            ? "bg-[#e7e3fa] hover:bg-[#d4cdf0]"
+            : themeMode === "Farcaster" && isDarkTheme
+            ? "bg-white"
+            : "bg-white hover:bg-gray-50"
+        } ${isLoading ? "opacity-75 pointer-events-none" : ""} ${
+          isSwipeModeActive ? "swipe-mode-active" : ""
+        } ${className}`}
         style={{
           transform,
           ...(isSwipeModeActive && {
@@ -518,34 +511,53 @@ export const ReplyCardSimple = memo<ReplyCardSimpleProps>(
 
         {/* Loading overlay */}
         {isLoading && (
-          <div className="absolute inset-0 bg-white/50 dark:bg-gray-900/50 flex items-center justify-center z-10">
+          <div
+            className={`absolute inset-0 flex items-center justify-center z-10 ${
+              themeMode === "Farcaster" && !isDarkTheme
+                ? "bg-[#e7e3fa]/50"
+                : themeMode === "Farcaster" && isDarkTheme
+                ? "bg-gradient-to-br from-purple-800/20 to-indigo-800/20"
+                : "bg-white/50"
+            }`}
+          >
             <div className="w-6 h-6 border-2 border-purple-500 border-t-transparent rounded-full animate-spin"></div>
           </div>
         )}
 
         {/* Profile Picture */}
         <div className="flex flex-row p-4 gap-2 items-center">
-          <div className="relative">
+          <div
+            className={`rounded-full overflow-hidden ring-2 transition-all duration-200 ${
+              themeMode === "Farcaster" && !isDarkTheme
+                ? "ring-purple-200 group-hover:ring-purple-300"
+                : themeMode === "Farcaster" && isDarkTheme
+                ? "ring-purple-800/50 group-hover:ring-purple-700/50"
+                : "ring-gray-200 group-hover:ring-purple-300"
+            }`}
+          >
             <Image
               src={conversation.avatarUrl}
               alt={`@${conversation.username}'s avatar`}
               width={40}
               height={40}
-              className="rounded-full ring-2 ring-gray-200 dark:ring-gray-600 group-hover:ring-purple-300 dark:group-hover:ring-purple-600 transition-all duration-200"
+              className="w-10 h-10 object-cover"
               onError={(e) => {
                 const target = e.target as HTMLImageElement;
                 target.src = `https://api.dicebear.com/7.x/avataaars/svg?seed=${conversation.username}`;
               }}
+              // Disable optimization to prevent multiple requests
+              unoptimized={true}
+              // Disable lazy loading for immediate display
+              priority={false}
+              loading="eager"
             />
-            {/* Optional: Add a subtle glow effect on hover */}
-            <div className="absolute inset-0 rounded-full bg-gradient-to-r from-purple-400/20 to-blue-400/20 opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
           </div>
 
           {/* Header Row */}
           <div className="flex flex-col flex-1">
             {/* Username */}
             <span
-              className={`font-semibold text-left group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors`}
+              className={`font-semibold text-left group-hover:text-purple-600 transition-colors`}
             >
               @{conversation.username}
             </span>
@@ -579,7 +591,9 @@ export const ReplyCardSimple = memo<ReplyCardSimpleProps>(
                 <LinkContent
                   text={conversation.text}
                   isDarkTheme={isDarkTheme}
+                  themeMode={themeMode}
                   className="mb-0"
+                  embeds={conversation.embeds}
                 />
               </div>
             )}
@@ -597,12 +611,14 @@ export const ReplyCardSimple = memo<ReplyCardSimpleProps>(
 
             {/* Interaction Bar */}
             <div
-              className={`flex items-center gap-6 text-sm ${getTertiaryTextColor(
-                themeMode
-              )}`}
+              className={`flex items-center gap-6 text-sm ${
+                themeMode === "dark"
+                  ? "text-black/80"
+                  : getTertiaryTextColor(themeMode)
+              }`}
             >
               {/* Replies */}
-              <div className="flex items-center gap-2 group/stat hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+              <div className="flex items-center gap-2 group/stat hover:text-blue-600 transition-colors">
                 <svg
                   className="w-4 h-4"
                   fill="none"
@@ -616,7 +632,7 @@ export const ReplyCardSimple = memo<ReplyCardSimpleProps>(
               </div>
 
               {/* Recasts */}
-              <div className="flex items-center gap-2 group/stat hover:text-green-600 dark:hover:text-green-400 transition-colors">
+              <div className="flex items-center gap-2 group/stat hover:text-green-600 transition-colors">
                 <svg
                   className="w-4 h-4"
                   fill="none"
@@ -633,7 +649,7 @@ export const ReplyCardSimple = memo<ReplyCardSimpleProps>(
               </div>
 
               {/* Likes */}
-              <div className="flex items-center gap-2 group/stat hover:text-red-600 dark:hover:text-red-400 transition-colors">
+              <div className="flex items-center gap-2 group/stat hover:text-red-600 transition-colors">
                 <svg
                   className="w-4 h-4"
                   fill="currentColor"
@@ -646,6 +662,19 @@ export const ReplyCardSimple = memo<ReplyCardSimpleProps>(
             </div>
           </div>
         </div>
+
+        {/* Conditional Divider - only show when there are multiple items and this is not the last item */}
+        {hasMultipleItems && !isLastItem && (
+          <div
+            className={`h-px ${
+              themeMode === "Farcaster" && !isDarkTheme
+                ? "bg-purple-200"
+                : themeMode === "Farcaster" && isDarkTheme
+                ? "bg-purple-600/30"
+                : "bg-gray-200"
+            }`}
+          />
+        )}
       </div>
     );
   }
