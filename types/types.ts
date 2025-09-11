@@ -54,6 +54,30 @@ export interface FarcasterRepliesResponse {
   nextCursor?: string | null;
 }
 
+// New types for $REPLY tips functionality
+export interface ReplyTip {
+  amount: number;
+  timestamp: number;
+  castHash: string;
+  castText: string;
+  castUrl: string;
+  authorFid: number;
+  authorUsername: string;
+  authorDisplayName?: string;
+  authorPfpUrl?: string;
+  isTipGiven: boolean; // true if user gave the tip, false if received
+}
+
+export interface ReplyTipsResponse {
+  tipsReceived: ReplyTip[];
+  tipsGiven: ReplyTip[];
+  totalReceived: number;
+  totalGiven: number;
+  totalReceivedToday: number;
+  totalGivenToday: number;
+  message: string;
+  nextCursor?: string | null;
+}
 export interface OpenRankScore {
   rank: number | null;
   score: number | null;

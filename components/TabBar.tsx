@@ -8,7 +8,7 @@ import {
 } from "@/utils/themeHelpers";
 import type { ThemeMode } from "@/types/types";
 
-export type TabType = "inbox" | "focus" | "analytics";
+export type TabType = "inbox" | "focus" | "analytics" | "tips";
 
 interface TabBarProps {
   activeTab: TabType;
@@ -75,6 +75,22 @@ const tabs = [
       </svg>
     ),
   },
+  {
+    id: "tips" as TabType,
+    label: "Tips",
+    icon: (
+      <svg
+        width={20}
+        height={20}
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth={2}
+      >
+        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+      </svg>
+    ),
+  },
 ];
 
 export function TabBar({
@@ -103,39 +119,35 @@ export function TabBar({
     <div
       className={`sticky bottom-0 z-50 ${getBackgroundClass(
         themeMode
-      )} border-t ${getBorderColor(themeMode)}`}
+      )} ${getBorderColor(themeMode)} border-t`}
     >
-      <div className="flex items-center justify-around py-2">
+      <div className="flex justify-around items-center h-16 px-4">
         {tabs.map((tab) => {
           const isActive = activeTab === tab.id;
           return (
             <button
               key={tab.id}
               onClick={() => handleTabChange(tab.id)}
-              className={`flex flex-col items-center justify-center w-full py-2 rounded-lg transition-all duration-200 ${
-                isActive ? "scale-105" : "hover:scale-102 hover:bg-white/5"
-              }`}
-              aria-label={tab.label}
+              className={`flex flex-col items-center justify-center flex-1 h-full transition-all duration-200 ${getTextColor(
+                themeMode,
+                isActive
+              )}`}
+              aria-label={`Switch to ${tab.label} tab`}
             >
               <div
-                className={`mb-1 transition-all duration-200 ${getTextColor(
-                  themeMode,
-                  isActive
-                )}`}
+                className={`mb-1 transition-transform duration-200 ${
+                  isActive ? "scale-110" : "scale-100"
+                }`}
               >
                 {tab.icon}
               </div>
               <span
-                className={`text-xs font-medium transition-all duration-200 ${getTextColor(
-                  themeMode,
-                  isActive
-                )}`}
+                className={`text-xs font-medium transition-all duration-200 ${
+                  isActive ? "opacity-100" : "opacity-70"
+                }`}
               >
                 {tab.label}
               </span>
-              {isActive && (
-                <div className="w-1 h-1 rounded-full bg-current mt-1" />
-              )}
             </button>
           );
         })}

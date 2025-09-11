@@ -12,6 +12,7 @@ import { TabBar, type TabType } from "./TabBar";
 import { FocusTab } from "./FocusTab";
 import { SpeedModeTab } from "./SpeedModeTab";
 import { AnalyticsTab } from "./AnalyticsTab";
+import { TipsTab } from "./TipsTab";
 import { ToastNotification } from "./ToastNotification";
 import { EmptyState } from "./EmptyState";
 import { Badge } from "./Badge";
@@ -1164,6 +1165,15 @@ export default function FarcasterApp() {
               themeMode={themeMode}
               searchQuery={searchQuery}
               isSearching={searchStats.isSearching}
+            />
+          )}
+
+          {activeTab === "tips" && (
+            <TipsTab
+              user={user}
+              isDarkTheme={isDarkTheme}
+              themeMode={themeMode}
+              useMockData={false} // Use mock data for testing
             />
           )}
         </div>
