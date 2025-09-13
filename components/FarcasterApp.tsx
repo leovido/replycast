@@ -754,7 +754,7 @@ export default function FarcasterApp() {
 
   return (
     <div
-      className={`min-h-screen ${getBackgroundClass()} transition-all duration-300 flex flex-col`}
+      className={`min-h-screen ${getBackgroundClass()} transition-all duration-300 flex flex-col safari-flex-fix safari-height-fix`}
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
@@ -917,9 +917,9 @@ export default function FarcasterApp() {
         </div>
       </div>
 
-      <div className="container mx-auto px-4 max-w-6xl flex-1 flex flex-col">
+      <div className="container mx-auto px-4 max-w-6xl flex-1 flex flex-col min-h-0">
         {/* Search Bar */}
-        <div className="mb-6">
+        <div className="mb-6 flex-shrink-0">
           <SearchBar
             onSearch={handleSearch}
             placeholder="Search conversations, users, or FIDs..."
@@ -929,20 +929,22 @@ export default function FarcasterApp() {
         </div>
 
         {/* Search Results */}
-        <SearchResults
-          isSearching={searchStats.isSearching}
-          totalFound={searchStats.totalFound}
-          totalOriginal={searchStats.totalOriginal}
-          searchQuery={searchStats.searchQuery}
-          isDarkTheme={isDarkTheme}
-          themeMode={themeMode}
-          onClearSearch={handleClearSearch}
-        />
+        <div className="flex-shrink-0">
+          <SearchResults
+            isSearching={searchStats.isSearching}
+            totalFound={searchStats.totalFound}
+            totalOriginal={searchStats.totalOriginal}
+            searchQuery={searchStats.searchQuery}
+            isDarkTheme={isDarkTheme}
+            themeMode={themeMode}
+            onClearSearch={handleClearSearch}
+          />
+        </div>
 
         {/* User Info Card */}
         {user && (
           <div
-            className={`mb-6 p-4 rounded-2xl ${
+            className={`mb-6 p-4 rounded-2xl flex-shrink-0 ${
               isDarkTheme
                 ? "bg-white/10 backdrop-blur-md border border-white/20"
                 : "bg-white/80 backdrop-blur-md border border-gray-200"
@@ -1032,7 +1034,7 @@ export default function FarcasterApp() {
         )}
 
         {/* Tab Content */}
-        <div className="flex-1 overflow-y-auto pb-20">
+        <div className="flex-1 overflow-y-auto pb-20 min-h-0 safari-scroll-fix safari-flex-fix">
           {activeTab === "inbox" && (
             <>
               {displayConversations.length === 0 && !dataLoading ? (
