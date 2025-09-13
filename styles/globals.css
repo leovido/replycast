@@ -51,6 +51,36 @@ body {
   overflow-x: hidden;
 }
 
+/* Safari-specific fixes for scrolling */
+@supports (-webkit-appearance: none) {
+  /* Fix for Safari desktop scrolling issues */
+  .safari-scroll-fix {
+    -webkit-overflow-scrolling: touch;
+    overflow-y: auto;
+    height: 100%;
+    min-height: 0;
+    /* Additional Safari fixes */
+    -webkit-transform: translateZ(0);
+    transform: translateZ(0);
+    will-change: scroll-position;
+  }
+  
+  /* Ensure flex containers work properly in Safari */
+  .safari-flex-fix {
+    min-height: 0;
+    flex: 1 1 0%;
+    /* Force hardware acceleration */
+    -webkit-transform: translateZ(0);
+    transform: translateZ(0);
+  }
+  
+  /* Fix for Safari flexbox height calculation issues */
+  .safari-height-fix {
+    height: 100vh;
+    height: -webkit-fill-available;
+  }
+}
+
 /* Safe area handling for mobile devices */
 .safe-area-inset-top {
   height: env(safe-area-inset-top, 0px);

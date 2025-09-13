@@ -184,7 +184,7 @@ export function SpeedModeAlt({
   }
 
   return (
-    <div className="px-4 pb-20">
+    <div className="px-4 pb-20 safari-scroll-fix">
       {/* Users List */}
       <div className="space-y-2">
         {sortedUserGroups.map((userGroup) => (
