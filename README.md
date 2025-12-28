@@ -85,6 +85,10 @@ pnpm build
 pnpm start
 ```
 
+### Docker (with Prometheus + Grafana)
+
+See `DOCKER_SETUP.md`.
+
 ## API Endpoints
 
 ### `/api/farcaster-replies`

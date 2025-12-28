@@ -96,6 +96,16 @@ const nextConfig = {
           },
         ],
       },
+      // Prometheus scrapes should never be cached.
+      {
+        source: "/api/metrics",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "no-store",
+          },
+        ],
+      },
       {
         source: "/api/(.*)",
         headers: [
