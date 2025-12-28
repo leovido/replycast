@@ -134,3 +134,7 @@ node_modules
 **/.DS_Store
 .vscode
 .env*
+
+# Docker volumes
+monitoring/prometheus/data/
+monitoring/grafana/data/

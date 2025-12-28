@@ -1,0 +1,23 @@
+# Development Dockerfile with hot reload
+FROM node:18-alpine
+
+WORKDIR /app
+
+# Install dependencies
+RUN apk add --no-cache libc6-compat
+
+# Copy package files
+COPY package.json pnpm-lock.yaml* ./
+
+# Install pnpm and dependencies
+RUN corepack enable pnpm && pnpm i
+
+# Copy source
+COPY . .
+
+EXPOSE 3000
+
+ENV PORT=3000
+ENV HOSTNAME="0.0.0.0"
+
+CMD ["pnpm", "run", "dev"]
