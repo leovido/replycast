@@ -65,7 +65,7 @@ function reducer(state: State, action: Action): State {
       };
     
     case 'FETCH_ERROR':
-      return { ...state, loading: false, error: action.error, hasMore: false };
+      return { ...state, loading: false, error: action.error, hasMore: false, isRefreshing: false };
     
     case 'LOAD_MORE_START':
       return { ...state, isLoadingMore: true };
@@ -264,7 +264,7 @@ export function useFarcasterData({
           fetchOpenRankDataRef.current(fids).catch(console.error);
         }
       } catch (error: unknown) {
-        if (error instanceof FarcasterError) {
+        if (error instanceof Error) {
           if (error.name === 'AbortError') return;
           if (isCancelled) return;
           
@@ -332,7 +332,7 @@ export function useFarcasterData({
         fetchOpenRankDataRef.current(fids).catch(console.error);
       }
     } catch (err) {
-      if (err instanceof FarcasterError) {
+      if (err instanceof Error) {
         if (err.name === 'AbortError') return;
         dispatch({ type: 'LOAD_MORE_ERROR' });
       }
