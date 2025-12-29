@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useEffect, useCallback, useRef, useReducer } from "react";
 import type {
   FarcasterRepliesResponse,
   UnrepliedDetail,
@@ -14,334 +14,380 @@ interface UseFarcasterDataProps {
   dayFilter?: string;
 }
 
+export class FarcasterError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'FarcasterError';
+  }
+}
+
+// State shape for useReducer
+interface State {
+  data: FarcasterRepliesResponse | null;
+  loading: boolean;
+  error: string | null;
+  isRefreshing: boolean;
+  cursor: Cursor;
+  hasMore: boolean;
+  isLoadingMore: boolean;
+  conversations: UnrepliedDetail[];
+  userOpenRank: number | null;
+  userQuotientScore: number | null;
+  userFollowingRank: number | null;
+}
+
+type Action =
+  | { type: 'FETCH_START' }
+  | { type: 'FETCH_SUCCESS'; payload: FarcasterRepliesResponse }
+  | { type: 'FETCH_ERROR'; error: string }
+  | { type: 'LOAD_MORE_START' }
+  | { type: 'LOAD_MORE_SUCCESS'; payload: UnrepliedDetail[]; cursor: Cursor }
+  | { type: 'LOAD_MORE_ERROR' }
+  | { type: 'REFRESH_START' }
+  | { type: 'REFRESH_SUCCESS'; payload: FarcasterRepliesResponse }
+  | { type: 'SET_USER_RANKS'; openRank: number | null; quotient: number | null; following: number | null }
+  | { type: 'RESET_PAGINATION' };
+
+function reducer(state: State, action: Action): State {
+  switch (action.type) {
+    case 'FETCH_START':
+      return { ...state, loading: true, error: null };
+    
+    case 'FETCH_SUCCESS':
+      return {
+        ...state,
+        data: action.payload,
+        loading: false,
+        isLoadingMore: false,
+        conversations: deduplicateConversations(action.payload.unrepliedDetails || []),
+        cursor: action.payload.nextCursor || null,
+        hasMore: !!action.payload.nextCursor,
+      };
+    
+    case 'FETCH_ERROR':
+      return { ...state, loading: false, error: action.error, hasMore: false, isRefreshing: false };
+    
+    case 'LOAD_MORE_START':
+      return { ...state, isLoadingMore: true };
+    
+    case 'LOAD_MORE_SUCCESS':
+      return {
+        ...state,
+        isLoadingMore: false,
+        conversations: deduplicateAndMerge(state.conversations, action.payload),
+        cursor: action.cursor,
+        hasMore: !!action.cursor && action.payload.length > 0,
+      };
+    
+    case 'LOAD_MORE_ERROR':
+      return { ...state, isLoadingMore: false, hasMore: false };
+    
+    case 'REFRESH_START':
+      return { ...state, isRefreshing: true, error: null };
+    
+    case 'REFRESH_SUCCESS':
+      return {
+        ...state,
+        isRefreshing: false,
+        data: action.payload,
+        conversations: deduplicateConversations(action.payload.unrepliedDetails || []),
+        cursor: action.payload.nextCursor || null,
+        hasMore: !!action.payload.nextCursor,
+      };
+    
+    case 'SET_USER_RANKS':
+      return {
+        ...state,
+        userOpenRank: action.openRank,
+        userQuotientScore: action.quotient,
+        userFollowingRank: action.following,
+      };
+    
+    case 'RESET_PAGINATION':
+      return {
+        ...state,
+        cursor: null,
+        hasMore: true,
+        isLoadingMore: false,
+        conversations: [],
+      };
+    
+    default:
+      return state;
+  }
+}
+
+// Helper functions
+function deduplicateConversations(conversations: UnrepliedDetail[]): UnrepliedDetail[] {
+  const seen = new Set<string>();
+  return conversations.filter(conv => {
+    if (seen.has(conv.castHash)) return false;
+    seen.add(conv.castHash);
+    return true;
+  });
+}
+
+function deduplicateAndMerge(existing: UnrepliedDetail[], newItems: UnrepliedDetail[]): UnrepliedDetail[] {
+  const existingHashes = new Set(existing.map(item => item.castHash));
+  const filtered = newItems.filter(item => !existingHashes.has(item.castHash));
+  return [...existing, ...filtered];
+}
+
 export function useFarcasterData({
   user,
   fetchOpenRankData,
   clearOpenRankCache,
   dayFilter = "today",
 }: UseFarcasterDataProps) {
-  const [data, setData] = useState<FarcasterRepliesResponse | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [isRefreshing, setIsRefreshing] = useState(false);
-  const [userOpenRank, setUserOpenRank] = useState<number | null>(null);
-  const [userQuotientScore, setUserQuotientScore] = useState<number | null>(
-    null
-  );
-  const [userFollowingRank, setUserFollowingRank] = useState<number | null>(
-    null
-  );
+  const [state, dispatch] = useReducer(reducer, {
+    data: null,
+    loading: true,
+    error: null,
+    isRefreshing: false,
+    cursor: null,
+    hasMore: true,
+    isLoadingMore: false,
+    conversations: [],
+    userOpenRank: null,
+    userQuotientScore: null,
+    userFollowingRank: null,
+  });
 
-  // Pagination state
-  const [cursor, setCursor] = useState<Cursor>(null);
-  const [hasMore, setHasMore] = useState(true);
-  const [isLoadingMore, setIsLoadingMore] = useState(false);
-  const [allConversations, setAllConversations] = useState<UnrepliedDetail[]>(
-    []
-  );
-
-  // Fetch user's reputation score
-  const fetchUserReputation = useCallback(async (userFid: number) => {
-    try {
-      // Check if mocks are enabled
-      const useMocks =
-        process.env.NEXT_PUBLIC_USE_MOCKS === "true" ||
-        (typeof window !== "undefined" && (window as any).__FORCE_MOCKS__);
-
-      if (useMocks) {
-        // For mocks, we'll use the default "quotient" type
-        const mockScore = await MockFarcasterService.fetchUserReputation(
-          userFid,
-          "quotient"
-        );
-        setUserOpenRank(mockScore);
-        return;
-      }
-
-      // Fetch both OpenRank and Quotient data for the user
-      const [openRankResponse, quotientResponse] = await Promise.all([
-        fetch(`/api/openRank?fids=${userFid}`, {
-          signal: AbortSignal.timeout(10000), // 10 second timeout
-        }),
-        fetch(`/api/quotient`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ fids: [userFid] }),
-          signal: AbortSignal.timeout(10000), // 10 second timeout
-        }),
-      ]);
-
-      if (openRankResponse.ok) {
-        const openRankData = await openRankResponse.json();
-        if (openRankData.ranks && openRankData.ranks[userFid]) {
-          const engagementRank = openRankData.ranks[userFid].engagement.rank;
-          const followingRank = openRankData.ranks[userFid].following.rank;
-          setUserOpenRank(engagementRank);
-          setUserFollowingRank(followingRank);
-        }
-      }
-
-      if (quotientResponse.ok) {
-        const quotientData = await quotientResponse.json();
-        if (quotientData.data && quotientData.data[0]) {
-          setUserQuotientScore(quotientData.data[0].quotientScore);
-        }
-      }
-    } catch (error) {
-      console.error("Failed to fetch user reputation:", error);
-      // Don't set error state for user reputation as it's not critical
-    }
-  }, []);
-
+  // Store function refs to avoid dependency issues
+  const fetchOpenRankDataRef = useRef(fetchOpenRankData);
+  const clearOpenRankCacheRef = useRef(clearOpenRankCache);
+  
   useEffect(() => {
-    if (!user) return;
+    fetchOpenRankDataRef.current = fetchOpenRankData;
+    clearOpenRankCacheRef.current = clearOpenRankCache;
+  });
 
-    const fetchData = async () => {
-      setLoading(true);
+  // Fetch user reputation (separate effect for separate concern)
+  useEffect(() => {
+    if (!user?.fid) return;
+
+    const abortController = new AbortController();
+    
+    const fetchReputation = async () => {
       try {
-        // Fetch user's reputation score first
-        await fetchUserReputation(user.fid);
-
-        // Check if mocks are enabled
-        const useMocks =
-          process.env.NEXT_PUBLIC_USE_MOCKS === "true" ||
+        const useMocks = process.env.NEXT_PUBLIC_USE_MOCKS === "true" ||
           (typeof window !== "undefined" && (window as any).__FORCE_MOCKS__);
 
-        let responseData;
+        if (useMocks) {
+          const mockScore = await MockFarcasterService.fetchUserReputation(user.fid, "quotient");
+          dispatch({ type: 'SET_USER_RANKS', openRank: mockScore, quotient: null, following: null });
+          return;
+        }
+
+        // Parallel fetch with timeout
+        const [openRankResponse, quotientResponse] = await Promise.all([
+          fetch(`/api/openRank?fids=${user.fid}`, {
+            signal: abortController.signal,
+          }),
+          fetch(`/api/quotient`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ fids: [user.fid] }),
+            signal: abortController.signal,
+          }),
+        ]);
+
+        let openRank = null, quotient = null, following = null;
+
+        if (openRankResponse.ok) {
+          const data = await openRankResponse.json();
+          if (data.ranks?.[user.fid]) {
+            openRank = data.ranks[user.fid].engagement.rank;
+            following = data.ranks[user.fid].following.rank;
+          }
+        }
+
+        if (quotientResponse.ok) {
+          const data = await quotientResponse.json();
+          if (data.data?.[0]) {
+            quotient = data.data[0].quotientScore;
+          }
+        }
+
+        dispatch({ type: 'SET_USER_RANKS', openRank, quotient, following });
+      } catch (error: unknown) {
+        console.error("Failed to fetch user reputation:", error);
+      }
+    };
+
+    fetchReputation();
+
+    return () => abortController.abort();
+  }, [user?.fid]); // Only primitive dependency
+
+  // Main data fetch effect
+  useEffect(() => {
+    if (!user?.fid) return;
+
+    const abortController = new AbortController();
+    let isCancelled = false;
+
+    const fetchData = async () => {
+      dispatch({ type: 'FETCH_START' });
+
+      try {
+        const useMocks = process.env.NEXT_PUBLIC_USE_MOCKS === "true" ||
+          (typeof window !== "undefined" && (window as any).__FORCE_MOCKS__);
+
+        let responseData: FarcasterRepliesResponse;
 
         if (useMocks) {
-          responseData = await MockFarcasterService.fetchReplies(
-            user.fid,
-            dayFilter,
-            25
-          );
+          responseData = await MockFarcasterService.fetchReplies(user.fid, dayFilter, 25);
         } else {
-          // Use the same API endpoint as infinite scroll for consistency
-          const url = new URL(
-            "/api/farcaster-notification-replies",
-            window.location.origin
-          );
+          const url = new URL("/api/farcaster-notification-replies", window.location.origin);
           url.searchParams.set("fid", user.fid.toString());
           url.searchParams.set("limit", "25");
           if (dayFilter !== "all") {
             url.searchParams.set("dayFilter", dayFilter);
           }
 
-          const res = await fetch(url.toString());
+          const res = await fetch(url.toString(), {
+            signal: abortController.signal,
+          });
+          
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
           responseData = await res.json();
         }
 
-        if (responseData) {
-          setData(responseData);
-          setLoading(false);
-          setIsLoadingMore(false);
+        if (isCancelled) return;
 
-          // Deduplicate conversations using castHash
-          const uniqueConversations = (
-            responseData.unrepliedDetails || []
-          ).reduce((acc: UnrepliedDetail[], item: UnrepliedDetail) => {
-            const isDuplicate = acc.some(
-              (existing) => existing.castHash === item.castHash
-            );
-            if (!isDuplicate) {
-              acc.push(item);
-            }
-            return acc;
-          }, []);
+        dispatch({ type: 'FETCH_SUCCESS', payload: responseData });
 
-          setAllConversations(uniqueConversations);
-          setCursor(responseData.nextCursor || null);
-
-          // Set hasMore based on nextCursor availability
-          setHasMore(!!responseData.nextCursor);
-
-          // Fetch OpenRank ranks for all FIDs in the response
-          if (responseData.unrepliedDetails?.length > 0) {
-            const fids = responseData.unrepliedDetails.map(
-              (detail: UnrepliedDetail) => detail.authorFid
-            );
-            await fetchOpenRankData(fids);
-          }
+        // Fire and forget: fetch OpenRank for conversation authors
+        if (responseData.unrepliedDetails?.length > 0) {
+          const fids = responseData.unrepliedDetails.map(detail => detail.authorFid);
+          fetchOpenRankDataRef.current(fids).catch(console.error);
         }
-      } catch (err) {
-        setHasMore(false);
-        setError(
-          err instanceof Error ? err.message : "Failed to load conversations"
-        );
-        setLoading(false);
+      } catch (error: unknown) {
+        if (error instanceof Error) {
+          if (error.name === 'AbortError') return;
+          if (isCancelled) return;
+          
+          dispatch({
+            type: 'FETCH_ERROR',
+            error: error instanceof Error ? error.message : "Failed to load conversations",
+          });
+        }
       }
     };
 
     fetchData();
-  }, [user, fetchOpenRankData, userOpenRank, fetchUserReputation, dayFilter]);
 
+    return () => {
+      isCancelled = true;
+      abortController.abort();
+    };
+  }, [user?.fid, dayFilter]); // Only primitive dependencies
+
+  // Load more callback
   const loadMoreConversations = useCallback(async () => {
-    if (!hasMore || isLoadingMore || loading) return;
+    if (!state.hasMore || state.isLoadingMore || state.loading || !user?.fid) return;
 
-    setIsLoadingMore(true);
+    const abortController = new AbortController();
+    dispatch({ type: 'LOAD_MORE_START' });
+
     try {
-      // Check if mocks are enabled
-      const useMocks =
-        process.env.NEXT_PUBLIC_USE_MOCKS === "true" ||
+      const useMocks = process.env.NEXT_PUBLIC_USE_MOCKS === "true" ||
         (typeof window !== "undefined" && (window as any).__FORCE_MOCKS__);
 
-      let responseData;
+      let responseData: FarcasterRepliesResponse;
 
       if (useMocks) {
         responseData = await MockFarcasterService.fetchReplies(
-          user?.fid || 0,
+          user.fid,
           dayFilter,
           25,
-          cursor || undefined
+          state.cursor || undefined
         );
       } else {
-        const url = new URL(
-          "/api/farcaster-notification-replies",
-          window.location.origin
-        );
-        if (!user?.fid) {
-          throw new Error("User FID is required to load conversations");
-        }
+        const url = new URL("/api/farcaster-notification-replies", window.location.origin);
         url.searchParams.set("fid", user.fid.toString());
-        if (cursor) {
-          url.searchParams.set("cursor", cursor);
+        if (state.cursor) {
+          url.searchParams.set("cursor", state.cursor);
         }
         if (dayFilter !== "all") {
           url.searchParams.set("dayFilter", dayFilter);
         }
 
-        const res = await fetch(url.toString());
+        const res = await fetch(url.toString(), {
+          signal: abortController.signal,
+        });
         responseData = await res.json();
       }
 
-      // Append new conversations with deduplication
-      setAllConversations((prev) => {
-        const existingHashes = new Set(prev.map((item) => item.castHash));
-        const newConversations = (responseData.unrepliedDetails || []).filter(
-          (item: UnrepliedDetail) => !existingHashes.has(item.castHash)
-        );
-
-        return [...prev, ...newConversations];
+      dispatch({
+        type: 'LOAD_MORE_SUCCESS',
+        payload: responseData.unrepliedDetails || [],
+        cursor: responseData.nextCursor || null,
       });
 
-      setCursor(responseData.nextCursor || null);
-
-      // Fetch OpenRank ranks for new FIDs in the response
+      // Fire and forget: fetch OpenRank
       if (responseData.unrepliedDetails?.length > 0) {
-        const fids = responseData.unrepliedDetails.map(
-          (detail: UnrepliedDetail) => detail.authorFid
-        );
-        // Don't await this to prevent blocking the UI update
-        fetchOpenRankData(fids).catch((error) => {
-          console.error(
-            "Failed to fetch OpenRank for new conversations:",
-            error
-          );
-        });
+        const fids = responseData.unrepliedDetails.map(detail => detail.authorFid);
+        fetchOpenRankDataRef.current(fids).catch(console.error);
       }
-
-      // If no more data, stop loading more
-      if (!responseData.nextCursor || !responseData.unrepliedDetails?.length) {
-        setHasMore(false);
+    } catch (err) {
+      if (err instanceof Error) {
+        if (err.name === 'AbortError') return;
+        dispatch({ type: 'LOAD_MORE_ERROR' });
       }
-    } catch (e) {
-      setHasMore(false); // Stop trying if error
     }
-    setIsLoadingMore(false); // Always reset spinner
-  }, [
-    hasMore,
-    isLoadingMore,
-    loading,
-    user,
-    cursor,
-    dayFilter,
-    fetchOpenRankData,
-  ]);
+  }, [state.hasMore, state.isLoadingMore, state.loading, state.cursor, user?.fid, dayFilter]);
 
+  // Refresh callback
   const handleRefresh = useCallback(async () => {
-    setIsRefreshing(true);
-    setError(null);
+    if (!user?.fid) return;
 
-    // Clear OpenRank cache to force fresh data
-    clearOpenRankCache();
+    dispatch({ type: 'REFRESH_START' });
+    clearOpenRankCacheRef.current();
 
-    // Reset pagination state for fresh start
-    setCursor(null);
-    setHasMore(true);
-    setIsLoadingMore(false);
-
-    // Force refresh by bypassing cache
-    if (!user?.fid) {
-      throw new Error("User FID is required to refresh conversations");
-    }
-    const userFid = user.fid;
     try {
-      // Refresh user's OpenRank score
-      await fetchUserReputation(userFid);
-
-      const url = new URL(
-        "/api/farcaster-notification-replies",
-        window.location.origin
-      );
-      url.searchParams.set("fid", userFid.toString());
+      const url = new URL("/api/farcaster-notification-replies", window.location.origin);
+      url.searchParams.set("fid", user.fid.toString());
       url.searchParams.set("limit", "25");
       if (dayFilter !== "all") {
         url.searchParams.set("dayFilter", dayFilter);
       }
 
-      const res = await fetch(url.toString(), {
-        cache: "no-store",
-      });
+      const res = await fetch(url.toString(), { cache: "no-store" });
       const responseData = await res.json();
-      if (responseData) {
-        setData(responseData);
-        setAllConversations(responseData.unrepliedDetails || []);
-        setCursor(responseData.nextCursor || null);
-        setHasMore(!!responseData.nextCursor);
 
-        // Fetch OpenRank ranks for all FIDs in the response
-        if (responseData.unrepliedDetails?.length > 0) {
-          const fids = responseData.unrepliedDetails.map(
-            (detail: UnrepliedDetail) => detail.authorFid
-          );
-          await fetchOpenRankData(fids);
-        }
-      } else {
-        setError(responseData.error || "Failed to fetch data");
+      dispatch({ type: 'REFRESH_SUCCESS', payload: responseData });
+
+      // Fire and forget: fetch OpenRank
+      if (responseData.unrepliedDetails?.length > 0) {
+        const fids = responseData.unrepliedDetails.map((detail: UnrepliedDetail) => detail.authorFid);
+        fetchOpenRankDataRef.current(fids).catch(console.error);
       }
     } catch (err) {
-      setError("Failed to load conversations");
+      dispatch({
+        type: 'FETCH_ERROR',
+        error: "Failed to refresh conversations",
+      });
     }
-    setIsRefreshing(false);
-  }, [
-    user?.fid,
-    fetchOpenRankData,
-    fetchUserReputation,
-    clearOpenRankCache,
-    dayFilter,
-  ]);
+  }, [user?.fid, dayFilter]);
 
   const resetPagination = useCallback(() => {
-    setCursor(null);
-    setHasMore(true);
-    setIsLoadingMore(false);
-    setAllConversations([]);
+    dispatch({ type: 'RESET_PAGINATION' });
   }, []);
 
   return {
-    data,
-    loading,
-    error,
-    isRefreshing,
-    allConversations,
-    hasMore,
-    isLoadingMore,
-    cursor,
-    userOpenRank,
-    userQuotientScore,
-    userFollowingRank,
+    data: state.data,
+    loading: state.loading,
+    error: state.error,
+    isRefreshing: state.isRefreshing,
+    allConversations: state.conversations,
+    hasMore: state.hasMore,
+    isLoadingMore: state.isLoadingMore,
+    cursor: state.cursor,
+    userOpenRank: state.userOpenRank,
+    userQuotientScore: state.userQuotientScore,
+    userFollowingRank: state.userFollowingRank,
     loadMoreConversations,
     handleRefresh,
     resetPagination,
