@@ -125,23 +125,27 @@ export function SearchBar({
 
   const getInputClass = () => {
     const baseClass =
-      "w-full pl-12 pr-20 py-3 text-sm rounded-2xl border-0 outline-none transition-all duration-200";
+      "w-full pl-10 pr-16 py-3 text-sm rounded-lg border outline-none transition-colors duration-150";
     const themeClass = isDarkTheme
-      ? "bg-white/10 backdrop-blur-md text-white placeholder-white/60 border border-white/20"
-      : "bg-white/80 backdrop-blur-md text-gray-900 placeholder-gray-500 border border-gray-200";
+      ? "bg-gray-800/50 text-white placeholder-gray-400 border-gray-700/50 focus:border-gray-600 focus:bg-gray-800"
+      : "bg-white text-gray-900 placeholder-gray-500 border-gray-200 focus:border-gray-300 focus:bg-white";
 
     return `${baseClass} ${themeClass}`;
   };
 
   const getButtonClass = (isActive = false) => {
     const baseClass =
-      "absolute right-2 p-2 rounded-xl transition-all duration-200 hover:scale-105 active:scale-95";
+      "flex items-center justify-center w-8 h-8 rounded-md transition-colors duration-150";
     const themeClass = isDarkTheme
-      ? `bg-white/10 hover:bg-white/20 text-white ${
-          isActive ? "bg-red-500/20 text-red-400" : ""
+      ? `${
+          isActive
+            ? "bg-red-500/20 text-red-400"
+            : "bg-gray-700/50 hover:bg-gray-700 text-gray-300"
         }`
-      : `bg-gray-100 hover:bg-gray-200 text-gray-700 ${
-          isActive ? "bg-red-100 text-red-600" : ""
+      : `${
+          isActive
+            ? "bg-red-100 text-red-600"
+            : "bg-gray-100 hover:bg-gray-200 text-gray-600"
         }`;
 
     return `${baseClass} ${themeClass}`;
@@ -158,7 +162,9 @@ export function SearchBar({
           fill="none"
           stroke="currentColor"
           strokeWidth={2}
-          className={isDarkTheme ? "text-white/60" : "text-gray-400"}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          className={isDarkTheme ? "text-gray-400" : "text-gray-400"}
         >
           <circle cx="11" cy="11" r="8" />
           <path d="m21 21-4.35-4.35" />
@@ -183,15 +189,14 @@ export function SearchBar({
         {/* Voice Search Button */}
         {isSupported && (
           <button
+            type="button"
             onClick={handleVoiceSearch}
             className={getButtonClass(isListening)}
             aria-label={isListening ? "Stop listening" : "Start voice search"}
             title={isListening ? "Stop listening" : "Start voice search"}
           >
             {isListening ? (
-              <div className="flex items-center justify-center">
-                <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse" />
-              </div>
+              <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
             ) : (
               <svg
                 width={16}
@@ -200,6 +205,8 @@ export function SearchBar({
                 fill="none"
                 stroke="currentColor"
                 strokeWidth={2}
+                strokeLinecap="round"
+                strokeLinejoin="round"
               >
                 <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3Z" />
                 <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
@@ -213,6 +220,7 @@ export function SearchBar({
         {/* Clear Button */}
         {query && (
           <button
+            type="button"
             onClick={handleClear}
             className={getButtonClass()}
             aria-label="Clear search"
@@ -225,6 +233,8 @@ export function SearchBar({
               fill="none"
               stroke="currentColor"
               strokeWidth={2}
+              strokeLinecap="round"
+              strokeLinejoin="round"
             >
               <line x1="18" y1="6" x2="6" y2="18" />
               <line x1="6" y1="6" x2="18" y2="18" />
@@ -237,7 +247,7 @@ export function SearchBar({
       {isListening && (
         <div className="absolute -bottom-8 left-0 right-0 text-center">
           <div
-            className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs ${
+            className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium ${
               isDarkTheme
                 ? "bg-red-500/20 text-red-400"
                 : "bg-red-100 text-red-600"
