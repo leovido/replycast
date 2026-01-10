@@ -151,7 +151,7 @@ export function TabBar({
       <div className="flex items-center justify-around py-3">
         {tabs.map((tab) => {
           const isActive = activeTab === tab.id;
-          const getTextColor = isActive ? getActiveTextColor() : getInactiveTextColor();
+          const textColor = isActive ? getActiveTextColor() : getInactiveTextColor();
           return (
             <button
               key={tab.id}
@@ -166,11 +166,11 @@ export function TabBar({
               }`}
               aria-label={tab.label}
             >
-              <div className={`mb-1 ${getTextColor}`}>
+              <div className={`mb-1 ${textColor}`}>
                 {tab.icon}
               </div>
               <span
-                className={`text-xs font-medium ${getTextColor}`}
+                className={`text-xs font-medium ${textColor}`}
               >
                 {tab.label}
               </span>

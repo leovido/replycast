@@ -133,24 +133,24 @@ export function SearchBar({
     return `${baseClass} ${themeClass}`;
   };
 
-  const getButtonClass = (isActive = false) => {
+  const getActiveButtonClass = () => {
     const baseClass =
       "flex items-center justify-center w-11 h-11 rounded-md transition-colors duration-150";
-    const alternativeThemeClass = () => {
-      isActive
-            ? "bg-red-100 text-red-600"
-            : "bg-gray-100 hover:bg-gray-200 text-gray-600"
-    };
-    const mainThemeClass = () => {
-      isActive
-            ? "bg-red-500/20 text-red-400"
-            : "bg-gray-700/50 hover:bg-gray-700 text-gray-300"
-    };
-    const themeClass = isDarkTheme
-      ? mainThemeClass()
-      : alternativeThemeClass();
+    return isDarkTheme
+      ? `${baseClass} bg-red-500/20 text-red-400`
+      : `${baseClass} bg-red-100 text-red-600`;
+  };
 
-    return `${baseClass} ${themeClass}`;
+  const getInactiveButtonClass = () => {
+    const baseClass =
+      "flex items-center justify-center w-11 h-11 rounded-md transition-colors duration-150";
+    return isDarkTheme
+      ? `${baseClass} bg-gray-700/50 hover:bg-gray-700 text-gray-300`
+      : `${baseClass} bg-gray-100 hover:bg-gray-200 text-gray-600`;
+  };
+
+  const getButtonClass = (isActive = false) => {
+    return isActive ? getActiveButtonClass() : getInactiveButtonClass();
   };
 
   return (
