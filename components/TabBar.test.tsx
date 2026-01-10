@@ -28,7 +28,9 @@ describe("TabBar", () => {
     render(<TabBar {...defaultProps} activeTab="focus" />);
 
     const focusTab = screen.getByText("Focus").closest("button");
-    expect(focusTab).toHaveClass("scale-105");
+    // Active tab should have active indicator (dot)
+    const activeIndicator = focusTab?.querySelector("div[class*='w-1 h-1']");
+    expect(activeIndicator).toBeInTheDocument();
   });
 
   it("calls onTabChange when tab is clicked", () => {
@@ -44,36 +46,21 @@ describe("TabBar", () => {
     render(<TabBar {...defaultProps} isDarkTheme={true} themeMode="dark" />);
 
     const tabBar = screen.getByText("Inbox").closest("div")?.parentElement;
-    expect(tabBar).toHaveClass(
-      "bg-gradient-to-r",
-      "from-gray-900/95",
-      "via-gray-800/95",
-      "to-gray-900/95"
-    );
+    expect(tabBar).toHaveClass("bg-gray-900", "border-gray-700/50");
   });
 
   it("applies light theme styling", () => {
     render(<TabBar {...defaultProps} isDarkTheme={false} themeMode="light" />);
 
     const tabBar = screen.getByText("Inbox").closest("div")?.parentElement;
-    expect(tabBar).toHaveClass(
-      "bg-gradient-to-r",
-      "from-gray-50/95",
-      "via-white/95",
-      "to-gray-100/95"
-    );
+    expect(tabBar).toHaveClass("bg-white", "border-gray-200");
   });
 
   it("applies Farcaster theme styling", () => {
     render(<TabBar {...defaultProps} themeMode="Farcaster" />);
 
     const tabBar = screen.getByText("Inbox").closest("div")?.parentElement;
-    expect(tabBar).toHaveClass(
-      "bg-gradient-to-r",
-      "from-purple-900/95",
-      "via-purple-800/95",
-      "to-indigo-900/95"
-    );
+    expect(tabBar).toHaveClass("bg-purple-900", "border-purple-700/50");
   });
 
   it("shows active indicator for active tab", () => {
@@ -105,6 +92,6 @@ describe("TabBar", () => {
     render(<TabBar {...defaultProps} activeTab="inbox" />);
 
     const focusTab = screen.getByText("Focus").closest("button");
-    expect(focusTab).toHaveClass("hover:scale-102", "hover:bg-white/5");
+    expect(focusTab).toHaveClass("hover:bg-gray-800/50");
   });
 });

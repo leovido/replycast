@@ -1,11 +1,6 @@
 import React from "react";
 import { sdk } from "@farcaster/miniapp-sdk";
 import { useAppAnalytics } from "../hooks/useAnalytics";
-import {
-  getBackgroundClass,
-  getBorderColor,
-  getTextColor,
-} from "@/utils/themeHelpers";
 import type { ThemeMode } from "@/types/types";
 
 export type TabType = "inbox" | "focus" | "analytics";
@@ -23,12 +18,14 @@ const tabs = [
     label: "Inbox",
     icon: (
       <svg
-        width={20}
-        height={20}
+        width={18}
+        height={18}
         viewBox="0 0 24 24"
         fill="none"
         stroke="currentColor"
         strokeWidth={2}
+        strokeLinecap="round"
+        strokeLinejoin="round"
       >
         <path d="M22 4H2v16h20V4zM2 8h20" />
         <path d="M6 14h.01" />
@@ -43,12 +40,14 @@ const tabs = [
     label: "Focus",
     icon: (
       <svg
-        width={20}
-        height={20}
+        width={18}
+        height={18}
         viewBox="0 0 24 24"
         fill="none"
         stroke="currentColor"
         strokeWidth={2}
+        strokeLinecap="round"
+        strokeLinejoin="round"
       >
         <circle cx="12" cy="12" r="3" />
         <path d="M12 1v6m0 6v6" />
@@ -63,12 +62,14 @@ const tabs = [
     label: "Analytics",
     icon: (
       <svg
-        width={20}
-        height={20}
+        width={18}
+        height={18}
         viewBox="0 0 24 24"
         fill="none"
         stroke="currentColor"
         strokeWidth={2}
+        strokeLinecap="round"
+        strokeLinejoin="round"
       >
         <path d="M3 3v18h18" />
         <path d="M18.7 8l-5.1 5.2-2.8-2.7L7 14.3" />
@@ -99,11 +100,53 @@ export function TabBar({
     onTabChange(tab);
   };
 
+  const getBackgroundColor = () => {
+    switch (themeMode) {
+      case "Farcaster":
+        return "bg-purple-900";
+      case "light":
+        return "bg-white";
+      default:
+        return "bg-gray-900";
+    }
+  };
+
+  const getBorderColor = () => {
+    switch (themeMode) {
+      case "Farcaster":
+        return "border-purple-700/50";
+      case "light":
+        return "border-gray-200";
+      default:
+        return "border-gray-700/50";
+    }
+  };
+
+  const getTextColor = (isActive: boolean) => {
+    if (isActive) {
+      switch (themeMode) {
+        case "light":
+          return "text-gray-900";
+        case "Farcaster":
+          return "text-white";
+        default:
+          return "text-white";
+      }
+    } else {
+      switch (themeMode) {
+        case "light":
+          return "text-gray-500";
+        case "Farcaster":
+          return "text-gray-400";
+        default:
+          return "text-gray-400";
+      }
+    }
+  };
+
   return (
     <div
-      className={`sticky bottom-0 z-50 ${getBackgroundClass(
-        themeMode
-      )} border-t ${getBorderColor(themeMode)}`}
+      className={`sticky bottom-0 z-50 border-t ${getBackgroundColor()} ${getBorderColor()}`}
     >
       <div className="flex items-center justify-around py-2">
         {tabs.map((tab) => {
@@ -111,30 +154,31 @@ export function TabBar({
           return (
             <button
               key={tab.id}
+              type="button"
               onClick={() => handleTabChange(tab.id)}
-              className={`flex flex-col items-center justify-center w-full py-2 rounded-lg transition-all duration-200 ${
-                isActive ? "scale-105" : "hover:scale-102 hover:bg-white/5"
+              className={`flex flex-col items-center justify-center w-full py-2 rounded-md transition-colors duration-150 ${
+                isActive
+                  ? ""
+                  : isDarkTheme
+                  ? "hover:bg-gray-800/50"
+                  : "hover:bg-gray-50"
               }`}
               aria-label={tab.label}
             >
-              <div
-                className={`mb-1 transition-all duration-200 ${getTextColor(
-                  themeMode,
-                  isActive
-                )}`}
-              >
+              <div className={`mb-1 ${getTextColor(isActive)}`}>
                 {tab.icon}
               </div>
               <span
-                className={`text-xs font-medium transition-all duration-200 ${getTextColor(
-                  themeMode,
-                  isActive
-                )}`}
+                className={`text-xs font-medium ${getTextColor(isActive)}`}
               >
                 {tab.label}
               </span>
               {isActive && (
-                <div className="w-1 h-1 rounded-full bg-current mt-1" />
+                <div
+                  className={`w-1 h-1 rounded-full mt-1 ${
+                    isDarkTheme ? "bg-white" : "bg-gray-900"
+                  }`}
+                />
               )}
             </button>
           );
