@@ -942,19 +942,19 @@ export default function FarcasterApp() {
         {/* User Info Card */}
         {user && (
           <div
-            className={`mb-6 p-4 rounded-2xl ${
+            className={`mb-6 p-4 rounded-lg ${
               isDarkTheme
-                ? "bg-white/10 backdrop-blur-md border border-white/20"
-                : "bg-white/80 backdrop-blur-md border border-gray-200"
+                ? "bg-gray-800/50 border border-gray-700/50"
+                : "bg-white border border-gray-200"
             }`}
           >
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3">
               <div className="flex-shrink-0">
                 {user.pfpUrl ? (
                   <Image
                     src={`/api/image-proxy?url=${user.pfpUrl}`}
                     alt={`${user.displayName || user.username}'s avatar`}
-                    className="w-12 h-12 rounded-full border-2 border-white/20"
+                    className="w-12 h-12 rounded-full border border-gray-300"
                     width={48}
                     height={48}
                     // Disable optimization to prevent multiple requests
@@ -964,7 +964,7 @@ export default function FarcasterApp() {
                     loading="eager"
                   />
                 ) : (
-                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold text-lg">
+                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-semibold text-sm">
                     {user.displayName?.charAt(0) ||
                       user.username?.charAt(0) ||
                       "?"}
@@ -972,18 +972,18 @@ export default function FarcasterApp() {
                 )}
               </div>
               <div className="flex-1 min-w-0">
-                <div className="flex items-center justify-between mb-0">
-                  <div className="flex flex-col min-w-0">
+                <div className="flex items-center justify-between">
+                  <div className="flex flex-col min-w-0 gap-1">
                     <span
-                      className={`font-semibold truncate ${
+                      className={`text-sm font-semibold truncate tracking-tight ${
                         isDarkTheme ? "text-white" : "text-gray-900"
                       }`}
                     >
                       {user.displayName || user.username}
                     </span>
                     <span
-                      className={`text-sm ${
-                        isDarkTheme ? "text-white/60" : "text-gray-600"
+                      className={`text-xs font-normal ${
+                        isDarkTheme ? "text-gray-400" : "text-gray-500"
                       }`}
                     >
                       FID: {user.fid}
@@ -1003,22 +1003,27 @@ export default function FarcasterApp() {
                 </div>
               </div>
               <button
+                type="button"
                 onClick={handleRefresh}
                 disabled={dataLoading}
-                className={`p-2 rounded-lg transition-all duration-200 ${
+                className={`flex items-center justify-center w-8 h-8 rounded-md transition-colors duration-150 ${
                   dataLoading
                     ? "opacity-50 cursor-not-allowed"
-                    : "hover:bg-white/20"
-                } ${isDarkTheme ? "text-white" : "text-gray-700"}`}
+                    : isDarkTheme
+                    ? "bg-gray-700/50 hover:bg-gray-700 text-gray-300"
+                    : "bg-gray-100 hover:bg-gray-200 text-gray-600"
+                }`}
                 aria-label="Refresh data"
               >
                 <svg
-                  width={20}
-                  height={20}
+                  width={16}
+                  height={16}
                   viewBox="0 0 24 24"
                   fill="none"
                   stroke="currentColor"
                   strokeWidth={2}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
                   className={dataLoading ? "animate-spin" : ""}
                 >
                   <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8" />
