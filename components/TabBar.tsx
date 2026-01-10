@@ -122,25 +122,25 @@ export function TabBar({
     }
   };
 
-  const getTextColor = (isActive: boolean) => {
-    if (isActive) {
-      switch (themeMode) {
-        case "light":
-          return "text-gray-900";
-        case "Farcaster":
-          return "text-white";
-        default:
-          return "text-white";
-      }
-    } else {
-      switch (themeMode) {
-        case "light":
-          return "text-gray-500";
-        case "Farcaster":
-          return "text-gray-400";
-        default:
-          return "text-gray-400";
-      }
+  const getActiveTextColor = () => {
+    switch (themeMode) {
+      case "light":
+        return "text-gray-900";
+      case "Farcaster":
+        return "text-white";
+      default:
+        return "text-white";
+    }
+  };
+
+  const getInactiveTextColor = () => {
+    switch (themeMode) {
+      case "light":
+        return "text-gray-500";
+      case "Farcaster":
+        return "text-gray-400";
+      default:
+        return "text-gray-400";
     }
   };
 
@@ -151,6 +151,7 @@ export function TabBar({
       <div className="flex items-center justify-around py-3">
         {tabs.map((tab) => {
           const isActive = activeTab === tab.id;
+          const getTextColor = isActive ? getActiveTextColor() : getInactiveTextColor();
           return (
             <button
               key={tab.id}
@@ -165,11 +166,11 @@ export function TabBar({
               }`}
               aria-label={tab.label}
             >
-              <div className={`mb-1 ${getTextColor(isActive)}`}>
+              <div className={`mb-1 ${getTextColor}`}>
                 {tab.icon}
               </div>
               <span
-                className={`text-xs font-medium ${getTextColor(isActive)}`}
+                className={`text-xs font-medium ${getTextColor}`}
               >
                 {tab.label}
               </span>

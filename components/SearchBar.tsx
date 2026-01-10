@@ -136,17 +136,19 @@ export function SearchBar({
   const getButtonClass = (isActive = false) => {
     const baseClass =
       "flex items-center justify-center w-11 h-11 rounded-md transition-colors duration-150";
-    const themeClass = isDarkTheme
-      ? `${
-          isActive
-            ? "bg-red-500/20 text-red-400"
-            : "bg-gray-700/50 hover:bg-gray-700 text-gray-300"
-        }`
-      : `${
-          isActive
+    const alternativeThemeClass = () => {
+      isActive
             ? "bg-red-100 text-red-600"
             : "bg-gray-100 hover:bg-gray-200 text-gray-600"
-        }`;
+    };
+    const mainThemeClass = () => {
+      isActive
+            ? "bg-red-500/20 text-red-400"
+            : "bg-gray-700/50 hover:bg-gray-700 text-gray-300"
+    };
+    const themeClass = isDarkTheme
+      ? mainThemeClass()
+      : alternativeThemeClass();
 
     return `${baseClass} ${themeClass}`;
   };
@@ -164,7 +166,7 @@ export function SearchBar({
           strokeWidth={2}
           strokeLinecap="round"
           strokeLinejoin="round"
-          className={isDarkTheme ? "text-gray-400" : "text-gray-400"}
+          className={"text-gray-400"}
         >
           <circle cx="11" cy="11" r="8" />
           <path d="m21 21-4.35-4.35" />
