@@ -595,6 +595,10 @@ export default function FarcasterApp() {
     touchStartTime.current = 0;
   };
 
+  const buttonThemeStyle = () => isDarkTheme
+    ? "bg-gray-700/50 hover:bg-gray-700 text-gray-300"
+    : "bg-gray-100 hover:bg-gray-200 text-gray-600"
+
   // Fetch reputation data for current user
   useEffect(() => {
     if (user?.fid) {
@@ -1015,9 +1019,7 @@ export default function FarcasterApp() {
                 className={`flex items-center justify-center w-11 h-11 rounded-md transition-colors duration-150 ${
                   dataLoading
                     ? "opacity-50 cursor-not-allowed"
-                    : isDarkTheme
-                    ? "bg-gray-700/50 hover:bg-gray-700 text-gray-300"
-                    : "bg-gray-100 hover:bg-gray-200 text-gray-600"
+                    : buttonThemeStyle()
                 }`}
                 aria-label="Refresh data"
               >
