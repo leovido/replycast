@@ -148,7 +148,7 @@ export function TabBar({
     <div
       className={`sticky bottom-0 z-50 border-t ${getBackgroundColor()} ${getBorderColor()}`}
     >
-      <div className="flex items-center justify-around py-2">
+      <div className="flex items-center justify-around py-3">
         {tabs.map((tab) => {
           const isActive = activeTab === tab.id;
           return (
@@ -156,7 +156,7 @@ export function TabBar({
               key={tab.id}
               type="button"
               onClick={() => handleTabChange(tab.id)}
-              className={`flex flex-col items-center justify-center w-full py-2 rounded-md transition-colors duration-150 ${
+              className={`flex flex-col items-center justify-center w-full py-2 min-h-[56px] rounded-md transition-colors duration-150 ${
                 isActive
                   ? ""
                   : isDarkTheme

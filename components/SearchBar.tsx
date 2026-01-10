@@ -125,7 +125,7 @@ export function SearchBar({
 
   const getInputClass = () => {
     const baseClass =
-      "w-full pl-10 pr-16 py-3 text-sm rounded-lg border outline-none transition-colors duration-150";
+      "w-full pl-12 pr-20 py-3.5 text-base rounded-lg border outline-none transition-colors duration-150";
     const themeClass = isDarkTheme
       ? "bg-gray-800/50 text-white placeholder-gray-400 border-gray-700/50 focus:border-gray-600 focus:bg-gray-800"
       : "bg-white text-gray-900 placeholder-gray-500 border-gray-200 focus:border-gray-300 focus:bg-white";
@@ -135,7 +135,7 @@ export function SearchBar({
 
   const getButtonClass = (isActive = false) => {
     const baseClass =
-      "flex items-center justify-center w-8 h-8 rounded-md transition-colors duration-150";
+      "flex items-center justify-center w-11 h-11 rounded-md transition-colors duration-150";
     const themeClass = isDarkTheme
       ? `${
           isActive
@@ -154,10 +154,10 @@ export function SearchBar({
   return (
     <div className={getContainerClass()}>
       {/* Search Icon */}
-      <div className="absolute left-3 z-10 pointer-events-none">
+      <div className="absolute left-4 z-10 pointer-events-none">
         <svg
-          width={16}
-          height={16}
+          width={18}
+          height={18}
           viewBox="0 0 24 24"
           fill="none"
           stroke="currentColor"
@@ -185,7 +185,7 @@ export function SearchBar({
       />
 
       {/* Action Buttons */}
-      <div className="absolute right-2 flex items-center gap-1">
+      <div className="absolute right-2 flex items-center gap-2">
         {/* Voice Search Button */}
         {isSupported && (
           <button
@@ -199,8 +199,8 @@ export function SearchBar({
               <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
             ) : (
               <svg
-                width={16}
-                height={16}
+                width={18}
+                height={18}
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
@@ -227,8 +227,8 @@ export function SearchBar({
             title="Clear search"
           >
             <svg
-              width={16}
-              height={16}
+              width={18}
+              height={18}
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"

@@ -863,7 +863,7 @@ export default function FarcasterApp() {
             <button
               type="button"
               onClick={handleShareApp}
-              className={`flex items-center justify-center w-10 h-10 rounded-md transition-colors duration-150 ${
+              className={`flex items-center justify-center w-12 h-12 rounded-md transition-colors duration-150 ${
                 isDarkTheme
                   ? "bg-gray-700/50 hover:bg-gray-700 text-gray-300"
                   : "bg-gray-100 hover:bg-gray-200 text-gray-600"
@@ -872,8 +872,8 @@ export default function FarcasterApp() {
               title="Share ReplyCast with your followers"
             >
               <svg
-                width={18}
-                height={18}
+                width={20}
+                height={20}
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
@@ -898,7 +898,7 @@ export default function FarcasterApp() {
                   theme: themeMode,
                 });
               }}
-              className={`flex items-center justify-center w-10 h-10 rounded-md transition-colors duration-150 ${
+              className={`flex items-center justify-center w-12 h-12 rounded-md transition-colors duration-150 ${
                 isDarkTheme
                   ? "bg-gray-700/50 hover:bg-gray-700 text-gray-300"
                   : "bg-gray-100 hover:bg-gray-200 text-gray-600"
@@ -1012,7 +1012,7 @@ export default function FarcasterApp() {
                 type="button"
                 onClick={handleRefresh}
                 disabled={dataLoading}
-                className={`flex items-center justify-center w-8 h-8 rounded-md transition-colors duration-150 ${
+                className={`flex items-center justify-center w-11 h-11 rounded-md transition-colors duration-150 ${
                   dataLoading
                     ? "opacity-50 cursor-not-allowed"
                     : isDarkTheme
@@ -1022,8 +1022,8 @@ export default function FarcasterApp() {
                 aria-label="Refresh data"
               >
                 <svg
-                  width={16}
-                  height={16}
+                  width={18}
+                  height={18}
                   viewBox="0 0 24 24"
                   fill="none"
                   stroke="currentColor"
