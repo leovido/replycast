@@ -1,6 +1,24 @@
-const withBundleAnalyzer = require("@next/bundle-analyzer")({
-  enabled: process.env.ANALYZE === "true",
-});
+/**
+ * `@next/bundle-analyzer` is intentionally a devDependency.
+ *
+ * Our Docker runtime image prunes devDependencies, but Next.js still loads
+ * `next.config.js` on startup. If we `require()` the analyzer at the top level,
+ * production containers will crash with `MODULE_NOT_FOUND`.
+ *
+ * Only load the analyzer when explicitly requested (ANALYZE=true) and fall back
+ * gracefully if the package isn't installed.
+ */
+let withBundleAnalyzer = (config) => config;
+if (process.env.ANALYZE === "true") {
+  try {
+    withBundleAnalyzer = require("@next/bundle-analyzer")({ enabled: true });
+  } catch (e) {
+    // eslint-disable-next-line no-console
+    console.warn(
+      "ANALYZE=true but @next/bundle-analyzer is not installed; skipping bundle analyzer.",
+    );
+  }
+}
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
@@ -93,6 +111,16 @@ const nextConfig = {
           {
             key: "Referrer-Policy",
             value: "origin-when-cross-origin",
+          },
+        ],
+      },
+      // Prometheus scrapes should never be cached.
+      {
+        source: "/api/metrics",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "no-store",
           },
         ],
       },
