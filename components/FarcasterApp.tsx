@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo } from "react";
+import React, { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { sdk } from "@farcaster/miniapp-sdk";
 import { useFarcasterAuth } from "../hooks/useFarcasterAuth";
 import { useReputation } from "../hooks/useReputation";
@@ -213,9 +213,6 @@ export default function FarcasterApp() {
 
   const {
     fetchReputationData,
-    getReputationValue,
-    getReputationDisplay,
-    getReputationColor,
     openRankData,
     quotientScores,
     clearCache,
@@ -223,21 +220,32 @@ export default function FarcasterApp() {
 
   const {
     allConversations,
-    userOpenRank,
-    userQuotientScore,
-    userFollowingRank,
     loading: dataLoading,
     error,
-    handleRefresh,
+    handleRefresh: refreshConversations,
     hasMore,
     loadMoreConversations,
     isLoadingMore,
   } = useFarcasterData({
     user,
-    fetchOpenRankData: fetchReputationData,
-    clearOpenRankCache: clearCache,
     dayFilter,
   });
+
+  const userOpenRank = useMemo(() => {
+    if (!user?.fid) return null;
+    return openRankData[user.fid]?.engagement?.rank ?? null;
+  }, [openRankData, user?.fid]);
+
+  const userQuotientScore = useMemo(() => {
+    if (!user?.fid) return null;
+    return quotientScores[user.fid]?.quotientScore ?? null;
+  }, [quotientScores, user?.fid]);
+
+  const handleRefresh = useCallback(async () => {
+    // Keep reputation caches in sync with conversation refresh.
+    clearCache();
+    await refreshConversations();
+  }, [clearCache, refreshConversations]);
 
   // Mock getCacheStatus function since it's not available in the hook
   const getCacheStatus = () => ({
@@ -605,6 +613,13 @@ export default function FarcasterApp() {
       fetchReputationData([user.fid]);
     }
   }, [user?.fid, fetchReputationData]);
+
+  // Fetch reputation data for conversation authors (all reputation concerns live in useReputation)
+  useEffect(() => {
+    if (!allConversations || allConversations.length === 0) return;
+    const fids = allConversations.map((c) => c.authorFid);
+    fetchReputationData(fids);
+  }, [allConversations, fetchReputationData]);
 
   // Call ready when app is loaded and data is ready
   useEffect(() => {
