@@ -27,7 +27,6 @@ jest.mock("../hooks/useFarcasterAuth", () => ({
 jest.mock("../hooks/useFarcasterData", () => ({
   useFarcasterData: () => ({
     allConversations: [],
-    userOpenRank: null,
     loading: false,
     error: null,
     handleRefresh: jest.fn(),

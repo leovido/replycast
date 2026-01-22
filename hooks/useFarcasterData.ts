@@ -1,4 +1,4 @@
-import { useEffect, useCallback, useRef, useReducer } from "react";
+import { useEffect, useCallback, useReducer } from "react";
 import type {
   FarcasterRepliesResponse,
   UnrepliedDetail,
@@ -9,8 +9,6 @@ import { MockFarcasterService } from "@/utils/mockService";
 
 interface UseFarcasterDataProps {
   user: User | null;
-  fetchOpenRankData: (fids: number[]) => Promise<void>;
-  clearOpenRankCache: () => void;
   dayFilter?: string;
 }
 
@@ -31,9 +29,6 @@ interface State {
   hasMore: boolean;
   isLoadingMore: boolean;
   conversations: UnrepliedDetail[];
-  userOpenRank: number | null;
-  userQuotientScore: number | null;
-  userFollowingRank: number | null;
 }
 
 type Action =
@@ -45,7 +40,6 @@ type Action =
   | { type: 'LOAD_MORE_ERROR' }
   | { type: 'REFRESH_START' }
   | { type: 'REFRESH_SUCCESS'; payload: FarcasterRepliesResponse }
-  | { type: 'SET_USER_RANKS'; openRank: number | null; quotient: number | null; following: number | null }
   | { type: 'RESET_PAGINATION' };
 
 function reducer(state: State, action: Action): State {
@@ -95,14 +89,6 @@ function reducer(state: State, action: Action): State {
         hasMore: !!action.payload.nextCursor,
       };
     
-    case 'SET_USER_RANKS':
-      return {
-        ...state,
-        userOpenRank: action.openRank,
-        userQuotientScore: action.quotient,
-        userFollowingRank: action.following,
-      };
-    
     case 'RESET_PAGINATION':
       return {
         ...state,
@@ -135,8 +121,6 @@ function deduplicateAndMerge(existing: UnrepliedDetail[], newItems: UnrepliedDet
 
 export function useFarcasterData({
   user,
-  fetchOpenRankData,
-  clearOpenRankCache,
   dayFilter = "today",
 }: UseFarcasterDataProps) {
   const [state, dispatch] = useReducer(reducer, {
@@ -148,77 +132,7 @@ export function useFarcasterData({
     hasMore: true,
     isLoadingMore: false,
     conversations: [],
-    userOpenRank: null,
-    userQuotientScore: null,
-    userFollowingRank: null,
   });
-
-  // Store function refs to avoid dependency issues
-  const fetchOpenRankDataRef = useRef(fetchOpenRankData);
-  const clearOpenRankCacheRef = useRef(clearOpenRankCache);
-  
-  useEffect(() => {
-    fetchOpenRankDataRef.current = fetchOpenRankData;
-    clearOpenRankCacheRef.current = clearOpenRankCache;
-  });
-
-  // Fetch user reputation (separate effect for separate concern)
-  useEffect(() => {
-    if (!user?.fid) return;
-
-    const abortController = new AbortController();
-    
-    const fetchReputation = async () => {
-      try {
-        const useMocks = process.env.NEXT_PUBLIC_USE_MOCKS === "true" ||
-          (typeof window !== "undefined" && (window as any).__FORCE_MOCKS__);
-
-        if (useMocks) {
-          const mockScore = await MockFarcasterService.fetchUserReputation(user.fid, "quotient");
-          dispatch({ type: 'SET_USER_RANKS', openRank: mockScore, quotient: null, following: null });
-          return;
-        }
-
-        // Parallel fetch with timeout
-        const [openRankResponse, quotientResponse] = await Promise.all([
-          fetch(`/api/openRank?fids=${user.fid}`, {
-            signal: abortController.signal,
-          }),
-          fetch(`/api/quotient`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ fids: [user.fid] }),
-            signal: abortController.signal,
-          }),
-        ]);
-
-        let openRank = null, quotient = null, following = null;
-
-        if (openRankResponse.ok) {
-          const data = await openRankResponse.json();
-          if (data.ranks?.[user.fid]) {
-            openRank = data.ranks[user.fid].engagement.rank;
-            following = data.ranks[user.fid].following.rank;
-          }
-        }
-
-        if (quotientResponse.ok) {
-          const data = await quotientResponse.json();
-          if (data.data?.[0]) {
-            quotient = data.data[0].quotientScore;
-          }
-        }
-
-        dispatch({ type: 'SET_USER_RANKS', openRank, quotient, following });
-      } catch (error: unknown) {
-        console.error("Failed to fetch user reputation:", error);
-      }
-    };
-
-    fetchReputation();
-
-    return () => abortController.abort();
-  }, [user?.fid]); // Only primitive dependency
 
   // Main data fetch effect
   useEffect(() => {
@@ -257,12 +171,6 @@ export function useFarcasterData({
         if (isCancelled) return;
 
         dispatch({ type: 'FETCH_SUCCESS', payload: responseData });
-
-        // Fire and forget: fetch OpenRank for conversation authors
-        if (responseData.unrepliedDetails?.length > 0) {
-          const fids = responseData.unrepliedDetails.map(detail => detail.authorFid);
-          fetchOpenRankDataRef.current(fids).catch(console.error);
-        }
       } catch (error: unknown) {
         if (error instanceof Error) {
           if (error.name === 'AbortError') return;
@@ -325,12 +233,6 @@ export function useFarcasterData({
         payload: responseData.unrepliedDetails || [],
         cursor: responseData.nextCursor || null,
       });
-
-      // Fire and forget: fetch OpenRank
-      if (responseData.unrepliedDetails?.length > 0) {
-        const fids = responseData.unrepliedDetails.map(detail => detail.authorFid);
-        fetchOpenRankDataRef.current(fids).catch(console.error);
-      }
     } catch (err) {
       if (err instanceof Error) {
         if (err.name === 'AbortError') return;
@@ -344,7 +246,6 @@ export function useFarcasterData({
     if (!user?.fid) return;
 
     dispatch({ type: 'REFRESH_START' });
-    clearOpenRankCacheRef.current();
 
     try {
       const url = new URL("/api/farcaster-notification-replies", window.location.origin);
@@ -358,12 +259,6 @@ export function useFarcasterData({
       const responseData = await res.json();
 
       dispatch({ type: 'REFRESH_SUCCESS', payload: responseData });
-
-      // Fire and forget: fetch OpenRank
-      if (responseData.unrepliedDetails?.length > 0) {
-        const fids = responseData.unrepliedDetails.map((detail: UnrepliedDetail) => detail.authorFid);
-        fetchOpenRankDataRef.current(fids).catch(console.error);
-      }
     } catch (err) {
       dispatch({
         type: 'FETCH_ERROR',
@@ -385,9 +280,6 @@ export function useFarcasterData({
     hasMore: state.hasMore,
     isLoadingMore: state.isLoadingMore,
     cursor: state.cursor,
-    userOpenRank: state.userOpenRank,
-    userQuotientScore: state.userQuotientScore,
-    userFollowingRank: state.userFollowingRank,
     loadMoreConversations,
     handleRefresh,
     resetPagination,
