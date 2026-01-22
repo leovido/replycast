@@ -42,48 +42,37 @@ A Farcaster Mini App that helps you track and reply to unreplied conversations. 
 - **Image Generation**: Satori for dynamic OG images
 - **Fonts**: Instrument Sans (custom font)
 
-## Development
+## Getting Started
 
 ### Prerequisites
 - Node.js 18+ 
 - pnpm (recommended) or npm
 - Neynar API key
 
-### Setup
+### Quick Start
 
-1. **Clone the repository**
+1. **Clone and install**
    ```bash
    git clone <repository-url>
-   cd replycast-be-widget
-   ```
-
-2. **Install dependencies**
-   ```bash
+   cd ui-update-skills
    pnpm install
    ```
 
-3. **Environment Variables**
+2. **Set up environment variables**
    Create a `.env.local` file:
    ```env
    NEYNAR_API_KEY=your_neynar_api_key_here
    ```
 
-4. **Run development server**
+3. **Start development server**
    ```bash
    pnpm dev
    ```
 
-5. **Test the API**
-   ```bash
-   pnpm test:api
-   ```
+4. **Open in browser**
+   Navigate to `http://localhost:3000`
 
-### Building for Production
-
-```bash
-pnpm build
-pnpm start
-```
+For detailed development instructions, testing, and code style guidelines, see [AGENTS.md](./AGENTS.md).
 
 ## API Endpoints
 
@@ -139,11 +128,16 @@ The app is configured as a Farcaster Mini App with:
 
 ## Contributing
 
+We welcome contributions! Please:
+
 1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests if applicable
-5. Submit a pull request
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Make your changes following our [code style guidelines](./AGENTS.md#code-style)
+4. Add tests for new functionality
+5. Ensure all tests pass (`pnpm test`)
+6. Submit a pull request
+
+For detailed development guidelines, see [AGENTS.md](./AGENTS.md).
 
 ## License
 
@@ -153,10 +147,8 @@ MIT License - see LICENSE file for details
 
 For issues or questions:
 - Create an issue on GitHub
-- Reach out on Farcaster @username
+- Reach out on Farcaster
 
 ---
 
 Built with ❤️ for the Farcaster community
-# Lefthook Setup Complete
-# Test commit for Lefthook
