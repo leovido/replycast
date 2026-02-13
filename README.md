@@ -74,6 +74,10 @@ A Farcaster Mini App that helps you track and reply to unreplied conversations. 
 
 For detailed development instructions, testing, and code style guidelines, see [AGENTS.md](./AGENTS.md).
 
+### Docker (with Prometheus + Grafana)
+
+See `DOCKER_SETUP.md`.
+
 ## API Endpoints
 
 ### `/api/farcaster-replies`
