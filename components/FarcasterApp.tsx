@@ -942,7 +942,7 @@ export default function FarcasterApp() {
         </div>
       </div>
 
-      <div className="container mx-auto px-4 max-w-6xl flex-1 flex flex-col">
+      <div className="container mx-auto px-4 max-w-6xl flex-1 flex flex-col min-h-0">
         {/* Search Bar */}
         <div className="mb-6">
           <SearchBar
@@ -1060,7 +1060,7 @@ export default function FarcasterApp() {
         )}
 
         {/* Tab Content */}
-        <div className="flex-1 overflow-y-auto pb-20">
+        <div className="flex-1 overflow-y-auto pb-20 min-h-0">
           {activeTab === "inbox" && (
             <>
               {displayConversations.length === 0 && !dataLoading ? (
